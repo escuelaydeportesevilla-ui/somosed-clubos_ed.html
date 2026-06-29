@@ -1367,6 +1367,8 @@ function iniciarSesion(cred) {
 
   const subtexts = { admin: 'Escuela & Deporte · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
   document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'Escuela & Deporte';
+  // Actualizar MONITOR_ID para los módulos
+  if (typeof MONITOR_ID !== 'undefined') { window.MONITOR_ID = cred.nombre || cred.user || 'admin'; }
 
   buildNav();
   activarTab(getDefaultTab());
@@ -4676,11 +4678,7 @@ function toast(msg) {
 }
 
 // CREDENCIALES DE DEMO en consola
-console.log('%c ClubOS Escuela &amp; Deporte ', 'background:#C8102E;color:white;font-size:14px;padding:4px 12px;');
-console.log('Admin:   edadmin / ed2627');
-console.log('Club 1:  club01   / club01');
-console.log('Club 2:  club02   / club02');
-console.log('Árbitro: arbitro1 / edArb2627');
+// [credenciales omitidas por seguridad]
 console.log('Familias: acceso directo (sin contraseña)');
 
   // ══ GOOGLE SHEETS SYNC ══════════════════════════════════════
@@ -5059,6 +5057,27 @@ function eliminarClub(id) {
     });
   }
 
+
+// ── HELPERS COMPARTIDOS CON MÓDULOS ────────────────────────────
+// MONITOR_ID: identificador del usuario activo
+var MONITOR_ID = 'edadmin';
+// Se actualiza al iniciar sesión
+document.addEventListener('DOMContentLoaded', function() {
+  // Se sobreescribe en iniciarSesion
+});
+
+function safeParseJSON(str, fallback) {
+  if (!str) return fallback;
+  if (Array.isArray(str) || typeof str === 'object') return str;
+  try { return JSON.parse(str); } catch(e) { return fallback; }
+}
+
+function showSaved(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.opacity = '1';
+  setTimeout(() => { el.style.opacity = '0'; }, 1500);
+}
 
 // ══════════════════════════════════════════
 // MÓDULOS: DEPORTISTAS · ESCUELAS · EVALUACIONES
