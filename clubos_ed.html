@@ -15,7 +15,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --rojo:#C0392B; --rojo-oscuro:#922B21; --rojo-suave:#FDECEA;
+  --rojo:#C8102E; --rojo-oscuro:#9B0D22; --rojo-suave:#FDECEA;
   --negro:#111111; --negro-medio:#222;
   --dorado:#D4A017; --dorado-suave:#FBF5E0;
   --blanco:#FFFFFF; --crema:#F7F7F5;
@@ -559,7 +559,7 @@ tbody td.center{text-align:center;}
   .tabla-jugadores-desktop{display:block;}
 }
 
-
+</style>
 </head>
 <body>
 
@@ -794,7 +794,7 @@ tbody td.center{text-align:center;}
 
 <!-- ══ TAB DEPORTISTAS ══ -->
 <div id="panel-deportistas" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="navToTab('competicion')">← Volver al inicio</button>
+  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
   <div class="section-header"><h2>🧑‍🤝‍🧑 Deportistas</h2><div class="section-line"></div></div>
 
   <div class="dep-search-bar">
@@ -816,7 +816,7 @@ tbody td.center{text-align:center;}
 
 <!-- ══ TAB ESCUELAS DEPORTIVAS ══ -->
 <div id="panel-escuelas" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="navToTab('competicion')">← Volver al inicio</button>
+  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
   <div class="section-header"><h2>🏫 Escuelas deportivas</h2><div class="section-line"></div></div>
 
   <!-- Vista 1: Lista de escuelas -->
@@ -870,7 +870,7 @@ tbody td.center{text-align:center;}
 
 <!-- ══ TAB EVALUACIONES ══ -->
 <div id="panel-evaluaciones" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="navToTab('competicion')">← Volver al inicio</button>
+  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
   <div class="section-header"><h2>📝 Evaluación continua</h2><div class="section-line"></div></div>
 
   <!-- Filtros -->
@@ -6447,7 +6447,7 @@ function eliminarClub(id) {
       reader.onload = async (ev) => {
         const foto = ev.target.result;
         const dep = (DB.deportistas||[]).find(x=>x.id===id);
-        if (dep) { dep.foto = foto; _doSync(); }
+        if (dep) { dep.foto = foto; save(); _doSync(); }
         closeModal('modalFichaDeportista');
         renderDeportistas();
       };
