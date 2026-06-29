@@ -667,6 +667,22 @@ tbody td.center{text-align:center;}
 .historial-fecha{font-size:11px;color:var(--gris-suave);}
 .historial-dep{font-weight:700;}
 .radar-wrap{display:flex;justify-content:center;margin:12px 0;}
+/* ── Layout section-header paneles nuevos ── */
+#panel-deportistas .section-header,
+#panel-escuelas .section-header,
+#panel-evaluaciones .section-header {
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px;
+}
+#panel-deportistas .section-header h2,
+#panel-escuelas .section-header h2,
+#panel-evaluaciones .section-header h2 {
+  flex:none;
+}
+#panel-deportistas .section-header .section-line,
+#panel-escuelas .section-header .section-line,
+#panel-evaluaciones .section-header .section-line {
+  flex:1;
+}
 
 </style>
 </head>
@@ -7426,10 +7442,52 @@ function showSaved(id) {
   }
 
 
-// ── Exponer renders anidados al ámbito global ──────────────────
-window.renderDeportistas     = typeof renderDeportistas     === 'function' ? renderDeportistas     : function(){};
-window.renderEscuelas        = typeof renderEscuelas        === 'function' ? renderEscuelas        : function(){};
-window.renderEvalDeportistas = typeof renderEvalDeportistas === 'function' ? renderEvalDeportistas : function(){};
+// ── Exponer funciones anidadas al ámbito global ────────────────
+window.renderDeportistas            = typeof renderDeportistas            === 'function' ? renderDeportistas            : function(){};
+window.renderEscuelas               = typeof renderEscuelas               === 'function' ? renderEscuelas               : function(){};
+window.renderEvalDeportistas        = typeof renderEvalDeportistas        === 'function' ? renderEvalDeportistas        : function(){};
+window.openModalDeportista          = typeof openModalDeportista          === 'function' ? openModalDeportista          : function(){};
+window.openModalEscuela             = typeof openModalEscuela             === 'function' ? openModalEscuela             : function(){};
+window.openModalGrupo               = typeof openModalGrupo               === 'function' ? openModalGrupo               : function(){};
+window.openModalAlumno              = typeof openModalAlumno              === 'function' ? openModalAlumno              : function(){};
+window.cerrarModalDep               = typeof cerrarModalDep               === 'function' ? cerrarModalDep               : function(){};
+window.cerrarFichaDep               = typeof cerrarFichaDep               === 'function' ? cerrarFichaDep               : function(){};
+window.saveDeportista               = typeof saveDeportista               === 'function' ? saveDeportista               : function(){};
+window.saveEscuela                  = typeof saveEscuela                  === 'function' ? saveEscuela                  : function(){};
+window.saveGrupo                    = typeof saveGrupo                    === 'function' ? saveGrupo                    : function(){};
+window.saveAlumno                   = typeof saveAlumno                   === 'function' ? saveAlumno                   : function(){};
+window.editDeportista               = typeof editDeportista               === 'function' ? editDeportista               : function(){};
+window.editEscuela                  = typeof editEscuela                  === 'function' ? editEscuela                  : function(){};
+window.editGrupo                    = typeof editGrupo                    === 'function' ? editGrupo                    : function(){};
+window.editAlumno                   = typeof editAlumno                   === 'function' ? editAlumno                   : function(){};
+window.deleteAlumno                 = typeof deleteAlumno                 === 'function' ? deleteAlumno                 : function(){};
+window.verFichaDeportista           = typeof verFichaDeportista           === 'function' ? verFichaDeportista           : function(){};
+window.verFichaAlumno               = typeof verFichaAlumno               === 'function' ? verFichaAlumno               : function(){};
+window.setDepFiltro                 = typeof setDepFiltro                 === 'function' ? setDepFiltro                 : function(){};
+window.cambiarFotoDep               = typeof cambiarFotoDep               === 'function' ? cambiarFotoDep               : function(){};
+window.abrirEscuela                 = typeof abrirEscuela                 === 'function' ? abrirEscuela                 : function(){};
+window.abrirGrupo                   = typeof abrirGrupo                   === 'function' ? abrirGrupo                   : function(){};
+window.volverEscuelas               = typeof volverEscuelas               === 'function' ? volverEscuelas               : function(){};
+window.volverGrupos                 = typeof volverGrupos                 === 'function' ? volverGrupos                 : function(){};
+window.abrirAsistencia              = typeof abrirAsistencia              === 'function' ? abrirAsistencia              : function(){};
+window.guardarAsistencia            = typeof guardarAsistencia            === 'function' ? guardarAsistencia            : function(){};
+window.toggleAsistencia             = typeof toggleAsistencia             === 'function' ? toggleAsistencia             : function(){};
+window.switchSubTab                 = typeof switchSubTab                 === 'function' ? switchSubTab                 : function(){};
+window.switchEvalTab                = typeof switchEvalTab                === 'function' ? switchEvalTab                : function(){};
+window.cargarEvalHistorial          = typeof cargarEvalHistorial          === 'function' ? cargarEvalHistorial          : function(){};
+window.verHistorialGeneral          = typeof verHistorialGeneral          === 'function' ? verHistorialGeneral          : function(){};
+window.verHistorial                 = typeof verHistorial                 === 'function' ? verHistorial                 : function(){};
+window.exportarPDFEval              = typeof exportarPDFEval              === 'function' ? exportarPDFEval              : function(){};
+window.openEvalModal                = typeof openEvalModal                === 'function' ? openEvalModal                : function(){};
+window.guardarEval                  = typeof guardarEval                  === 'function' ? guardarEval                  : function(){};
+window.seleccionarDeportistaGoleador= typeof seleccionarDeportistaGoleador=== 'function' ? seleccionarDeportistaGoleador: function(){};
+window.buscarDeportistaGoleador     = typeof buscarDeportistaGoleador     === 'function' ? buscarDeportistaGoleador     : function(){};
+window.releenarDesdeDep             = typeof rellenarDesdeDep             === 'function' ? rellenarDesdeDep             : function(){};
+window.limpiarDeportistaGoleador    = typeof limpiarDeportistaGoleador    === 'function' ? limpiarDeportistaGoleador    : function(){};
+window.syncCual                     = typeof syncCual                     === 'function' ? syncCual                     : function(){};
+window.syncNum                      = typeof syncNum                      === 'function' ? syncNum                      : function(){};
+window.imprimirPlantilla            = typeof imprimirPlantilla            === 'function' ? imprimirPlantilla            : function(){};
+window.previewDepFoto               = typeof previewDepFoto               === 'function' ? previewDepFoto               : function(){};
 
 </script>
 
