@@ -1148,6 +1148,12 @@ tbody td.center{text-align:center;}
       <button class="modal-close" onclick="cerrarModal('modalJugador')">✕</button>
     </div>
     <div class="form-grid">
+      <div class="form-field form-full">
+        <label>Deportista registrado <span style="font-size:11px;color:var(--gris-suave)">(opcional — rellena los datos automáticamente)</span></label>
+        <select id="jDeportista" onchange="rellenarDesdeDep(this.value)" style="width:100%;padding:9px 12px;border:1.5px solid var(--gris-linea);border-radius:8px;font-size:13px;background:#fff;">
+          <option value="">— Introducir manualmente —</option>
+        </select>
+      </div>
       <div class="form-field"><label>Nombre</label><input id="jNombre" placeholder="Nombre"></div>
       <div class="form-field"><label>Apellidos</label><input id="jApellidos" placeholder="Apellidos"></div>
       <div class="form-field"><label>Fecha de nacimiento</label><input type="date" id="jFechaNac"></div>
@@ -1431,6 +1437,8 @@ function _applyAdminButtons() {
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevoPatr2 = document.getElementById('btnNuevoPatr');
+  if (btnNuevoPatr2) btnNuevoPatr2.style.display = esAdmin ? '' : 'none';
   const btnNuevoDep = document.getElementById('btnNuevoDeportista');
   if (btnNuevoDep) btnNuevoDep.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEsc = document.getElementById('btnNuevaEscuela');
@@ -3350,6 +3358,15 @@ function abrirModalJugador() {
   document.getElementById('jActivo').checked    = true;
   document.getElementById('jConvocado').checked = false;
   const t = document.getElementById('modalJugadorTitle'); if(t) t.textContent = 'Añadir jugador';
+  // Poblar selector de deportistas
+  const selDep = document.getElementById('jDeportista');
+  if (selDep) {
+    selDep.innerHTML = '<option value="">— Introducir manualmente —</option>' +
+      (DB.deportistas||[]).sort((a,b)=>a.apellidos.localeCompare(b.apellidos,'es'))
+        .map(d => `<option value="${d.id}">${d.apellidos}, ${d.nombre} ${d.posicion?'· '+d.posicion:''}</option>`)
+        .join('');
+    selDep.value = '';
+  }
   abrirModal('modalJugador');
 }
 
@@ -3459,6 +3476,17 @@ function borrarNota(notaId) {
   save(); _doSync();
   renderListaNotas(j.notas);
   toast('Nota eliminada');
+}
+
+function rellenarDesdeDep(depId) {
+  if (!depId) return;
+  const dep = (DB.deportistas||[]).find(d => d.id === depId);
+  if (!dep) return;
+  document.getElementById('jNombre').value    = dep.nombre    || '';
+  document.getElementById('jApellidos').value = dep.apellidos || '';
+  document.getElementById('jFechaNac').value  = dep.fechaNac  || '';
+  if (dep.posicion) document.getElementById('jPosicion').value = dep.posicion;
+  if (dep.dorsal)   document.getElementById('jDorsal').value   = dep.dorsal;
 }
 
 function guardarJugador() {
