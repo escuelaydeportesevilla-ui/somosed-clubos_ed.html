@@ -566,6 +566,108 @@ tbody td.center{text-align:center;}
   .tabla-jugadores-desktop{display:block;}
 }
 
+/* ══ DEPORTISTAS ══════════════════════════════════════════ */
+.dep-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px;}
+.dep-card{background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);
+  cursor:pointer;transition:transform .15s,box-shadow .15s;border:1.5px solid transparent;}
+.dep-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12);border-color:var(--azul);}
+.dep-card-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.dep-avatar{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#0D1B2A,#117A65);
+  color:white;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;
+  flex-shrink:0;overflow:hidden;}
+.dep-avatar img{width:100%;height:100%;object-fit:cover;}
+.dep-card-name-wrap{flex:1;min-width:0;}
+.dep-card-apellidos{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.dep-card-nombre{font-size:13px;color:var(--gris-suave);}
+.dep-alerta{font-size:18px;flex-shrink:0;}
+.dep-card-body{}
+.dep-card-meta{font-size:11px;color:var(--gris-suave);margin-bottom:6px;}
+.dep-vinculos{display:flex;flex-wrap:wrap;gap:4px;}
+.dep-vinculo-tag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;
+  background:#EBF0F7;color:var(--azul);}
+.dep-vinculo-tag.equipo{background:#D5F5E3;color:var(--verde);}
+.dep-vinculo-tag.escuela{background:#FBF5E0;color:#8B6914;}
+.dep-filtro-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--gris-linea);
+  background:white;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s;}
+.dep-filtro-btn.active{background:var(--negro);color:white;border-color:var(--negro);}
+
+/* ══ ESCUELAS ════════════════════════════════════════════ */
+.escuelas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px;}
+.escuela-card{background:white;border-radius:12px;overflow:hidden;
+  box-shadow:0 2px 8px rgba(0,0,0,.07);cursor:pointer;
+  transition:transform .15s,box-shadow .15s;border:1.5px solid transparent;}
+.escuela-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12);}
+.escuela-card-header{padding:16px;color:white;display:flex;align-items:center;gap:10px;}
+.escuela-card-icon{font-size:1.8rem;}
+.escuela-card-nombre{font-family:'Barlow Condensed',sans-serif;font-weight:800;
+  font-size:1.1rem;text-transform:uppercase;letter-spacing:.5px;}
+.escuela-card-deporte{font-size:11px;opacity:.8;}
+.escuela-card-body{padding:12px 16px;}
+.escuela-stat{display:flex;justify-content:space-between;font-size:12px;
+  padding:4px 0;border-bottom:1px solid var(--gris-linea);}
+.escuela-stat:last-child{border:none;}
+.escuela-stat-label{color:var(--gris-suave);}
+.escuela-stat-val{font-weight:700;}
+.escuela-card-footer{padding:8px 16px;display:flex;justify-content:flex-end;gap:6px;
+  border-top:1px solid var(--gris-linea);}
+.escuela-stats-bar{display:flex;gap:16px;padding:12px 0;margin-bottom:16px;
+  border-bottom:2px solid var(--gris-linea);}
+.escuela-stat-item{text-align:center;}
+.escuela-stat-item .sv{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;
+  font-weight:900;color:var(--azul);}
+.escuela-stat-item .sl{font-size:10px;font-weight:700;letter-spacing:1px;
+  text-transform:uppercase;opacity:.5;}
+.grupo-card{background:white;border-radius:10px;padding:14px;margin-bottom:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.07);cursor:pointer;
+  display:flex;align-items:center;gap:14px;
+  transition:box-shadow .15s;}
+.grupo-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);}
+.grupo-card-color{width:6px;height:48px;border-radius:3px;flex-shrink:0;}
+.grupo-card-info{flex:1;}
+.grupo-card-nombre{font-weight:800;font-size:15px;}
+.grupo-card-meta{font-size:11px;color:var(--gris-suave);margin-top:2px;}
+.grupo-card-stats{display:flex;gap:12px;margin-top:6px;}
+.grupo-stat{font-size:11px;font-weight:700;color:var(--azul);}
+.alumno-item{display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid var(--gris-linea);}
+.alumno-item:last-child{border:none;}
+.alumno-avatar{width:36px;height:36px;border-radius:50%;background:var(--azul);
+  color:white;display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;}
+.alumno-info{flex:1;}
+.alumno-nombre{font-weight:700;font-size:14px;}
+.alumno-meta{font-size:11px;color:var(--gris-suave);margin-top:1px;}
+.alumno-actions{display:flex;gap:4px;}
+.actions-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+
+/* ══ EVALUACIONES ════════════════════════════════════════ */
+.eval-dep-card{background:white;border-radius:10px;padding:14px;margin-bottom:10px;
+  display:flex;align-items:center;gap:14px;box-shadow:0 1px 6px rgba(0,0,0,.07);
+  cursor:pointer;transition:box-shadow .15s;}
+.eval-dep-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);}
+.eval-dep-avatar{width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,#0D1B2A,#117A65);
+  color:white;display:flex;align-items:center;justify-content:center;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:800;flex-shrink:0;}
+.eval-dep-nombre{font-weight:800;font-size:14px;}
+.eval-dep-meta{font-size:11px;color:var(--gris-suave);}
+.eval-stars{display:flex;gap:2px;margin-top:4px;}
+.eval-star{font-size:14px;color:#ddd;cursor:pointer;transition:color .1s;}
+.eval-star.filled{color:#F1C40F;}
+.eval-criterio{margin-bottom:14px;}
+.eval-criterio-label{font-size:12px;font-weight:700;color:var(--gris-texto);margin-bottom:4px;}
+.eval-criterio-stars{display:flex;gap:4px;}
+.eval-categoria-title{font-size:10px;font-weight:800;letter-spacing:2px;
+  text-transform:uppercase;color:var(--azul);margin:16px 0 8px;
+  padding-bottom:4px;border-bottom:1px solid var(--gris-linea);}
+.historial-item{background:white;border-radius:10px;padding:14px;margin-bottom:10px;
+  box-shadow:0 1px 6px rgba(0,0,0,.07);}
+.historial-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.historial-fecha{font-size:11px;color:var(--gris-suave);}
+.historial-dep{font-weight:700;}
+.radar-wrap{display:flex;justify-content:center;margin:12px 0;}
+
 </style>
 </head>
 <body>
