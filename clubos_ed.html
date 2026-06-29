@@ -52,7 +52,7 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
   flex:1;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:48px 24px;
-  background:linear-gradient(160deg, #fff 0%, #fff8f8 50%, #fff 100%);
+  background:linear-gradient(160deg, #0D1B2A 0%, #1B3A5C 60%, #0D1B2A 100%);
   position:relative;
   overflow:hidden;
   z-index:1;
@@ -60,13 +60,13 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
 .portada-hero::before{
   content:'';position:absolute;top:-120px;right:-120px;
   width:500px;height:500px;border-radius:50%;
-  background:radial-gradient(circle, rgba(200,16,46,0.07) 0%, transparent 70%);
+  background:radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
   pointer-events:none;z-index:0;
 }
 .portada-hero::after{
   content:'';position:absolute;bottom:-80px;left:-80px;
   width:360px;height:360px;border-radius:50%;
-  background:radial-gradient(circle, rgba(212,160,23,0.06) 0%, transparent 70%);
+  background:radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
   pointer-events:none;z-index:0;
 }
 
@@ -80,12 +80,12 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
   font-family:'Barlow Condensed',sans-serif;
   font-size:clamp(2.8rem,7vw,5rem);font-weight:900;
   text-transform:uppercase;letter-spacing:1px;
-  color:var(--negro);text-align:center;line-height:1;
+  color:#fff;text-align:center;line-height:1;
   margin-bottom:8px;
 }
 .hero-title span{color:var(--rojo);}
 .hero-sub{
-  font-size:14px;color:var(--gris-suave);text-align:center;
+  font-size:14px;color:rgba(255,255,255,0.6);text-align:center;
   margin-bottom:40px;font-weight:400;
 }
 
@@ -567,7 +567,7 @@ tbody td.center{text-align:center;}
      PORTADA
 ════════════════════════════════════ -->
 <div id="portada">
-  <div class="portada-header">
+  <div class="portada-header" style="display:none;">
     <div class="portada-logo-wrap">
       <img class="portada-logo-img" id="img-portada-logo" src="" alt="ClubOS">
       <div class="portada-logo-text">
@@ -584,7 +584,7 @@ tbody td.center{text-align:center;}
   </div>
 
   <div class="portada-hero">
-    <div class="hero-badge">⚽ Temporada 2026/2027</div>
+    <!-- hero-badge oculto -->
     <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px;">
       <img id="img-hero" src="" alt="Escuela &amp; Deporte" style="height:50px;object-fit:contain;">
       <div class="hero-title" style="margin-bottom:0;">Club<span>OS</span></div>
@@ -615,7 +615,7 @@ tbody td.center{text-align:center;}
     </div>
   </div>
 
-  <div class="patrocinadores-portada">
+  <div class="patrocinadores-portada" style="display:none;">
     <span class="pat-label">Patrocinadores oficiales</span>
     <img class="pat-logo" id="img-pat-remax" src="" alt="RE/MAX Cristina Castro del Olmo">
     <img class="pat-logo" id="img-pat-dental" src="" alt="Clínica Dental Piñero Bilbao">
@@ -1283,10 +1283,13 @@ function abrirLogin(rol) {
   document.getElementById('loginModalTitle').textContent = titles[rol];
   document.getElementById('loginModalDesc').textContent  = descs[rol];
   document.getElementById('loginError').style.display = 'none';
-  document.getElementById('loginUser').value = '';
+  // Pre-rellenar usuario para roles con usuario fijo
+  const userFixed = { admin: 'edadmin', arbitro: 'arbitro1' };
+  document.getElementById('loginUser').value = userFixed[rol] || '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginModal').classList.add('open');
-  setTimeout(() => document.getElementById('loginUser').focus(), 200);
+  const focusEl = userFixed[rol] ? 'loginPass' : 'loginUser';
+  setTimeout(() => document.getElementById(focusEl).focus(), 200);
 }
 
 function cerrarLogin() {
@@ -5655,7 +5658,7 @@ function eliminarClub(id) {
             </div>
             <div style="display:flex;gap:6px;">
               <span class="badge ${e.estado==='activa'?'badge-activa':'badge-finalizada'}">${e.estado||'activa'}</span>
-              ${userRole==='admin'?`
+              ${sesion.rol==='admin'?`
               <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editEscuela('${e.id}')">✏️</button>
               <button class="btn btn-rojo btn-sm" onclick="event.stopPropagation();deleteEscuela('${e.id}')">🗑</button>`:''}
             </div>
@@ -5672,7 +5675,7 @@ function eliminarClub(id) {
     document.getElementById('vistaGrupos').style.display   = 'block';
     document.getElementById('escuelaActualTitle').textContent = escuelaActual.nombre;
     if (document.getElementById('btnNuevoGrupo'))
-      document.getElementById('btnNuevoGrupo').style.display = userRole==='admin'?'inline-flex':'none';
+      document.getElementById('btnNuevoGrupo').style.display = sesion.rol==='admin'?'inline-flex':'none';
     renderGrupos();
     renderEscuelaStats();
   }
@@ -5728,7 +5731,7 @@ function eliminarClub(id) {
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
           <span class="grupo-badge">${g.categoria||''}</span>
-          ${userRole==='admin'?`
+          ${sesion.rol==='admin'?`
           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editGrupo('${g.id}')">✏️</button>
           <button class="btn btn-rojo btn-sm" onclick="event.stopPropagation();deleteGrupo('${g.id}')">🗑</button>`:''}
         </div>
@@ -5742,7 +5745,7 @@ function eliminarClub(id) {
     document.getElementById('vistaGrupos').style.display  = 'none';
     document.getElementById('vistaAlumnos').style.display = 'block';
     document.getElementById('grupoActualTitle').textContent = grupoActual.nombre;
-    const canEdit = userRole==='admin'||userRole==='delegado';
+    const canEdit = sesion.rol==='admin'||sesion.rol==='delegado';
     if (document.getElementById('btnNuevoAlumno'))
       document.getElementById('btnNuevoAlumno').style.display = canEdit?'inline-flex':'none';
     if (document.getElementById('btnTomarAsistencia'))
@@ -5789,9 +5792,9 @@ function eliminarClub(id) {
         </div>
         <div class="alumno-actions">
           <button class="btn btn-outline btn-sm" onclick="verFichaAlumno('${a.id}')">👁</button>
-          ${(userRole==='admin'||userRole==='delegado')?`
+          ${(sesion.rol==='admin'||sesion.rol==='delegado')?`
           <button class="btn btn-outline btn-sm" onclick="editAlumno('${a.id}')">✏️</button>`:''}
-          ${userRole==='admin'?`
+          ${sesion.rol==='admin'?`
           <button class="btn btn-rojo btn-sm" onclick="deleteAlumno('${a.id}')">🗑</button>`:''}
         </div>
       </div>`;
@@ -5921,10 +5924,10 @@ function eliminarClub(id) {
       observaciones:document.getElementById('asisObservaciones').value,
       modificadoPor:MONITOR_ID
     };
-    if (!db.asistencia) db.asistencia = [];
-    db.asistencia.push(rec);
+    if (!DB.asistencia) DB.asistencia = [];
+    DB.asistencia.push(rec);
     save();
-    DB.asistencias=DB.asistencias||[];DB.asistencias.push(rec);save();_doSync();
+    _doSync();
     const msg = document.getElementById('savedAsistencia');
     msg.classList.add('show');
     setTimeout(() => { msg.classList.remove('show'); closeModal('modalAsistencia'); renderAsistenciaHistorial(); }, 1200);
@@ -5934,7 +5937,7 @@ function eliminarClub(id) {
     if (!grupoActual) return;
     const cont = document.getElementById('asistenciaHistorial');
     if (!cont) return;
-    const partes = (db.asistencia||[])
+    const partes = (DB.asistencia||[])
       .filter(a => a.grupoId === grupoActual.id)
       .sort((a,b) => b.fecha.localeCompare(a.fecha));
 
@@ -5997,7 +6000,7 @@ function eliminarClub(id) {
     const idx = DB.escuelas.findIndex(x=>x.id===editingEscuelaId);
     if (idx>=0) DB.escuelas[idx]=rec; else DB.escuelas.push(rec);
     save();
-    DB.escuelas=DB.escuelas||[];const _idxE=DB.escuelas.findIndex(x=>x.id===rec.id);if(_idxE>=0)DB.escuelas[_idxE]=rec;else DB.escuelas.push(rec);save();_doSync();
+    _doSync();
     showSaved('savedEscuela');
     setTimeout(()=>{ closeModal('modalEscuela'); renderEscuelas(); }, 1200);
   }
@@ -6007,7 +6010,7 @@ function eliminarClub(id) {
     DB.escuelas  = (DB.escuelas||[]).filter(e=>e.id!==id);
     DB.grupos    = (DB.grupos||[]).filter(g=>g.escuelaId!==id);
     DB.alumnos   = (DB.alumnos||[]).filter(a=>a.escuelaId!==id);
-    DB.escuelas=(DB.escuelas||[]).filter(x=>x.id!==id);save();_doSync();renderEscuelas();
+    save(); _doSync(); renderEscuelas();
   }
 
   // ── CRUD GRUPOS ────────────────────────────────────────────
@@ -6056,7 +6059,7 @@ function eliminarClub(id) {
     const idx = DB.grupos.findIndex(x=>x.id===editingGrupoId);
     if (idx>=0) DB.grupos[idx]=rec; else DB.grupos.push(rec);
     save();
-    DB.grupos=DB.grupos||[];const _idxG=DB.grupos.findIndex(x=>x.id===rec.id);if(_idxG>=0)DB.grupos[_idxG]=rec;else DB.grupos.push(rec);save();_doSync();
+    _doSync();
     showSaved('savedGrupo');
     setTimeout(()=>{ closeModal('modalGrupo'); renderGrupos(); renderEscuelaStats(); }, 1200);
   }
@@ -6065,7 +6068,7 @@ function eliminarClub(id) {
     if (!confirm('Eliminar este grupo y todos sus alumnos?')) return;
     DB.grupos  = (DB.grupos||[]).filter(g=>g.id!==id);
     DB.alumnos = (DB.alumnos||[]).filter(a=>a.grupoId!==id);
-    DB.grupos=(DB.grupos||[]).filter(x=>x.id!==id);save();_doSync();renderGrupos();renderEscuelaStats();
+    save(); _doSync(); renderGrupos(); renderEscuelaStats();
   }
 
   // ── CRUD ALUMNOS ───────────────────────────────────────────
@@ -6133,7 +6136,7 @@ function eliminarClub(id) {
     const idx = DB.alumnos.findIndex(x=>x.id===editingAlumnoId);
     if (idx>=0) DB.alumnos[idx]=rec; else DB.alumnos.push(rec);
     save();
-    DB.alumnos=DB.alumnos||[];const _idxA=DB.alumnos.findIndex(x=>x.id===rec.id);if(_idxA>=0)DB.alumnos[_idxA]=rec;else DB.alumnos.push(rec);save();_doSync();
+    _doSync();
     showSaved('savedAlumno');
     setTimeout(()=>{ closeModal('modalAlumno'); renderAlumnos(); renderEscuelaStats(); }, 1200);
   }
@@ -6141,7 +6144,7 @@ function eliminarClub(id) {
   async function deleteAlumno(id) {
     if (!confirm('Eliminar este alumno?')) return;
     DB.alumnos = (DB.alumnos||[]).filter(a=>a.id!==id);
-    DB.alumnos=(DB.alumnos||[]).filter(x=>x.id!==id);save();_doSync();renderAlumnos();renderEscuelaStats();
+    save(); _doSync(); renderAlumnos(); renderEscuelaStats();
   }
 
 
@@ -6417,7 +6420,7 @@ function eliminarClub(id) {
 
     // Botones del footer
     document.getElementById('btnEditarDep').onclick = () => { closeModal('modalFichaDeportista'); editDeportista(id); };
-    document.getElementById('btnEliminarDep').style.display = userRole==='admin' ? 'inline-flex' : 'none';
+    document.getElementById('btnEliminarDep').style.display = sesion.rol==='admin' ? 'inline-flex' : 'none';
     document.getElementById('btnEliminarDep').onclick = () => deleteDeportista(id);
 
     document.getElementById('modalFichaDeportista').style.display='flex';
@@ -6634,7 +6637,7 @@ function eliminarClub(id) {
   async function deleteDeportista(id) {
     if (!confirm('Eliminar este deportista?')) return;
     DB.deportistas = (DB.deportistas||[]).filter(d=>d.id!==id);
-    save(); DB.deportistas=(DB.deportistas||[]).filter(x=>x.id!==id);save();_doSync();
+    save(); _doSync();
     closeModal('modalFichaDeportista');
     renderDeportistas();
   }
@@ -6656,7 +6659,7 @@ function eliminarClub(id) {
     // Stats header
     const deps  = (DB.deportistas||[]).length;
     const comps = (DB.competiciones||[]).length;
-    const parts = (db.partidos||[]).length;
+    const parts = (DB.partidos||[]).length;
     const equips= (DB.equipos||[]).length;
     if(el('dashStatDep'))  el('dashStatDep').textContent  = deps;
     if(el('dashStatComp')) el('dashStatComp').textContent = comps;
@@ -6667,15 +6670,15 @@ function eliminarClub(id) {
     if(el('dmEq'))     el('dmEq').textContent      = equips + (equips===1?' equipo':' equipos');
     if(el('dmDep'))    el('dmDep').textContent     = deps + (deps===1?' registrado':' registrados');
     if(el('dmEsc'))    el('dmEsc').textContent     = (DB.escuelas||[]).length + (((DB.escuelas||[]).length)===1?' escuela':' escuelas');
-    if(el('dmCal'))    el('dmCal').textContent     = (db.partidos||[]).filter(p=>p.estado==='pendiente').length + ' pendientes';
+    if(el('dmCal'))    el('dmCal').textContent     = (DB.partidos||[]).filter(p=>p.estado==='pendiente').length + ' pendientes';
     if(el('dmClasif')) el('dmClasif').textContent  = equips + (equips===1?' equipo':' equipos');
     if(el('dmGol'))    el('dmGol').textContent     = (DB.goleadores||[]).length + ' jugadores';
-    if(el('dmNot'))    el('dmNot').textContent     = (db.noticias||[]).filter(n=>n.publicada==='true').length + ' publicadas';
-    if(el('dmSug'))    el('dmSug').textContent     = (db.sugerencias||[]).filter(s=>!s.leida||s.leida==='false').length + ' nuevas';
-    if(el('dmPat'))    el('dmPat').textContent     = (db.patrocinadores||[]).length + ' patrocinadores';
+    if(el('dmNot'))    el('dmNot').textContent     = (DB.noticias||[]).filter(n=>n.publicada==='true').length + ' publicadas';
+    if(el('dmSug'))    el('dmSug').textContent     = (DB.sugerencias||[]).filter(s=>!s.leida||s.leida==='false').length + ' nuevas';
+    if(el('dmPat'))    el('dmPat').textContent     = (DB.patrocinadores||[]).length + ' patrocinadores';
 
     // Proximos partidos
-    const proximos = (db.partidos||[])
+    const proximos = (DB.partidos||[])
       .filter(p => p.estado==='pendiente' && p.fecha)
       .sort((a,b) => a.fecha.localeCompare(b.fecha))
       .slice(0,3);
@@ -6699,7 +6702,7 @@ function eliminarClub(id) {
     }
 
     // Ultimos resultados
-    const resultados = (db.partidos||[])
+    const resultados = (DB.partidos||[])
       .filter(p => p.estado==='jugado')
       .sort((a,b) => b.fecha.localeCompare(a.fecha))
       .slice(0,3);
@@ -6730,42 +6733,493 @@ function eliminarClub(id) {
   //  FUNCIONES UNIFICADAS — renderAll y applyRoleUI
   // ══════════════════════════════════════════════════════════════
 
-  // Override the base renderAll with unified version
-  renderAll = function() {
-    updateStats();
-    populateFiltros();
-    renderCompeticiones();
-    renderEquipos();
-    renderCalendario();
-    renderClasificacion();
-    renderGoleadores();
-    renderMisPartidos();
-    renderEscuelas();
-    renderDeportistas();
-    renderDashboard();
-    loadEvals();
-    if (!DB.escuelas)    DB.escuelas    = [];
-    if (!DB.grupos)      DB.grupos      = [];
-    if (!DB.alumnos)     DB.alumnos     = [];
-    if (!db.asistencia)  db.asistencia  = [];
-    if (!DB.deportistas) DB.deportistas = [];
-    if (sesion.rol === 'admin') {
-      renderAdminNoticias();
-      renderAdminSugerencias();
-    }
-    renderSponsors();
-    if (sesion.rol === 'admin') renderSponsorAdmin();
-    applyRoleUI();
-  };
+  // renderAll delegado a ClubOS base
 
-  applyRoleUI = function() {
+    applyRoleUI = function() {
     const isAdmin    = sesion.rol === 'admin';
     const isDelegado = sesion.rol === 'club';
     const isArbitro  = sesion.rol === 'arbitro';
     const canEdit    = isAdmin || isDelegado;
 
-    // Nav buttons visibility
-    const navMap = {
+
+    // Admin action buttons
+    document.querySelectorAll('#adminActionsComp, #adminActionsEscuelas').forEach(el => {
+      el.style.display = isAdmin ? 'flex' : 'none';
+    });
+
+    // Add/edit buttons
+    const btnMap = {
+      'btnAddEquipo':       isAdmin,
+      'btnGenCalendario':   isAdmin,
+      'btnAddPartido':      isAdmin,
+      'btnAddGoleador':     canEdit,
+      'btnNuevoDeportista': canEdit,
+      'btnNuevoGrupo':      isAdmin,
+      'btnNuevoAlumno':     canEdit,
+      'btnTomarAsistencia': canEdit,
+      'btnNuevaAsistencia': canEdit,
+      'btnNuevoDeportista': canEdit,
+    };
+    Object.entries(btnMap).forEach(([id, show]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'inline-flex' : 'none';
+    });
+
+    // Dashboard module cards — siempre visibles según perfil base
+    // Admin y delegado ven todo
+    // Arbitro ve sus módulos + clasificación + calendario
+    // Familias ven clasificación, calendario, goleadores, noticias
+    // Mostrar/ocultar tarjetas según perfil
+    const cardRules = {
+      'dmCardDeportistas': canEdit,
+      'dmCardEscuelas':    canEdit,
+      'dmCardEval':        canEdit,
+      'dmCardActas':       canEdit || isArbitro,
+      'dmCardNoticias':    isAdmin,
+      'dmCardSugerencias': isAdmin,
+      'dmCardPat':         isAdmin,
+      'dmCardEquipos':     canEdit || isAdmin,
+    };
+    Object.entries(cardRules).forEach(([id, show]) => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = show ? 'flex' : 'none';
+    });
+
+    // Arbitro default tab
+    if (isArbitro) {
+      activarTab('actas', document.getElementById('navArbitro'));
+    }
+  };
+
+
+  function previewEqLogo(input) {
+    const file = input.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('eqLogoB64').value = e.target.result;
+      document.getElementById('eqLogoPreview').innerHTML = '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+      document.getElementById('eqEmoji').value = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updateEqEmojiPreview() {
+    const emoji = document.getElementById('eqEmoji').value;
+    if (emoji) {
+      document.getElementById('eqLogoPreview').innerHTML = emoji;
+      document.getElementById('eqLogoB64').value = '';
+    }
+  }
+
+
+  function editEquipo(id) {
+    const eq = (DB.equipos||[]).find(e => e.id === id);
+    if (!eq) return;
+    editingId = id;
+    const titleEl = document.getElementById('modalEquipoTitle');
+    if (!titleEl) { console.error('modalEquipoTitle not found'); openModalEquipo(); return; }
+    titleEl.textContent = 'Editar equipo';
+    document.getElementById('eqNombre').value    = eq.nombre || '';
+    document.getElementById('eqCategoria').value = eq.categoria || '';
+    document.getElementById('eqDelegado').value  = eq.delegado || '';
+    document.getElementById('eqTelefono').value  = eq.telefono || '';
+    document.getElementById('eqEmail').value     = eq.email || '';
+    document.getElementById('eqEmoji').value     = eq.emoji || '⚽';
+    document.getElementById('eqColor').value     = eq.color || '#1B3A5C';
+    document.getElementById('eqEstado').value    = eq.estado || 'activo';
+    document.getElementById('eqLogoB64').value   = eq.logo || '';
+    const prev = document.getElementById('eqLogoPreview');
+    if (eq.logo) {
+      prev.innerHTML = '<img src="'+eq.logo+'" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">';
+    } else {
+      prev.innerHTML = eq.emoji || '⚽';
+    }
+    const sel = document.getElementById('eqCompeticion');
+    sel.innerHTML = '<option value="">— Sin competición asignada —</option>';
+    (DB.competiciones||[]).forEach(c => {
+      sel.innerHTML += '<option value="'+c.id+'"'+(c.id===eq.competicionId?' selected':'')+'>'+c.nombre+' · '+c.temporada+'</option>';
+    });
+    openModal('modalEquipo');
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  GOLEADORES — VINCULACIÓN CON DEPORTISTAS
+  // ══════════════════════════════════════════════════════════════
+
+  let gDeportistaId = null; // ID del deportista vinculado
+
+  function buscarDeportistaGoleador() {
+    const q = (document.getElementById('gBuscador').value || '').toLowerCase().trim();
+    const res = document.getElementById('gBuscadorResultados');
+    if (!q || q.length < 2) { res.style.display = 'none'; return; }
+
+    const lista = (DB.deportistas || []).filter(d =>
+      (d.nombre + ' ' + d.apellidos).toLowerCase().includes(q) ||
+      (d.apellidos + ' ' + d.nombre).toLowerCase().includes(q)
+    ).slice(0, 8);
+
+    if (!lista.length) {
+      res.innerHTML = '<div style="padding:10px 14px;font-size:13px;color:var(--gris-suave);">Sin resultados — puedes escribir el nombre manualmente abajo</div>';
+      res.style.display = 'block';
+      return;
+    }
+
+    res.innerHTML = lista.map(d => {
+      const ini = ((d.nombre||'')[0] + (d.apellidos||'')[0]).toUpperCase();
+      const edad = d.fechaNacimiento ? calcularEdad(d.fechaNacimiento) + ' años' : '';
+      const alerta = (d.alergias && d.alergias.toLowerCase() !== 'ninguna' && d.alergias !== '') ||
+                     (d.medicacion && d.medicacion.toLowerCase() !== 'ninguna' && d.medicacion !== '');
+      return `<div onclick="seleccionarDeportistaGoleador('${d.id}')"
+        style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gris-linea);"
+        onmouseover="this.style.background='var(--crema)'" onmouseout="this.style.background='white'">
+        <div style="width:34px;height:34px;border-radius:50%;background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0;">${ini}</div>
+        <div style="flex:1;">
+          <div style="font-weight:600;font-size:13px;">${d.apellidos}, ${d.nombre} ${alerta ? '⚠️' : ''}</div>
+          <div style="font-size:11px;color:var(--gris-suave);">${d.posicion || d.rol || ''} ${edad ? '· ' + edad : ''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    res.style.display = 'block';
+  }
+
+  function seleccionarDeportistaGoleador(depId) {
+    const d = (DB.deportistas || []).find(x => x.id === depId);
+    if (!d) return;
+    gDeportistaId = depId;
+
+    // Hide search, show selected
+    document.getElementById('gBuscador').value = '';
+    document.getElementById('gBuscadorResultados').style.display = 'none';
+
+    // Show selected card
+    const card = document.getElementById('gDeportistaSeleccionado');
+    const ini  = ((d.nombre||'')[0] + (d.apellidos||'')[0]).toUpperCase();
+    document.getElementById('gDepAvatar').textContent = ini;
+    document.getElementById('gDepNombre').textContent = d.apellidos + ', ' + d.nombre;
+    document.getElementById('gDepMeta').textContent   =
+      [d.posicion, d.rol, d.licencia ? 'Lic. ' + d.licencia : ''].filter(Boolean).join(' · ');
+    card.style.display = 'flex';
+
+    // Fill name field
+    document.getElementById('gJugador').value = d.apellidos + ', ' + d.nombre;
+    document.getElementById('gJugadorWrap').style.opacity = '0.5';
+
+    // Auto-select equipo if deportista has one
+    const equiposIds = safeParseJSON(d.equipos, []);
+    if (equiposIds.length === 1) {
+      const sel = document.getElementById('gEquipo');
+      if (sel) {
+        Array.from(sel.options).forEach(o => {
+          if (equiposIds.includes(o.value)) o.selected = true;
+        });
+      }
+    }
+
+    // Show medical alert if needed
+    const tieneAlerta = (d.alergias && d.alergias.toLowerCase() !== 'ninguna' && d.alergias !== '') ||
+                        (d.medicacion && d.medicacion.toLowerCase() !== 'ninguna' && d.medicacion !== '');
+    if (tieneAlerta) {
+      const alertaDiv = document.getElementById('gAlertaMedica');
+      const alertaTxt = document.getElementById('gAlertaMedicaTexto');
+      let txt = '';
+      if (d.alergias && d.alergias.toLowerCase() !== 'ninguna') txt += 'Alergias: ' + d.alergias + ' ';
+      if (d.medicacion && d.medicacion.toLowerCase() !== 'ninguna') txt += '· Medicación: ' + d.medicacion;
+      alertaTxt.textContent = txt;
+      alertaDiv.style.display = 'block';
+    }
+  }
+
+  function limpiarDeportistaGoleador() {
+    gDeportistaId = null;
+    document.getElementById('gDeportistaSeleccionado').style.display = 'none';
+    document.getElementById('gAlertaMedica').style.display = 'none';
+    document.getElementById('gJugador').value = '';
+    document.getElementById('gJugadorWrap').style.opacity = '1';
+  }
+
+  function openModalGoleador() {
+    editingId = null;
+    gDeportistaId = null;
+    const compId = document.getElementById('filtroCompGol').value;
+    document.getElementById('gModalGoleadorTitle') && (document.getElementById('gModalGoleadorTitle').textContent = 'Añadir jugador');
+    document.getElementById('gBuscador').value = '';
+    document.getElementById('gBuscadorResultados').style.display = 'none';
+    document.getElementById('gDeportistaSeleccionado').style.display = 'none';
+    document.getElementById('gAlertaMedica').style.display = 'none';
+    document.getElementById('gJugadorWrap').style.opacity = '1';
+    ['gJugador'].forEach(id => document.getElementById(id).value = '');
+    ['gGoles','gAmarillas','gRojas','gAsistencias'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '0';
+    });
+    populateEquiposSelects(compId);
+    openModal('modalGoleador');
+  }
+
+  function editGoleador(id) {
+    const g = DB.goleadores.find(x => x.id === id); if (!g) return;
+    editingId = id;
+    gDeportistaId = g.deportistaId || null;
+    document.getElementById('modalGoleadorTitle').textContent = 'Editar jugador';
+    document.getElementById('gBuscador').value = '';
+    document.getElementById('gBuscadorResultados').style.display = 'none';
+    document.getElementById('gAlertaMedica').style.display = 'none';
+
+    // If linked to deportista, show card
+    if (gDeportistaId) {
+      const d = (DB.deportistas||[]).find(x=>x.id===gDeportistaId);
+      if (d) seleccionarDeportistaGoleador(gDeportistaId);
+    } else {
+      document.getElementById('gDeportistaSeleccionado').style.display = 'none';
+    }
+
+    populateEquiposSelects(g.competicionId);
+    document.getElementById('gJugador').value    = g.jugador    || '';
+    document.getElementById('gEquipo').value     = g.equipoId   || '';
+    document.getElementById('gGoles').value      = g.goles      || '0';
+    document.getElementById('gAmarillas').value  = g.amarillas  || '0';
+    document.getElementById('gRojas').value      = g.rojas      || '0';
+    const asEl = document.getElementById('gAsistencias');
+    if (asEl) asEl.value = g.asistencias || '0';
+    openModal('modalGoleador');
+  }
+
+  function saveGoleador() {
+    const jugador = document.getElementById('gJugador').value.trim();
+    if (!jugador) { alert('Introduce el nombre del jugador'); return; }
+    const equipoId = document.getElementById('gEquipo').value;
+    const eq = (DB.equipos||[]).find(e=>e.id===equipoId);
+    const compId = document.getElementById('filtroCompGol').value;
+
+    const rec = {
+      id:            editingId || ('gol_'+Date.now()),
+      competicionId: compId,
+      equipoId:      equipoId,
+      equipoNombre:  eq?.nombre || '',
+      jugador,
+      deportistaId:  gDeportistaId || '',
+      goles:         document.getElementById('gGoles').value      || '0',
+      amarillas:     document.getElementById('gAmarillas').value  || '0',
+      rojas:         document.getElementById('gRojas').value      || '0',
+      asistencias:   document.getElementById('gAsistencias')?.value || '0',
+      modificadoPor: MONITOR_ID,
+      fechaModif:    new Date().toLocaleString('es-ES')
+    };
+
+    if (!DB.goleadores) DB.goleadores = [];
+    const idx = DB.goleadores.findIndex(g => g.id === editingId);
+    if (idx >= 0) DB.goleadores[idx] = rec; else DB.goleadores.push(rec);
+    save();
+    _doSync();
+
+    // Also update deportista stats if linked
+    if (gDeportistaId) {
+      const dep = (DB.deportistas||[]).find(d=>d.id===gDeportistaId);
+      if (dep) {
+        // Recalculate totals from all goleador entries
+        const allGols = (DB.goleadores||[]).filter(g=>g.deportistaId===gDeportistaId);
+        dep.totalGoles     = allGols.reduce((s,g)=>s+(parseInt(g.goles)||0), 0);
+        dep.totalAmarillas = allGols.reduce((s,g)=>s+(parseInt(g.amarillas)||0), 0);
+        dep.totalRojas     = allGols.reduce((s,g)=>s+(parseInt(g.rojas)||0), 0);
+        save();
+        _doSync();
+      }
+    }
+
+    showSaved('savedGoleador');
+    setTimeout(() => { closeModal('modalGoleador'); renderGoleadores(); }, 1200);
+  }
+
+
+  function openModalEquipo() {
+    editingId = null;
+    const titleEl = document.getElementById('modalEquipoTitle');
+    if (!titleEl) { console.error('modalEquipoTitle not found'); return; }
+    titleEl.textContent = 'Nuevo equipo';
+    document.getElementById('eqNombre').value    = '';
+    document.getElementById('eqCategoria').value = '';
+    document.getElementById('eqDelegado').value  = '';
+    document.getElementById('eqTelefono').value  = '';
+    document.getElementById('eqEmail').value     = '';
+    document.getElementById('eqEmoji').value     = '⚽';
+    document.getElementById('eqColor').value     = '#1B3A5C';
+    document.getElementById('eqEstado').value    = 'activo';
+    document.getElementById('eqLogoB64').value   = '';
+    document.getElementById('eqLogoPreview').innerHTML = '⚽';
+    const sel = document.getElementById('eqCompeticion');
+    sel.innerHTML = '<option value="">— Sin competición asignada —</option>';
+    (DB.competiciones||[]).forEach(c => {
+      sel.innerHTML += '<option value="'+c.id+'">'+c.nombre+' · '+c.temporada+'</option>';
+    });
+    openModal('modalEquipo');
+  }
+
+
+  // ══════════════════════════════════════════════════════════════
+  //  FICHA EQUIPO — JUGADORES Y ESTADOS
+  // ══════════════════════════════════════════════════════════════
+
+  function renderJugadoresEquipo(equipo, jugadores, canEdit) {
+    const activos   = jugadores.filter(j => (j.estadoEquipo||{})[equipo.id] !== 'inactivo' && (j.estadoEquipo||{})[equipo.id] !== 'pendiente').length;
+    let html = '<div class="equipo-panel-header">' +
+      '<div class="equipo-panel-title">👥 Jugadores (&quot;+jugadores.length+&quot;)</div>' +
+      '<div class="equipo-panel-actions">' +
+        '<span style="font-size:11px;opacity:.7;">&quot;+activos+&quot; activos</span>' +
+        '<button onclick="imprimirPlantilla(&quot; + equipo.id + &quot;)" style="background:rgba(255,255,255,.15);border:none;color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">🖨️ Imprimir</button>' +
+      '</div>' +
+    '</div>';
+
+    if (!jugadores.length) {
+      html += '<div class="equipo-empty-jugadores">Sin jugadores asignados — vincula deportistas desde su ficha</div>';
+      return html;
+    }
+
+    const sorted = [...jugadores].sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es'));
+    html += sorted.map(j => {
+      const ini     = ((j.nombre||'')[0]+(j.apellidos||'')[0]).toUpperCase();
+      const estados = j.estadoEquipo ? (typeof j.estadoEquipo === 'string' ? JSON.parse(j.estadoEquipo||'{}') : j.estadoEquipo) : {};
+      const estado  = estados[equipo.id] || 'activo';
+      const fotoHtml = j.foto
+        ? '<img src="&quot;+j.foto+&quot;" alt="&quot;+ini+&quot;">'
+        : ini;
+      return '<div class="jugador-equipo-row">' +
+        '<div class="jugador-equipo-avatar">&quot;+fotoHtml+&quot;</div>' +
+        '<div style="flex:1;">' +
+          '<div class="jugador-equipo-nombre">'+j.apellidos+', &quot;+j.nombre+&quot;</div>' +
+          '<div class="jugador-equipo-pos">'+(j.posicion||j.rol||'')+'</div>' +
+        '</div>' +
+        (canEdit ?
+          '<select class="estado-select estado-&quot;+estado+&quot;" onchange="cambiarEstadoJugador(&quot;+j.id+&quot;,&quot;+equipo.id+&quot;,this)">' +
+            '<option value="activo"'+(estado==='activo'?' selected':'')+'>Activo</option>' +
+            '<option value="pendiente"'+(estado==='pendiente'?' selected':'')+'>Pendiente</option>' +
+            '<option value="inactivo"'+(estado==='inactivo'?' selected':'')+'>No activo</option>' +
+          '</select>'
+          : '<span class="estado-select estado-&quot;+estado+&quot;">'+estado.charAt(0).toUpperCase()+estado.slice(1)+'</span>'
+        ) +
+      '</div>';
+    }).join('');
+
+    return html;
+  }
+
+  function toggleEquipoPanel(equipoId) {
+    const hdr   = document.getElementById('hdr_'   + equipoId);
+    const panel = document.getElementById('panel_' + equipoId);
+    if (!hdr || !panel) return;
+    const isOpen = hdr.classList.contains('open');
+    // Close all panels first
+    document.querySelectorAll('.equipo-row-header.open').forEach(h => h.classList.remove('open'));
+    document.querySelectorAll('.equipo-jugadores-panel.open').forEach(p => p.classList.remove('open'));
+    // Open this one if it was closed
+    if (!isOpen) {
+      hdr.classList.add('open');
+      panel.classList.add('open');
+    }
+  }
+
+  async function cambiarEstadoJugador(depId, equipoId, selectEl) {
+    const nuevoEstado = selectEl.value;
+    // Update CSS class
+    selectEl.className = 'estado-select estado-' + nuevoEstado;
+    // Update in db
+    const dep = (DB.deportistas||[]).find(d=>d.id===depId);
+    if (!dep) return;
+    let estados = {};
+    try { estados = typeof dep.estadoEquipo === 'string' ? JSON.parse(dep.estadoEquipo||'{}') : (dep.estadoEquipo||{}); } catch(e) {}
+    estados[equipoId] = nuevoEstado;
+    dep.estadoEquipo = JSON.stringify(estados);
+    save();
+    _doSync();
+  }
+
+  function imprimirPlantilla(equipoId) {
+    const eq = (DB.equipos||[]).find(e=>e.id===equipoId);
+    if (!eq) return;
+    const comp = (DB.competiciones||[]).find(c=>c.id===eq.competicionId);
+    const jugadores = (DB.deportistas||[]).filter(d => {
+      const ids = safeParseJSON(d.equipos,[]);
+      return ids.includes(equipoId);
+    }).sort((a,b) => a.apellidos.localeCompare(b.apellidos,'es'));
+
+    const getEstado = (dep) => {
+      try {
+        const estados = typeof dep.estadoEquipo === 'string'
+          ? JSON.parse(dep.estadoEquipo||'{}')
+          : (dep.estadoEquipo||{});
+        return estados[equipoId] || 'activo';
+      } catch(e) { return 'activo'; }
+    };
+
+    const estadoColor = { activo:'#1E8449', pendiente:'#D4AC0D', inactivo:'#C0392B' };
+
+    const filas = jugadores.map((j, i) => {
+      const estado = getEstado(j);
+      return '<tr style="background:'+(i%2===0?'white':'#f9f9f7')+'">' +
+        '<td style="padding:8px 12px;text-align:center;font-weight:700;">'+(i+1)+'</td>' +
+        '<td style="padding:8px 12px;font-weight:600;">'+j.apellidos+', '+j.nombre+'</td>' +
+        '<td style="padding:8px 12px;font-size:12px;">'+(j.posicion||j.rol||'—')+'</td>' +
+        '<td style="padding:8px 12px;">' +
+          '<span style="background:'+estadoColor[estado]+'20;color:'+estadoColor[estado]+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;">'+estado.toUpperCase()+'</span>' +
+        '</td>' +
+        '<td style="padding:8px 12px;font-size:12px;">'+(j.fechaNacimiento||'—')+'</td>' +
+        '<td style="padding:8px 12px;font-size:12px;">'+(j.tutorTelefono||j.telefono||'—')+'</td>' +
+      '</tr>';
+    }).join('');
+
+    const activos   = jugadores.filter(j=>getEstado(j)==='activo').length;
+    const pendientes= jugadores.filter(j=>getEstado(j)==='pendiente').length;
+    const inactivos = jugadores.filter(j=>getEstado(j)==='inactivo').length;
+
+    const pdfHTML = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">' +
+      '<title>Plantilla - '+eq.nombre+'</title>' +
+      '<style>body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#222;}' +
+      '.header{background:#0D1B2A;color:white;padding:20px 24px;border-radius:8px;margin-bottom:20px;display:flex;align-items:center;gap:16px;}' +
+      '.header h1{margin:0;font-size:22px;}.header p{margin:4px 0;opacity:.6;font-size:13px;}' +
+      '.stats{display:flex;gap:16px;margin-bottom:20px;}' +
+      '.stat{background:#f5f5f0;border-radius:8px;padding:12px 16px;text-align:center;flex:1;}' +
+      '.stat-val{font-size:1.8rem;font-weight:900;color:#0D1B2A;}' +
+      '.stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:.5;}' +
+      'table{width:100%;border-collapse:collapse;}' +
+      'thead tr{background:#0D1B2A;color:white;}' +
+      'thead th{padding:10px 12px;text-align:left;font-size:12px;}' +
+      '.firma{margin-top:40px;display:flex;justify-content:space-between;}' +
+      '.firma-linea{width:200px;border-top:1px solid #999;padding-top:6px;font-size:11px;opacity:.6;text-align:center;}' +
+      '@media print{body{padding:0;}}' +
+      '</style></head><body>' +
+      '<div class="header">' +
+        '<div>' +
+          '<h1>'+eq.nombre+'</h1>' +
+          '<p>'+(comp?comp.nombre+' · ':''+(eq.categoria||''))+'</p>' +
+          '<p>Delegado: '+(eq.delegado||'—')+' · '+(eq.telefono||'')+'</p>' +
+        '</div>' +
+      '</div>' +
+      '<div class="stats">' +
+        '<div class="stat"><div class="stat-val">'+jugadores.length+'</div><div class="stat-lbl">Total</div></div>' +
+        '<div class="stat"><div class="stat-val" style="color:#1E8449">'+activos+'</div><div class="stat-lbl">Activos</div></div>' +
+        '<div class="stat"><div class="stat-val" style="color:#D4AC0D">'+pendientes+'</div><div class="stat-lbl">Pendientes</div></div>' +
+        '<div class="stat"><div class="stat-val" style="color:#C0392B">'+inactivos+'</div><div class="stat-lbl">No activos</div></div>' +
+      '</div>' +
+      '<table><thead><tr>' +
+        '<th style="width:40px;">#</th>' +
+        '<th>Nombre y apellidos</th>' +
+        '<th>Posición</th>' +
+        '<th>Estado</th>' +
+        '<th>Fecha nac.</th>' +
+        '<th>Teléfono tutor</th>' +
+      '</tr></thead><tbody>'+filas+'</tbody></table>' +
+      '<div class="firma">' +
+        '<div class="firma-linea">Firma del delegado</div>' +
+        '<div class="firma-linea">Escuela & Deporte · clubos.app</div>' +
+      '</div>' +
+      '</body></html>';
+
+    const win = window.open('', '_blank');
+    win.document.write(pdfHTML);
+    win.document.close();
+    setTimeout(() => win.print(), 500);
+  }
+
 
 
 </script>
