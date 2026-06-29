@@ -1255,10 +1255,10 @@ let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
 
 const REMAX_IMG = '';
 const DENTAL_IMG = '';
-const ED_LOGO_IMG = 'nuevo_logo_ed.jpg';
-const HERO_IMG_DATA = '';
+const ED_LOGO_IMG = 'https://escuelaydeportesevilla-ui.github.io/somosed-clubos_ed.html/nuevo_logo_ed.jpg';
+const HERO_IMG_DATA = 'https://escuelaydeportesevilla-ui.github.io/somosed-clubos_ed.html/nuevo_logo_ed.jpg';
 
-const CLUBOS_LOGO_IMG = 'nuevo_logo_ed.jpg';
+const CLUBOS_LOGO_IMG = 'https://escuelaydeportesevilla-ui.github.io/somosed-clubos_ed.html/nuevo_logo_ed.jpg';
 
 function _initStaticImages(){
   var el;
@@ -1367,8 +1367,8 @@ function iniciarSesion(cred) {
   const btnRecarga = document.getElementById('btnRecargaTotal');
   if (btnRecarga) btnRecarga.style.display = (cred.rol === 'admin') ? '' : 'none';
 
-  const subtexts = { admin: 'Escuela &amp; Deporte · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
-  document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'Escuela &amp; Deporte';
+  const subtexts = { admin: 'Escuela & Deporte · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
+  document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'Escuela & Deporte';
 
   buildNav();
   activarTab(getDefaultTab());
