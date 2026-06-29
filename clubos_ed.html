@@ -3,11 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 
-<title>ClubOS · Escuela &amp; Deporte</title>
+<title>ClubOS · Escuela &amp; Deporte v2</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -6624,7 +6621,8 @@ function showSaved(id) {
     document.getElementById('btnEliminarDep').style.display = sesion.rol==='admin' ? 'inline-flex' : 'none';
     document.getElementById('btnEliminarDep').onclick = () => deleteDeportista(id);
 
-    document.getElementById('modalFichaDeportista').style.display='flex';
+    const _mfd = document.getElementById('modalFichaDeportista');
+    if (_mfd) _mfd.style.display='flex';
   }
 
   // ── FOTO ──────────────────────────────────────────────────────
@@ -6714,13 +6712,15 @@ function showSaved(id) {
     const _ai = document.getElementById('depAutImagen');       if (_ai) _ai.checked = false;
     populateDepSelects();
     const m = document.getElementById('modalDeportista');
-    m.style.display = 'flex';
+    if (m) m.style.display = 'flex';
   }
   function cerrarModalDep() {
-    document.getElementById('modalDeportista').style.display = 'none';
+    const _cm = document.getElementById('modalDeportista');
+    if (_cm) _cm.style.display = 'none';
   }
   function cerrarFichaDep() {
-    document.getElementById('modalFichaDeportista').style.display = 'none';
+    const _cf = document.getElementById('modalFichaDeportista');
+    if (_cf) _cf.style.display = 'none';
   }
 
   function editDeportista(id) {
