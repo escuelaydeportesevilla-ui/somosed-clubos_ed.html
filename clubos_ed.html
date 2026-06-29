@@ -6157,10 +6157,11 @@ function showSaved(id) {
   // ── CRUD ESCUELAS ──────────────────────────────────────────
   function openModalEscuela() {
     editingEscuelaId = null;
-    document.getElementById('modalEscuelaTitle').textContent = 'Nueva escuela deportiva';
-    ['escNombre','escTemporada','escDescripcion'].forEach(id => document.getElementById(id).value='');
-    document.getElementById('escDeporte').value = 'Fútbol';
-    document.getElementById('escEstado').value  = 'activa';
+    const _met = document.getElementById('modalEscuelaTitle');
+    if (_met) _met.textContent = 'Nueva escuela deportiva';
+    ['escNombre','escTemporada','escDescripcion'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    const _ed = document.getElementById('escDeporte'); if(_ed) _ed.value = 'Fútbol';
+    const _ee = document.getElementById('escEstado');  if(_ee) _ee.value  = 'activa';
     openModal('modalEscuela');
   }
 
@@ -6692,7 +6693,8 @@ function showSaved(id) {
   // ── CRUD DEPORTISTAS ──────────────────────────────────────────
   function openModalDeportista() {
     editingDepId = null; depFotoB64 = null;
-    document.getElementById('modalDepTitle').textContent = 'Nuevo deportista';
+    const _mdt = document.getElementById('modalDepTitle');
+    if (_mdt) _mdt.textContent = 'Nuevo deportista';
     ['depNombre','depApellidos','depDni','depLicencia','depTelefono','depEmail',
      'depPosicion','depAltura','depPeso','depAlergias','depMedicacion','depObsMedicas','depNotas',
      'depTutorNombre','depTutorTel','depTutorEmail']
@@ -7441,7 +7443,7 @@ function showSaved(id) {
     setTimeout(() => win.print(), 500);
   }
 
-  // ── Exponer funciones anidadas al ámbito global ──────────────
+  // ── Exponer al ámbito global ──────────────────────────────────
   window.renderDeportistas             = renderDeportistas;
   window.renderEscuelas                = renderEscuelas;
   window.renderEvalDeportistas         = renderEvalDeportistas;
