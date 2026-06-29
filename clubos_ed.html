@@ -802,35 +802,29 @@ tbody td.center{text-align:center;}
 
 <!-- ══ TAB DEPORTISTAS ══ -->
 <div id="panel-deportistas" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
-  <div class="section-header"><h2>🧑‍🤝‍🧑 Deportistas</h2><div class="section-line"></div></div>
-
-  <div class="dep-search-bar">
-    <input class="dep-search-input" type="text" id="depBuscar"
-      placeholder="🔍 Buscar por nombre, apellidos, equipo..."
-      oninput="renderDeportistas()" />
-    <button class="btn btn-primary" id="btnNuevoDeportista" onclick="openModalDeportista()">+ Nuevo deportista</button>
+  <div class="section-header">
+    <h2>🧑‍🤝‍🧑 Deportistas</h2><div class="section-line"></div>
+    <input type="text" id="depBuscar" placeholder="🔎 Buscar deportista…"
+      oninput="renderDeportistas()"
+      style="padding:7px 12px;border:1.5px solid var(--gris-linea);border-radius:8px;font-size:13px;outline:none;min-width:200px;">
+    <button class="btn btn-primary" id="btnNuevoDeportista" onclick="openModalDeportista()" style="display:none">+ Nuevo deportista</button>
   </div>
-
-  <div class="dep-filtros" id="depFiltros">
+  <div class="dep-filtros" id="depFiltros" style="margin-bottom:16px;">
     <button class="dep-filtro-btn active" data-filtro="" onclick="setDepFiltro('',this)">Todos</button>
     <button class="dep-filtro-btn" data-filtro="equipo" onclick="setDepFiltro('equipo',this)">Con equipo</button>
     <button class="dep-filtro-btn" data-filtro="escuela" onclick="setDepFiltro('escuela',this)">En escuela</button>
     <button class="dep-filtro-btn" data-filtro="alerta" onclick="setDepFiltro('alerta',this)">⚠️ Alerta médica</button>
   </div>
-
   <div class="dep-grid" id="depGrid"></div>
 </div>
 
 <!-- ══ TAB ESCUELAS DEPORTIVAS ══ -->
 <div id="panel-escuelas" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
-  <div class="section-header"><h2>🏫 Escuelas deportivas</h2><div class="section-line"></div></div>
-
   <!-- Vista 1: Lista de escuelas -->
   <div id="vistaEscuelas">
-    <div class="actions-row" id="adminActionsEscuelas" style="display:none">
-      <button class="btn btn-primary" onclick="openModalEscuela()">+ Nueva escuela</button>
+    <div class="section-header">
+      <h2>🏫 Escuelas deportivas</h2><div class="section-line"></div>
+      <button class="btn btn-primary" id="btnNuevaEscuela" onclick="openModalEscuela()" style="display:none">+ Nueva escuela</button>
     </div>
     <div class="escuelas-grid" id="escuelasGrid"></div>
   </div>
@@ -878,19 +872,16 @@ tbody td.center{text-align:center;}
 
 <!-- ══ TAB EVALUACIONES ══ -->
 <div id="panel-evaluaciones" class="tab-panel">
-  <button class="btn-volver-inicio" onclick="activarTab('competicion')">← Volver al inicio</button>
-  <div class="section-header"><h2>📝 Evaluación continua</h2><div class="section-line"></div></div>
-
-  <!-- Filtros -->
-  <div class="actions-row">
-    <select id="evalFiltroComp" class="btn btn-outline" style="font-family:'DM Sans',sans-serif;font-size:13px;min-width:220px;" onchange="renderEvalDeportistas()">
-      <option value="">— Selecciona una competición / escuela —</option>
+  <div class="section-header">
+    <h2>📝 Evaluaciones</h2><div class="section-line"></div>
+    <select id="evalFiltroComp" class="btn btn-outline" style="font-family:'Barlow',sans-serif;font-size:13px;min-width:220px;" onchange="renderEvalDeportistas()">
+      <option value="">— Selecciona competición o escuela —</option>
     </select>
-    <button class="btn btn-primary" id="btnVerHistorial" style="display:none" onclick="verHistorialGeneral()">📋 Ver historial</button>
+    <button class="btn btn-primary" id="btnVerHistorial" style="display:none" onclick="verHistorialGeneral()">📋 Historial</button>
   </div>
-
-  <!-- Vista: lista de deportistas -->
-  <div id="evalDeportistasList"></div>
+  <div id="evalDeportistasList">
+    <div class="empty-state"><div class="ei">📝</div><p>Selecciona una competición o escuela para ver los deportistas a evaluar.</p></div>
+  </div>
 </div>
 
 
@@ -1440,6 +1431,10 @@ function _applyAdminButtons() {
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevoDep = document.getElementById('btnNuevoDeportista');
+  if (btnNuevoDep) btnNuevoDep.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevaEsc = document.getElementById('btnNuevaEscuela');
+  if (btnNuevaEsc) btnNuevaEsc.style.display = esAdmin ? '' : 'none';
 }
 
 function activarTab(tab) {
@@ -4637,6 +4632,10 @@ function eliminarSug(id) {
 // ══════════════════════════════════════════════════════
 function abrirModal(id) { document.getElementById(id).classList.add('open'); }
 function cerrarModal(id) { document.getElementById(id).classList.remove('open'); }
+// Aliases para módulos Escuelas/Deportistas (compatibilidad RC Labradores)
+function openModal(id)  { abrirModal(id); }
+function closeModal(id) { cerrarModal(id); }
+function handleOverlay(e, id) { if (e.target === e.currentTarget) cerrarModal(id); }
 
 document.querySelectorAll('.modal').forEach(m => {
   m.addEventListener('click', e => { if (e.target===m) m.classList.remove('open'); });
