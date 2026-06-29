@@ -1371,6 +1371,7 @@ function iniciarSesion(cred) {
   if (typeof MONITOR_ID !== 'undefined') { window.MONITOR_ID = cred.nombre || cred.user || 'admin'; }
 
   buildNav();
+  _applyAdminButtons();
   activarTab(getDefaultTab());
   manualSync().then(() => renderAll()).catch(() => renderAll());
 }
@@ -1470,7 +1471,7 @@ function renderTab(tab) {
     goleadores: renderGoleadores, actas: renderActas,
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
-    deportistas: renderDeportistas, escuelas: renderEscuelas, evaluaciones: renderEvalDeportistas
+    deportistas: ()=>(window.renderDeportistas||function(){})(), escuelas: ()=>(window.renderEscuelas||function(){})(), evaluaciones: ()=>(window.renderEvalDeportistas||function(){})()
   };
   if (fn[tab]) fn[tab]();
 }
@@ -7323,6 +7324,10 @@ function showSaved(id) {
   }
 
 
+// ── Exponer renders anidados al ámbito global ──────────────────
+window.renderDeportistas     = typeof renderDeportistas     === 'function' ? renderDeportistas     : function(){};
+window.renderEscuelas        = typeof renderEscuelas        === 'function' ? renderEscuelas        : function(){};
+window.renderEvalDeportistas = typeof renderEvalDeportistas === 'function' ? renderEvalDeportistas : function(){};
 
 </script>
 
