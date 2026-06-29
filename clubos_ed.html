@@ -3484,7 +3484,7 @@ function rellenarDesdeDep(depId) {
   if (!dep) return;
   document.getElementById('jNombre').value    = dep.nombre    || '';
   document.getElementById('jApellidos').value = dep.apellidos || '';
-  document.getElementById('jFechaNac').value  = dep.fechaNac  || '';
+  document.getElementById('jFechaNac').value  = dep.fechaNacimiento || dep.fechaNac || '';
   if (dep.posicion) document.getElementById('jPosicion').value = dep.posicion;
   if (dep.dorsal)   document.getElementById('jDorsal').value   = dep.dorsal;
 }
@@ -6676,6 +6676,36 @@ function eliminarClub(id) {
     if (!DB.deportistas) DB.deportistas = [];
     const idx = DB.deportistas.findIndex(x=>x.id===editingDepId);
     if (idx>=0) DB.deportistas[idx]=rec; else DB.deportistas.push(rec);
+
+    // Auto-sincronizar con DB.jugadores para los equipos seleccionados
+    if (!DB.jugadores) DB.jugadores = [];
+    if (equiposIds.length) {
+      equiposIds.forEach(eqId => {
+        const jugExistente = DB.jugadores.find(j => j.depId === rec.id && j.equipoId === eqId);
+        if (!jugExistente) {
+          DB.jugadores.push({
+            id:        'jug_' + rec.id + '_' + eqId,
+            depId:     rec.id,
+            nombre:    rec.nombre,
+            apellidos: rec.apellidos,
+            fechaNac:  rec.fechaNacimiento,
+            posicion:  rec.posicion || 'Jugador/a',
+            dorsal:    rec.dorsal || '',
+            equipoId:  eqId,
+            clubId:    (DB.equipos||[]).find(e=>e.id===eqId)?.clubId || '',
+            activo:    true,
+            convocado: false,
+            notas:     []
+          });
+        } else {
+          // Actualizar datos si el deportista fue editado
+          jugExistente.nombre    = rec.nombre;
+          jugExistente.apellidos = rec.apellidos;
+          jugExistente.fechaNac  = rec.fechaNacimiento;
+          jugExistente.posicion  = rec.posicion || jugExistente.posicion;
+        }
+      });
+    }
     save();
 
     // Send to Sheets (without foto if too large)
