@@ -1362,6 +1362,7 @@ function iniciarSesion(cred) {
   localStorage.setItem('clubos_ed_sesion', JSON.stringify(cred));
   document.getElementById('portada').style.display = 'none';
   document.getElementById('app').style.display = 'block';
+  _initStaticImages();
   document.getElementById('rolBadge').textContent = cred.rol.charAt(0).toUpperCase() + cred.rol.slice(1);
   document.getElementById('tbUserName').textContent = cred.nombre || '';
   const btnRecarga = document.getElementById('btnRecargaTotal');
