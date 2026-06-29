@@ -677,11 +677,17 @@ tbody td.center{text-align:center;}
 #panel-escuelas .section-header h2,
 #panel-evaluaciones .section-header h2 {
   flex:none;
+  font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.5px;
 }
 #panel-deportistas .section-header .section-line,
 #panel-escuelas .section-header .section-line,
 #panel-evaluaciones .section-header .section-line {
-  flex:1;
+  flex:1;min-width:20px;
+}
+#panel-deportistas .section-header input,
+#panel-deportistas .section-header button {
+  flex-shrink:0;
 }
 
 </style>
@@ -7444,6 +7450,9 @@ function showSaved(id) {
   }
 
   // ── Exponer al ámbito global ──────────────────────────────────
+  // Re-aplicar rol UI ahora que el módulo ha cargado
+  if (typeof applyRoleUI === 'function' && sesion && sesion.rol) applyRoleUI();
+
   window.renderDeportistas             = renderDeportistas;
   window.renderEscuelas                = renderEscuelas;
   window.renderEvalDeportistas         = renderEvalDeportistas;
