@@ -6705,10 +6705,10 @@ function showSaved(id) {
      'depPosicion','depAltura','depPeso','depAlergias','depMedicacion','depObsMedicas','depNotas',
      'depTutorNombre','depTutorTel','depTutorEmail']
       .forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
-    document.getElementById('depFechaNac').value = '';
-    document.getElementById('depPieDominante').value = '';
-    document.getElementById('depTutorParentesco').value = 'Padre';
-    document.getElementById('depAutImagen').checked = false;
+    const _fn = document.getElementById('depFechaNac');        if (_fn) _fn.value = '';
+    const _pd = document.getElementById('depPieDominante');    if (_pd) _pd.value = '';
+    const _tp = document.getElementById('depTutorParentesco'); if (_tp) _tp.value = 'Padre';
+    const _ai = document.getElementById('depAutImagen');       if (_ai) _ai.checked = false;
     populateDepSelects();
     const m = document.getElementById('modalDeportista');
     m.style.display = 'flex';
