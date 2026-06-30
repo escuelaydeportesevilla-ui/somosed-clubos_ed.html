@@ -22,9 +22,10 @@
   --gris-linea:#E5E5E0; --gris-texto:#222; --gris-suave:#666;
   --verde:#1A7A3C; --verde-suave:#D5F5E3;
   --azul:#1A56A0;
+  --azul-marino:#0B1F3A; --azul-marino-claro:#15315C;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-texto);min-height:100vh;}
+body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--gris-texto);min-height:100vh;}
 
 /* ═══════════════════════════════
    PORTADA / LOGIN
@@ -32,27 +33,14 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
 #portada{
   min-height:100vh;
   display:flex;flex-direction:column;
-  background:var(--blanco);
+  background:var(--azul-marino);
 }
-.portada-header{
-  background:var(--blanco);
-  padding:20px 40px;
-  display:flex;align-items:center;justify-content:space-between;
-  border-bottom:3px solid var(--rojo);
-}
-.portada-logo-wrap{display:flex;align-items:center;gap:14px;}
-.portada-logo-img{height:52px;object-fit:contain;}
-.portada-logo-text{font-family:'Barlow Condensed',sans-serif;}
-.portada-logo-text .club{font-size:2rem;font-weight:900;color:var(--negro);letter-spacing:-1px;line-height:1;}
-.portada-logo-text .club span{color:var(--rojo);}
-.portada-logo-text .tagline{font-size:10px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:var(--gris-suave);}
-.portada-sfc{height:44px;object-fit:contain;}
 
 .portada-hero{
   flex:1;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:48px 24px;
-  background:linear-gradient(160deg, #fff 0%, #fff8f8 50%, #fff 100%);
+  background:linear-gradient(160deg, var(--azul-marino) 0%, var(--azul-marino-claro) 50%, var(--azul-marino) 100%);
   position:relative;
   overflow:hidden;
   z-index:1;
@@ -80,12 +68,12 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
   font-family:'Barlow Condensed',sans-serif;
   font-size:clamp(2.8rem,7vw,5rem);font-weight:900;
   text-transform:uppercase;letter-spacing:1px;
-  color:var(--negro);text-align:center;line-height:1;
+  color:var(--blanco);text-align:center;line-height:1;
   margin-bottom:8px;
 }
 .hero-title span{color:var(--rojo);}
 .hero-sub{
-  font-size:14px;color:var(--gris-suave);text-align:center;
+  font-size:14px;color:#B8C4D9;text-align:center;
   margin-bottom:40px;font-weight:400;
 }
 
@@ -235,7 +223,7 @@ body{font-family:'Barlow',sans-serif;background:var(--crema);color:var(--gris-te
 .nav-btn.active{color:var(--rojo);border-bottom-color:var(--rojo);}
 
 /* ── MAIN ── */
-.main{max-width:1200px;margin:0 auto;padding:28px 20px 64px;}
+.main{max-width:1200px;margin:24px auto;padding:28px 20px 64px;background:var(--blanco);border-radius:16px;box-shadow:0 10px 34px rgba(0,0,0,.28);}
 .tab-panel{display:none;}
 .tab-panel.active{display:block;}
 
@@ -606,16 +594,6 @@ tbody td.center{text-align:center;}
      PORTADA
 ════════════════════════════════════ -->
 <div id="portada">
-  <div class="portada-header">
-    <div class="portada-logo-wrap">
-      <img class="portada-logo-img" id="img-portada-logo" src="" alt="ClubOS">
-      <div class="portada-logo-text">
-        <div class="club">Club<span>OS</span></div>
-        <div class="tagline">Gestión Deportiva</div>
-      </div>
-    </div>
-  </div>
-
   <div class="portada-hero">
     <div class="hero-badge">⚽ Temporada 2026/2027</div>
     <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px;">
@@ -651,7 +629,6 @@ tbody td.center{text-align:center;}
   <div class="patrocinadores-portada">
     <span class="pat-label">Patrocinadores oficiales</span>
     <img class="pat-logo" id="img-pat-remax" src="" alt="RE/MAX Cristina Castro del Olmo">
-    <img class="pat-logo" id="img-pat-dental" src="" alt="Clínica Dental Piñero Bilbao">
   </div>
 </div>
 
@@ -1187,8 +1164,7 @@ let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
   goleadores: [],
   noticias: [],
   patrocinadores: [
-    { id: 'p1', nombre: 'RE/MAX Cristina Castro del Olmo', nivel: 'oro', web: '', desc: 'Inmobiliaria Oficial', logo: 'remax' },
-    { id: 'p2', nombre: 'Piñero Bilbao Clínica Dental',    nivel: 'oro', web: '', desc: 'Clínica Dental Oficial', logo: 'dental' }
+    { id: 'p1', nombre: 'RE/MAX Cristina Castro del Olmo', nivel: 'oro', web: '', desc: 'Inmobiliaria Oficial', logo: 'remax' }
   ],
   sugerencias: [],
   jugadores: [],
