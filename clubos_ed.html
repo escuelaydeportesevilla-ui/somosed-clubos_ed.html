@@ -532,6 +532,10 @@ tbody td.center{text-align:center;}
   .tabla-equipos-desktop{display:block;}
 }
 
+/* ── Escuelas: grid de tarjetas ── */
+.cards-escuelas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
+.cards-escuelas .card-equipo{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+
 /* ── Jugadores: tarjetas en móvil ── */
 @media (max-width:768px){
   .tabla-jugadores-desktop{display:none;}
@@ -4334,7 +4338,7 @@ function renderEscuelas() {
     return;
   }
 
-  el.innerHTML = `<div class="cards-equipos">` + lista.map(e => {
+  el.innerHTML = `<div class="cards-escuelas">` + lista.map(e => {
     const nAlumnos = (DB.jugadores||[]).filter(j => j.escuelaId === e.id).length;
     const estado   = e.activa ? '<span style="color:#1A7A3C;font-weight:700;">● Activa</span>' : '<span style="color:#999;">● Inactiva</span>';
     return `
@@ -4396,8 +4400,7 @@ async function guardarEscuela() {
   } else {
     DB.escuelas.push(rec);
   }
-  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida');
-  activarTab('escuelas');
+  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
 }
 
 async function eliminarEscuela(id) {
