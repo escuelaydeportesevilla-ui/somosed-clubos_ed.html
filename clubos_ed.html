@@ -1070,36 +1070,87 @@ tbody td.center{text-align:center;}
 </div>
 
 <div class="modal" id="modalJugador">
-  <div class="modal-box">
+  <div class="modal-box" style="max-width:760px;">
     <div class="modal-header">
       <h3 id="modalJugadorTitle">Añadir jugador</h3>
       <button class="modal-close" onclick="cerrarModal('modalJugador')">✕</button>
     </div>
+
+    <!-- ── DATOS BÁSICOS ── -->
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin:0 0 8px;">⚽ Datos básicos</div>
     <div class="form-grid">
-      <div class="form-field"><label>Nombre</label><input id="jNombre" placeholder="Nombre"></div>
-      <div class="form-field"><label>Apellidos</label><input id="jApellidos" placeholder="Apellidos"></div>
+      <div class="form-field"><label>Nombre *</label><input id="jNombre" placeholder="Nombre"></div>
+      <div class="form-field"><label>Apellidos *</label><input id="jApellidos" placeholder="Apellidos"></div>
       <div class="form-field"><label>Fecha de nacimiento</label><input type="date" id="jFechaNac"></div>
       <div class="form-field"><label>Posición</label><select id="jPosicion"><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="10" min="1" max="99"></div>
-      <div class="form-field"><label>Equipo del club</label><select id="jEquipo"></select></div>
+      <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
+      <div class="form-field"><label>Escuela deportiva</label><select id="jEscuela"><option value="">— Sin asignar —</option></select></div>
+      <div class="form-field"><label>Altura (cm)</label><input type="number" id="jAltura" placeholder="165"></div>
+      <div class="form-field"><label>Peso (kg)</label><input type="number" id="jPeso" placeholder="60"></div>
     </div>
-    <div style="display:flex;gap:20px;margin-top:14px;padding:12px;background:#f9f9f7;border-radius:10px;">
+    <div style="display:flex;gap:20px;margin-top:10px;padding:12px;background:#f9f9f7;border-radius:10px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
         <input type="checkbox" id="jActivo" checked style="width:16px;height:16px;cursor:pointer;">
-        <span>✅ Activo (disponible para el equipo)</span>
+        <span>✅ Activo</span>
       </label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
         <input type="checkbox" id="jConvocado" style="width:16px;height:16px;cursor:pointer;">
-        <span>📋 Convocado próximo partido</span>
+        <span>📋 Convocado</span>
       </label>
     </div>
+
+    <!-- ── DATOS PERSONALES (admin/club) ── -->
+    <div id="seccionDatosPersonales" style="display:none;margin-top:18px;">
+      <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🪪 Datos personales</div>
+      <div class="form-grid">
+        <div class="form-field"><label>DNI / NIE</label><input id="jDni" placeholder="12345678A"></div>
+        <div class="form-field"><label>Nº Licencia</label><input id="jLicencia" placeholder="Licencia federativa"></div>
+        <div class="form-field"><label>Email</label><input type="email" id="jEmail" placeholder="jugador@email.com"></div>
+        <div class="form-field"><label>Teléfono</label><input id="jTelefono" placeholder="600000000"></div>
+        <div class="form-field"><label>Fecha de inscripción</label><input type="date" id="jFechaInscripcion"></div>
+        <div class="form-field"><label>Autorización imagen</label>
+          <select id="jAutorizacionImagen">
+            <option value="">— Sin indicar —</option>
+            <option value="si">✅ Sí autoriza</option>
+            <option value="no">❌ No autoriza</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DATOS DEL TUTOR (admin/club) ── -->
+    <div id="seccionTutor" style="display:none;margin-top:18px;">
+      <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">👨‍👩‍👦 Tutor / Familiar</div>
+      <div class="form-grid">
+        <div class="form-field"><label>Nombre del tutor</label><input id="jTutorNombre" placeholder="Nombre y apellidos"></div>
+        <div class="form-field"><label>Teléfono tutor</label><input id="jTutorTelefono" placeholder="600000000"></div>
+        <div class="form-field"><label>Email tutor</label><input type="email" id="jTutorEmail" placeholder="tutor@email.com"></div>
+        <div class="form-field"><label>Parentesco</label>
+          <select id="jTutorParentesco">
+            <option value="">— Seleccionar —</option>
+            <option>Padre</option><option>Madre</option><option>Tutor legal</option><option>Otro</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── DATOS MÉDICOS (admin/club) ── -->
+    <div id="seccionMedica" style="display:none;margin-top:18px;">
+      <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🏥 Datos médicos</div>
+      <div class="form-grid" style="grid-template-columns:1fr;">
+        <div class="form-field"><label>Alergias</label><textarea id="jAlergias" rows="2" placeholder="Alergias conocidas..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+        <div class="form-field"><label>Medicación habitual</label><textarea id="jMedicacion" rows="2" placeholder="Medicación o tratamientos..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+        <div class="form-field"><label>Observaciones médicas</label><textarea id="jObservacionesMedicas" rows="2" placeholder="Otras observaciones médicas relevantes..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+      </div>
+    </div>
+
     <input type="hidden" id="jEditId">
-    <!-- NOTAS DEL JUGADOR -->
+
+    <!-- ── NOTAS DEL JUGADOR (existente, sin cambios) ── -->
     <div id="seccionNotas" style="display:none;margin-top:18px;">
       <div style="font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">📝 Notas del jugador</div>
-      <!-- Historial -->
       <div id="listaNotas" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
-      <!-- Formulario nueva nota / edición -->
       <div style="background:#f9f9f7;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="display:flex;gap:8px;align-items:center;">
           <label style="font-size:12px;font-weight:600;white-space:nowrap;">Fecha</label>
@@ -1113,6 +1164,7 @@ tbody td.center{text-align:center;}
         </div>
       </div>
     </div>
+
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalJugador')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarJugador()">Guardar jugador</button>
@@ -2552,13 +2604,35 @@ function seleccionarJugadorBuscador(id) {
 
 function abrirModalJugador() {
   const isAdmin = sesion.rol === 'admin';
+  const isClub  = sesion.rol === 'club';
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
+
   const sel = document.getElementById('jEquipo');
-  sel.innerHTML = misEquipos.map(e=>`<option value="${e.id}">${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')'  :''}</option>`).join('');
-  ['jNombre','jApellidos','jFechaNac','jDorsal'].forEach(id=>document.getElementById(id).value='');
+  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}">${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
+
+  const selE = document.getElementById('jEscuela');
+  selE.innerHTML = '<option value="">— Sin asignar —</option>' + misEscuelas.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+
+  ['jNombre','jApellidos','jFechaNac','jDorsal','jAltura','jPeso',
+   'jDni','jLicencia','jEmail','jTelefono','jFechaInscripcion',
+   'jTutorNombre','jTutorTelefono','jTutorEmail',
+   'jAlergias','jMedicacion','jObservacionesMedicas'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('jAutorizacionImagen').value = '';
+  document.getElementById('jTutorParentesco').value = '';
   document.getElementById('jEditId').value = '';
   document.getElementById('jActivo').checked    = true;
   document.getElementById('jConvocado').checked = false;
+
+  // Secciones sensibles: solo admin y club
+  const verPrivado = isAdmin || isClub;
+  ['seccionDatosPersonales','seccionTutor','seccionMedica'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.style.display = verPrivado ? '' : 'none';
+  });
+  document.getElementById('seccionNotas').style.display = 'none';
+
   const t = document.getElementById('modalJugadorTitle'); if(t) t.textContent = 'Añadir jugador';
   abrirModal('modalJugador');
 }
@@ -2567,34 +2641,66 @@ function editarJugador(id) {
   const j = (DB.jugadores||[]).find(x=>x.id===id); if(!j) return;
   const isAdmin = sesion.rol === 'admin';
   const isClub  = sesion.rol === 'club';
+
+  // Equipos
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const sel = document.getElementById('jEquipo');
-  sel.innerHTML = misEquipos.map(e=>`<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
+  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
+
+  // Escuelas
+  const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
+  const selE = document.getElementById('jEscuela');
+  selE.innerHTML = '<option value="">— Sin asignar —</option>' + misEscuelas.map(e=>`<option value="${e.id}"${e.id===j.escuelaId?' selected':''}>${e.nombre}</option>`).join('');
+
+  // Campos básicos
   document.getElementById('jNombre').value    = j.nombre    ||'';
   document.getElementById('jApellidos').value = j.apellidos ||'';
   document.getElementById('jFechaNac').value  = j.fechaNac  ||'';
   document.getElementById('jDorsal').value    = j.dorsal    ||'';
   document.getElementById('jPosicion').value  = j.posicion  ||'Portero';
+  document.getElementById('jAltura').value    = j.altura    ||'';
+  document.getElementById('jPeso').value      = j.peso      ||'';
   document.getElementById('jEditId').value    = j.id;
   document.getElementById('jActivo').checked    = j.activo !== false;
   document.getElementById('jConvocado').checked = !!j.convocado;
-  const t = document.getElementById('modalJugadorTitle'); if(t) t.textContent = 'Editar jugador';
 
-  // Notas: visibles solo para admin (equipos cbedadmin) y club (equipos propios)
+  // Secciones y campos privados: solo admin y club
+  const verPrivado = isAdmin || isClub;
+  ['seccionDatosPersonales','seccionTutor','seccionMedica'].forEach(sid=>{
+    const el = document.getElementById(sid); if(el) el.style.display = verPrivado ? '' : 'none';
+  });
+  if (verPrivado) {
+    document.getElementById('jDni').value                  = j.dni                  ||'';
+    document.getElementById('jLicencia').value             = j['nºlicencia']        ||'';
+    document.getElementById('jEmail').value                = j.email                ||'';
+    document.getElementById('jTelefono').value             = j.telefono             ||'';
+    document.getElementById('jFechaInscripcion').value     = j.fechaInscripcion     ||'';
+    document.getElementById('jAutorizacionImagen').value   = j.autorizacionImagen   ||'';
+    document.getElementById('jTutorNombre').value          = j.tutorNombre          ||'';
+    document.getElementById('jTutorTelefono').value        = j.tutorTelefono        ||'';
+    document.getElementById('jTutorEmail').value           = j.tutorEmail           ||'';
+    document.getElementById('jTutorParentesco').value      = j.tutorParentesco      ||'';
+    document.getElementById('jAlergias').value             = j.alergias             ||'';
+    document.getElementById('jMedicacion').value           = j.medicacion           ||'';
+    document.getElementById('jObservacionesMedicas').value = j.observacionesMedicas ||'';
+  }
+
+  // Notas: visibles solo para admin y club propietario
   const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
   const puedeVerNotas = (isAdmin && (!eq || !eq.clubId || eq.clubId==='cbedadmin')) ||
                         (isClub  && eq && eq.clubId===sesion.user);
-  const seccion = document.getElementById('seccionNotas');
-  if (seccion) seccion.style.display = puedeVerNotas ? '' : 'none';
+  const seccionNotas = document.getElementById('seccionNotas');
+  if (seccionNotas) seccionNotas.style.display = puedeVerNotas ? '' : 'none';
   if (puedeVerNotas) {
     document.getElementById('jNotaFecha').value  = new Date().toISOString().split('T')[0];
     document.getElementById('jNotaTexto').value  = '';
     document.getElementById('jNotaEditId').value = '';
     document.getElementById('btnCancelarNota').style.display = 'none';
-    document.getElementById('btnGuardarNota').textContent = '\u2795 A\u00f1adir nota';
+    document.getElementById('btnGuardarNota').textContent = '➕ Añadir nota';
     renderListaNotas(j.notas || []);
   }
 
+  const t = document.getElementById('modalJugadorTitle'); if(t) t.textContent = 'Editar jugador';
   abrirModal('modalJugador');
 }
 
@@ -2673,8 +2779,11 @@ function borrarNota(notaId) {
 
 async function guardarJugador() {
   const editId = document.getElementById('jEditId').value;
-  // Preservar notas existentes si las hay
   const jugadorExistente = editId ? (DB.jugadores||[]).find(x=>x.id===editId) : null;
+  const isAdmin = sesion.rol === 'admin';
+  const isClub  = sesion.rol === 'club';
+  const verPrivado = isAdmin || isClub;
+
   const j = {
     id:        editId || uid(),
     nombre:    document.getElementById('jNombre').value.trim(),
@@ -2683,10 +2792,46 @@ async function guardarJugador() {
     posicion:  document.getElementById('jPosicion').value,
     dorsal:    document.getElementById('jDorsal').value,
     equipoId:  document.getElementById('jEquipo').value,
+    escuelaId: document.getElementById('jEscuela').value,
+    altura:    document.getElementById('jAltura').value,
+    peso:      document.getElementById('jPeso').value,
     activo:    document.getElementById('jActivo').checked,
     convocado: document.getElementById('jConvocado').checked,
     notas:     jugadorExistente ? (jugadorExistente.notas || []) : [],
+    clubId:    jugadorExistente ? (jugadorExistente.clubId || sesion.user) : sesion.user,
+    equipoNombre: '',
   };
+
+  // Nombre del equipo para referencia rápida
+  const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+  if (eq) j.equipoNombre = eq.nombre;
+
+  // Campos privados: solo si el rol lo permite
+  if (verPrivado) {
+    j['nºlicencia']        = document.getElementById('jLicencia').value.trim();
+    j.dni                  = document.getElementById('jDni').value.trim();
+    j.email                = document.getElementById('jEmail').value.trim();
+    j.telefono             = document.getElementById('jTelefono').value.trim();
+    j.fechaInscripcion     = document.getElementById('jFechaInscripcion').value;
+    j.autorizacionImagen   = document.getElementById('jAutorizacionImagen').value;
+    j.tutorNombre          = document.getElementById('jTutorNombre').value.trim();
+    j.tutorTelefono        = document.getElementById('jTutorTelefono').value.trim();
+    j.tutorEmail           = document.getElementById('jTutorEmail').value.trim();
+    j.tutorParentesco      = document.getElementById('jTutorParentesco').value;
+    j.alergias             = document.getElementById('jAlergias').value.trim();
+    j.medicacion           = document.getElementById('jMedicacion').value.trim();
+    j.observacionesMedicas = document.getElementById('jObservacionesMedicas').value.trim();
+    j.modificadoPor        = sesion.user;
+    j.fechaModif           = new Date().toISOString().split('T')[0];
+  } else if (jugadorExistente) {
+    // Preservar campos privados si quien guarda no tiene permiso para verlos
+    ['nºlicencia','dni','email','telefono','fechaInscripcion','autorizacionImagen',
+     'tutorNombre','tutorTelefono','tutorEmail','tutorParentesco',
+     'alergias','medicacion','observacionesMedicas','modificadoPor','fechaModif'].forEach(k=>{
+      if (jugadorExistente[k] !== undefined) j[k] = jugadorExistente[k];
+    });
+  }
+
   if (!j.nombre) { toast('El nombre es obligatorio'); return; }
   if (!DB.jugadores) DB.jugadores = [];
   if (editId) {
