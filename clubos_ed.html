@@ -2452,7 +2452,8 @@ function renderJugadores() {
     if (j.escuelaId) { if(!byEsc[j.escuelaId])byEsc[j.escuelaId]=[]; byEsc[j.escuelaId].push(j); }
     else sinNada.push(j);
   });
- = (jugs, puedeEditar) => {
+
+  const renderGrupoJugadores = (jugs, puedeEditar) => {
     let h = `<div class="cards-jugadores">`;
     jugs.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).forEach(j=>{
       const activo    = j.activo!==false&&j.activo!=='false';
