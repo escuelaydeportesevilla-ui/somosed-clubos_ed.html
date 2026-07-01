@@ -4396,7 +4396,8 @@ async function guardarEscuela() {
   } else {
     DB.escuelas.push(rec);
   }
-  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
+  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida');
+  activarTab('escuelas');
 }
 
 async function eliminarEscuela(id) {
