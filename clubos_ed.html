@@ -2425,7 +2425,11 @@ function renderJugadores() {
   if (!DB.jugadores) DB.jugadores=[];
 
   const misEquipos = (isAdmin||isArbitro) ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
-  const lista = (isAdmin||isArbitro) ? DB.jugadores : DB.jugadores.filter(j=>misEquipos.some(e=>e.id===j.equipoId));
+  const misEscuelas = (isAdmin||isArbitro) ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
+  const lista = (isAdmin||isArbitro) ? DB.jugadores : DB.jugadores.filter(j=>
+    misEquipos.some(e=>e.id===j.equipoId) || misEscuelas.some(e=>e.id===j.escuelaId) ||
+    (!j.equipoId && !j.escuelaId && j.clubId===sesion.user)
+  );
 
   const btnAdd = document.getElementById('btnAddJugador');
   if (btnAdd) btnAdd.style.display=(isAdmin||isClub)?'':'none';
@@ -2439,7 +2443,16 @@ function renderJugadores() {
   const byEq={};
   lista.forEach(j=>{ const k=j.equipoId||'__none__'; if(!byEq[k])byEq[k]=[]; byEq[k].push(j); });
 
-  const renderGrupoJugadores = (jugs, puedeEditar) => {
+  // Separar jugadores sin equipo: por escuela y sin asignar
+  const sinEquipo = byEq['__none__'] || [];
+  delete byEq['__none__'];
+  const byEsc={};
+  const sinNada=[];
+  sinEquipo.forEach(j=>{
+    if (j.escuelaId) { if(!byEsc[j.escuelaId])byEsc[j.escuelaId]=[]; byEsc[j.escuelaId].push(j); }
+    else sinNada.push(j);
+  });
+ = (jugs, puedeEditar) => {
     let h = `<div class="cards-jugadores">`;
     jugs.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).forEach(j=>{
       const activo    = j.activo!==false&&j.activo!=='false';
@@ -2507,15 +2520,47 @@ function renderJugadores() {
              font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
              padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
           <span><span id="${contId}_icon">▶</span> ${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} jugadores)</span></span>
-          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('${eid}')">📄 Exportar</button>
+          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('equipo','${eid}')">📄 Exportar</button>
         </div>
         <div id="${contId}" style="display:none;padding-top:12px;">
           ${renderGrupoJugadores(jugs, isAdmin)}
         </div>
       </div>`;
     });
+    // ── POR ESCUELA ──
+    Object.entries(byEsc).forEach(([escId,jugs])=>{
+      const esc=(DB.escuelas||[]).find(e=>e.id===escId);
+      const eNom=esc?.nombre||'Escuela sin nombre';
+      const contId = 'jugEsc_' + escId;
+      out+=`<div style="margin-bottom:14px;">
+        <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+             font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#1A56A0;
+             padding:10px 14px;background:#fff;border-radius:8px;border:1px solid #D0E4F7;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+          <span><span id="${contId}_icon">▶</span> 🏫 ${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} alumnos)</span></span>
+          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('escuela','${escId}')">📄 Exportar</button>
+        </div>
+        <div id="${contId}" style="display:none;padding-top:12px;">
+          ${renderGrupoJugadores(jugs, isAdmin)}
+        </div>
+      </div>`;
+    });
+    // ── SIN ASIGNAR ──
+    if (sinNada.length) {
+      const contId = 'jugSinAsignar';
+      out+=`<div style="margin-bottom:14px;">
+        <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+             font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;
+             padding:10px 14px;background:#fff;border-radius:8px;border:1px solid #ddd;box-shadow:0 1px 4px rgba(0,0,0,.05);">
+          <span><span id="${contId}_icon">▶</span> Sin asignar <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${sinNada.length} jugadores)</span></span>
+          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('sinasignar','')">📄 Exportar</button>
+        </div>
+        <div id="${contId}" style="display:none;padding-top:12px;">
+          ${renderGrupoJugadores(sinNada, isAdmin)}
+        </div>
+      </div>`;
+    }
   } else {
-    // ── VISTA CLUB: SIN ACORDEÓN (sin cambios) ──
+    // ── VISTA CLUB: SIN ACORDEÓN ──
     Object.entries(byEq).forEach(([eid,jugs])=>{
       const eq=(DB.equipos||[]).find(e=>e.id===eid);
       const eNom=eq?.nombre||'Sin equipo';
@@ -2526,25 +2571,52 @@ function renderJugadores() {
         ${renderGrupoJugadores(jugs, puedeEditar)}
       </div>`;
     });
+    // ── POR ESCUELA ──
+    Object.entries(byEsc).forEach(([escId,jugs])=>{
+      const esc=(DB.escuelas||[]).find(e=>e.id===escId);
+      const eNom=esc?.nombre||'Escuela sin nombre';
+      out+=`<div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#1A56A0;margin-bottom:8px;">🏫 ${eNom}</div>
+        ${renderGrupoJugadores(jugs, isClub)}
+      </div>`;
+    });
+    // ── SIN ASIGNAR ──
+    if (sinNada.length) {
+      out+=`<div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#888;margin-bottom:8px;">Sin asignar</div>
+        ${renderGrupoJugadores(sinNada, isClub)}
+      </div>`;
+    }
   }
 
   el.innerHTML=out;
   aplicarEstadoAcordeones();
 }
 
-function exportarJugadoresPDF(soloEquipoId) {
-  const lista = soloEquipoId ? (DB.jugadores||[]).filter(j=>j.equipoId===soloEquipoId) : (DB.jugadores||[]);
+function exportarJugadoresPDF(tipo, id) {
+  let lista, titulo;
+  if (tipo === 'equipo') {
+    lista = (DB.jugadores||[]).filter(j=>j.equipoId===id);
+    const eq = (DB.equipos||[]).find(e=>e.id===id);
+    titulo = eq?.nombre || 'Equipo';
+  } else if (tipo === 'escuela') {
+    lista = (DB.jugadores||[]).filter(j=>j.escuelaId===id);
+    const esc = (DB.escuelas||[]).find(e=>e.id===id);
+    titulo = '🏫 ' + (esc?.nombre || 'Escuela');
+  } else if (tipo === 'sinasignar') {
+    lista = (DB.jugadores||[]).filter(j=>!j.equipoId&&!j.escuelaId);
+    titulo = 'Sin asignar';
+  } else {
+    lista = DB.jugadores||[];
+    titulo = 'Todos';
+  }
   if (!lista.length) { toast('No hay jugadores para exportar'); return; }
-  const byEq={};
-  lista.forEach(j=>{ const k=j.equipoId||'__none__'; if(!byEq[k])byEq[k]=[]; byEq[k].push(j); });
-  let body = Object.entries(byEq).map(([eid,jugs]) => {
-    const eq=(DB.equipos||[]).find(e=>e.id===eid);
-    const eNom=eq?.nombre||'Sin equipo';
-    return `<h2>${eNom}</h2>
+
+  const body = `<h2>${titulo}</h2>
     <table>
       <thead><tr><th>#</th><th>Jugador</th><th>Posición</th><th>Estado</th><th>Convocado</th></tr></thead>
       <tbody>
-        ${jugs.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).map(j => {
+        ${lista.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).map(j => {
           const activo = j.activo!==false&&j.activo!=='false';
           const convocado = j.convocado===true||j.convocado==='true';
           return `<tr>
@@ -2557,7 +2629,6 @@ function exportarJugadoresPDF(soloEquipoId) {
         }).join('')}
       </tbody>
     </table>`;
-  }).join('');
 
   const w = window.open('', '_blank');
   w.document.write(`
