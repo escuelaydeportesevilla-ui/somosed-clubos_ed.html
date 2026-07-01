@@ -802,8 +802,16 @@ tbody td.center{text-align:center;}
     </div>
 
     <!-- ══ PANEL: CLUBES (Admin) ══ -->
-    <div class="tab-panel" id="panel-clubes">
+    <!-- ══ PANEL: ESCUELAS ══ -->
+    <div class="tab-panel" id="panel-escuelas">
       <div class="section-header">
+        <h2>🏫 Escuelas Deportivas</h2><div class="section-line"></div>
+        <button class="btn btn-rojo" id="btnNuevaEscuela" onclick="abrirModalEscuela()">+ Añadir escuela</button>
+      </div>
+      <div id="escuelasContent"></div>
+    </div>
+
+    <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-rojo" onclick="abrirModalClub()">+ Nuevo club</button>
       </div>
@@ -832,6 +840,31 @@ tbody td.center{text-align:center;}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalClub')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarClub()">Guardar club</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalEscuela">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modalEscuelaTitle">Nueva escuela deportiva</h3>
+      <button class="modal-close" onclick="cerrarModal('modalEscuela')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field form-full"><label>Nombre de la escuela *</label><input id="escNombre" placeholder="Escuela de Baloncesto"></div>
+      <div class="form-field"><label>Deporte</label><input id="escDeporte" placeholder="Fútbol, Baloncesto, Pádel…"></div>
+      <div class="form-field"><label>Responsable / Monitor</label><input id="escResponsable" placeholder="Nombre del monitor"></div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;padding:12px;background:#f9f9f7;border-radius:10px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+        <input type="checkbox" id="escActiva" checked style="width:16px;height:16px;">
+        <span>✅ Escuela activa</span>
+      </label>
+    </div>
+    <input type="hidden" id="escEditId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalEscuela')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarEscuela()">Guardar escuela</button>
     </div>
   </div>
 </div>
@@ -1383,13 +1416,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
+  escuelas:'🏫 Escuelas',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -1414,6 +1448,8 @@ function buildNav() {
   });
   const btnNuevoEquipo = document.getElementById('btnNuevoEquipo');
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevaEscuela = document.getElementById('btnNuevaEscuela');
+  if (btnNuevaEscuela) btnNuevaEscuela.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
 }
@@ -1439,7 +1475,8 @@ function renderTab(tab) {
     calendario: renderCalendario, clasificacion: renderClasificacion,
     goleadores: renderGoleadores, actas: renderActas,
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
-    sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes
+    sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
+    escuelas: renderEscuelas
   };
   if (fn[tab]) fn[tab]();
 }
@@ -4203,6 +4240,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.patrocinadores?.length) DB.patrocinadores = merge(DB.patrocinadores, d.patrocinadores);
         if (d.sedes?.length)         DB.sedes         = merge(DB.sedes,         d.sedes);
         if (d.clubes?.length)        DB.clubes        = merge(DB.clubes,        d.clubes);
+        if (d.escuelas?.length)      DB.escuelas      = merge(DB.escuelas,      d.escuelas);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4231,6 +4269,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.patrocinadores = d.patrocinadores || DB.patrocinadores || [];
         DB.sedes          = d.sedes          || [];
         DB.clubes         = d.clubes         || DB.clubes || [];
+        DB.escuelas       = d.escuelas       || [];
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4279,6 +4318,95 @@ console.log('Familias: acceso directo (sin contraseña)');
 // ══════════════════════════════════════════════════════
 //  GESTIÓN DE CLUBES (solo admin, fase 1)
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+//  ESCUELAS DEPORTIVAS
+// ══════════════════════════════════════════════════════
+function renderEscuelas() {
+  const el      = document.getElementById('escuelasContent');
+  const isAdmin = sesion.rol === 'admin';
+  const isClub  = sesion.rol === 'club';
+  if (!DB.escuelas) DB.escuelas = [];
+
+  const lista = isAdmin ? DB.escuelas : DB.escuelas.filter(e => e.clubId === sesion.user);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state"><div class="ei">🏫</div><p>No hay escuelas deportivas registradas.</p></div>';
+    return;
+  }
+
+  el.innerHTML = `<div class="cards-equipos">` + lista.map(e => {
+    const nAlumnos = (DB.jugadores||[]).filter(j => j.escuelaId === e.id).length;
+    const estado   = e.activa ? '<span style="color:#1A7A3C;font-weight:700;">● Activa</span>' : '<span style="color:#999;">● Inactiva</span>';
+    return `
+    <div class="card-equipo" style="border-top:4px solid #1A56A0;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">🏫 ${e.nombre||'Sin nombre'}</div>
+          <div style="font-size:12px;color:var(--gris-suave);">🏅 ${e.deporte||'—'} · 👤 ${e.responsable||'Sin responsable'}</div>
+        </div>
+        <div style="text-align:right;font-size:12px;">${estado}</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:16px;font-size:13px;">
+        <span>👥 <strong>${nAlumnos}</strong> alumno${nAlumnos!==1?'s':''}</span>
+      </div>
+      ${(isAdmin||isClub) ? `
+      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="editarEscuela('${e.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEscuela('${e.id}')">🗑️ Eliminar</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function abrirModalEscuela() {
+  ['escNombre','escDeporte','escResponsable'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('escActiva').checked = true;
+  document.getElementById('escEditId').value = '';
+  const t = document.getElementById('modalEscuelaTitle'); if(t) t.textContent = 'Nueva escuela deportiva';
+  abrirModal('modalEscuela');
+}
+
+function editarEscuela(id) {
+  const e = (DB.escuelas||[]).find(x=>x.id===id); if(!e) return;
+  document.getElementById('escNombre').value      = e.nombre      ||'';
+  document.getElementById('escDeporte').value     = e.deporte     ||'';
+  document.getElementById('escResponsable').value = e.responsable ||'';
+  document.getElementById('escActiva').checked    = e.activa !== false;
+  document.getElementById('escEditId').value      = e.id;
+  const t = document.getElementById('modalEscuelaTitle'); if(t) t.textContent = 'Editar escuela';
+  abrirModal('modalEscuela');
+}
+
+async function guardarEscuela() {
+  const editId = document.getElementById('escEditId').value;
+  const nombre = document.getElementById('escNombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio'); return; }
+  const rec = {
+    id:          editId || uid(),
+    nombre,
+    deporte:     document.getElementById('escDeporte').value.trim(),
+    responsable: document.getElementById('escResponsable').value.trim(),
+    clubId:      sesion.user,
+    activa:      document.getElementById('escActiva').checked,
+  };
+  if (!DB.escuelas) DB.escuelas = [];
+  if (editId) {
+    const idx = DB.escuelas.findIndex(x=>x.id===editId);
+    if (idx>=0) DB.escuelas[idx]=rec; else DB.escuelas.push(rec);
+  } else {
+    DB.escuelas.push(rec);
+  }
+  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
+}
+
+async function eliminarEscuela(id) {
+  if (!confirm('¿Eliminar esta escuela? Los jugadores asignados perderán la vinculación.')) return;
+  DB.escuelas = (DB.escuelas||[]).filter(x=>x.id!==id);
+  // Desvincular jugadores
+  (DB.jugadores||[]).forEach(j=>{ if(j.escuelaId===id) j.escuelaId=''; });
+  await saveCols(['escuelas','jugadores']); renderEscuelas(); toast('Escuela eliminada');
+}
+
 function renderClubes() {
   const el = document.getElementById('clubesContent'); if (!el) return;
   if (sesion.rol !== 'admin') { el.innerHTML = ''; return; }
