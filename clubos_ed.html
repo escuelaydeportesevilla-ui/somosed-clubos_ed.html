@@ -1468,7 +1468,7 @@ function pedirSyncAntesDeLogout() {
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
   admin:    ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  club:     ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
@@ -1502,7 +1502,7 @@ function buildNav() {
   const btnNuevaEscuela = document.getElementById('btnNuevaEscuela');
   if (btnNuevaEscuela) btnNuevaEscuela.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevoPersonal = document.getElementById('btnNuevoPersonal');
-  if (btnNuevoPersonal) btnNuevoPersonal.style.display = (esAdmin || esClub) ? '' : 'none';
+  if (btnNuevoPersonal) btnNuevoPersonal.style.display = esAdmin ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
 }
