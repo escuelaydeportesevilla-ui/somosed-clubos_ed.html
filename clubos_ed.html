@@ -964,7 +964,7 @@ tbody td.center{text-align:center;}
         </select>
       </div>
       <div class="form-field"><label>Categoría</label><input id="eqCategoria" placeholder="Alevín, Benjamín..."></div>
-      <div class="form-field"><label>Delegado</label><select id="eqDelegado"></select></div>
+      <div class="form-field"><label>Delegado</label><select id="eqDelegado" onchange="_syncDelegadoContacto()"></select></div>
       <div class="form-field"><label>Email delegado</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
       <div class="form-field"><label>Teléfono delegado</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
       <div class="form-field">
@@ -2229,6 +2229,15 @@ function seleccionarEquipoBuscador(id) {
   const inp = document.getElementById('buscadorEquiposGlobal');
   if (inp) { inp.value = ''; filtrarEquiposGlobal(''); }
   editarEquipo(id);
+}
+
+function _syncDelegadoContacto() {
+  const nombre = document.getElementById('eqDelegado').value;
+  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === nombre);
+  if (per) {
+    document.getElementById('eqEmailDelegado').value = per.email    || '';
+    document.getElementById('eqTelDelegado').value    = per.telefono || '';
+  }
 }
 
 function _rellenarSelectPersonalNombre(selectId, valorActual) {
