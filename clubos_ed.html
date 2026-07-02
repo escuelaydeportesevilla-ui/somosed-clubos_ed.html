@@ -815,6 +815,15 @@ tbody td.center{text-align:center;}
       <div id="escuelasContent"></div>
     </div>
 
+    <!-- ══ PANEL: PERSONAL ══ -->
+    <div class="tab-panel" id="panel-personal">
+      <div class="section-header">
+        <h2>🧑‍🏫 Personal</h2><div class="section-line"></div>
+        <button class="btn btn-rojo" id="btnNuevoPersonal" onclick="abrirModalPersonal()">+ Añadir personal</button>
+      </div>
+      <div id="personalContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-rojo" onclick="abrirModalClub()">+ Nuevo club</button>
@@ -869,6 +878,43 @@ tbody td.center{text-align:center;}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalEscuela')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarEscuela()">Guardar escuela</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalPersonal">
+  <div class="modal-box" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modalPersonalTitle">Nuevo miembro del personal</h3>
+      <button class="modal-close" onclick="cerrarModal('modalPersonal')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Nombre *</label><input id="perNombre" placeholder="Nombre"></div>
+      <div class="form-field"><label>Apellidos</label><input id="perApellidos" placeholder="Apellidos"></div>
+      <div class="form-field"><label>Rol</label>
+        <select id="perRol">
+          <option value="Entrenador">Entrenador</option>
+          <option value="Delegado">Delegado</option>
+          <option value="Monitor">Monitor</option>
+          <option value="Colaborador">Colaborador</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Teléfono</label><input id="perTelefono" placeholder="600 000 000"></div>
+      <div class="form-field form-full"><label>Email</label><input id="perEmail" type="email" placeholder="correo@ejemplo.com"></div>
+      <div class="form-field"><label>Equipo asignado</label><select id="perEquipo"></select></div>
+      <div class="form-field"><label>Escuela asignada</label><select id="perEscuela"></select></div>
+    </div>
+    <div style="display:flex;gap:16px;margin-top:12px;padding:12px;background:#f9f9f7;border-radius:10px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+        <input type="checkbox" id="perActivo" checked style="width:16px;height:16px;">
+        <span>✅ Activo</span>
+      </label>
+    </div>
+    <input type="hidden" id="perEditId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalPersonal')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarPersonal()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1255,6 +1301,7 @@ let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
   jugadores: [],
   sedes: [],
   clubes: [],
+  personal: [],
   actaEditId: null
 }));
 
@@ -1420,14 +1467,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -1454,6 +1501,8 @@ function buildNav() {
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEscuela = document.getElementById('btnNuevaEscuela');
   if (btnNuevaEscuela) btnNuevaEscuela.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevoPersonal = document.getElementById('btnNuevoPersonal');
+  if (btnNuevoPersonal) btnNuevoPersonal.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
 }
@@ -1480,7 +1529,7 @@ function renderTab(tab) {
     goleadores: renderGoleadores, actas: renderActas,
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
-    escuelas: renderEscuelas
+    escuelas: renderEscuelas, personal: renderPersonal
   };
   if (fn[tab]) fn[tab]();
 }
@@ -4317,6 +4366,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.sedes?.length)         DB.sedes         = merge(DB.sedes,         d.sedes);
         if (d.clubes?.length)        DB.clubes        = merge(DB.clubes,        d.clubes);
         if (d.escuelas?.length)      DB.escuelas      = merge(DB.escuelas,      d.escuelas);
+        if (d.personal?.length)      DB.personal      = merge(DB.personal,      d.personal);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4346,6 +4396,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.sedes          = d.sedes          || [];
         DB.clubes         = d.clubes         || DB.clubes || [];
         DB.escuelas       = d.escuelas       || [];
+        DB.personal       = d.personal       || [];
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4364,7 +4415,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes'];
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','personal'];
       await Promise.all(cols.map(col => {
         const items = DB[col];
         if (!items || !items.length) return Promise.resolve();
@@ -4481,6 +4532,114 @@ async function eliminarEscuela(id) {
   // Desvincular jugadores
   (DB.jugadores||[]).forEach(j=>{ if(j.escuelaId===id) j.escuelaId=''; });
   await saveCols(['escuelas','jugadores']); renderEscuelas(); toast('Escuela eliminada');
+}
+
+// ══════════════════════════════════════════════════════
+//  PERSONAL
+// ══════════════════════════════════════════════════════
+function renderPersonal() {
+  const el      = document.getElementById('personalContent');
+  const isAdmin = sesion.rol === 'admin';
+  const isClub  = sesion.rol === 'club';
+  if (!DB.personal) DB.personal = [];
+
+  const lista = isAdmin ? DB.personal : DB.personal.filter(p => p.clubId === sesion.user);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state"><div class="ei">🧑‍🏫</div><p>No hay personal registrado.</p></div>';
+    return;
+  }
+
+  el.innerHTML = `<div class="cards-escuelas">` + lista.map(p => {
+    const equipo  = (DB.equipos||[]).find(e=>e.id===p.equipoId);
+    const escuela = (DB.escuelas||[]).find(e=>e.id===p.escuelaId);
+    const asign   = equipo ? ('🏟️ '+equipo.nombre) : escuela ? ('🏫 '+escuela.nombre) : 'Sin asignar';
+    const estado  = p.activo !== false ? '<span style="color:#1A7A3C;font-weight:700;">● Activo</span>' : '<span style="color:#999;">● Inactivo</span>';
+    return `
+    <div class="card-equipo" style="border-top:4px solid #2E4057;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">🧑‍🏫 ${p.nombre||''} ${p.apellidos||''}</div>
+          <div style="font-size:12px;color:var(--gris-suave);">${p.rol||'—'} · ${asign}</div>
+        </div>
+        <div style="text-align:right;font-size:12px;">${estado}</div>
+      </div>
+      <div style="margin-top:10px;font-size:13px;color:var(--gris-suave);">
+        ${p.telefono ? '📞 '+p.telefono+' &nbsp; ' : ''}${p.email ? '✉️ '+p.email : ''}
+      </div>
+      ${(isAdmin||isClub) ? `
+      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="editarPersonal('${p.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarPersonal('${p.id}')">🗑️ Eliminar</button>
+      </div>` : ''}
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function _rellenarSelectsPersonal(equipoIdSel, escuelaIdSel) {
+  const isAdmin = sesion.rol === 'admin';
+  const misEquipos  = isAdmin ? (DB.equipos||[])  : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
+  const selEq = document.getElementById('perEquipo');
+  selEq.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===equipoIdSel?' selected':''}>${e.nombre}</option>`).join('');
+  const selEs = document.getElementById('perEscuela');
+  selEs.innerHTML = '<option value="">— Sin escuela —</option>' + misEscuelas.map(e=>`<option value="${e.id}"${e.id===escuelaIdSel?' selected':''}>${e.nombre}</option>`).join('');
+}
+
+function abrirModalPersonal() {
+  ['perNombre','perApellidos','perTelefono','perEmail'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('perRol').value = 'Entrenador';
+  document.getElementById('perActivo').checked = true;
+  document.getElementById('perEditId').value = '';
+  _rellenarSelectsPersonal('', '');
+  const t = document.getElementById('modalPersonalTitle'); if(t) t.textContent = 'Nuevo miembro del personal';
+  abrirModal('modalPersonal');
+}
+
+function editarPersonal(id) {
+  const p = (DB.personal||[]).find(x=>x.id===id); if(!p) return;
+  document.getElementById('perNombre').value     = p.nombre     ||'';
+  document.getElementById('perApellidos').value  = p.apellidos  ||'';
+  document.getElementById('perRol').value        = p.rol        ||'Entrenador';
+  document.getElementById('perTelefono').value   = p.telefono   ||'';
+  document.getElementById('perEmail').value      = p.email      ||'';
+  document.getElementById('perActivo').checked   = p.activo !== false;
+  document.getElementById('perEditId').value     = p.id;
+  _rellenarSelectsPersonal(p.equipoId||'', p.escuelaId||'');
+  const t = document.getElementById('modalPersonalTitle'); if(t) t.textContent = 'Editar personal';
+  abrirModal('modalPersonal');
+}
+
+async function guardarPersonal() {
+  const editId = document.getElementById('perEditId').value;
+  const nombre = document.getElementById('perNombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio'); return; }
+  const rec = {
+    id:         editId || uid(),
+    nombre,
+    apellidos:  document.getElementById('perApellidos').value.trim(),
+    rol:        document.getElementById('perRol').value,
+    telefono:   document.getElementById('perTelefono').value.trim(),
+    email:      document.getElementById('perEmail').value.trim(),
+    equipoId:   document.getElementById('perEquipo').value,
+    escuelaId:  document.getElementById('perEscuela').value,
+    clubId:     sesion.user,
+    activo:     document.getElementById('perActivo').checked,
+  };
+  if (!DB.personal) DB.personal = [];
+  if (editId) {
+    const idx = DB.personal.findIndex(x=>x.id===editId);
+    if (idx>=0) DB.personal[idx]=rec; else DB.personal.push(rec);
+  } else {
+    DB.personal.push(rec);
+  }
+  await saveCol('personal'); cerrarModal('modalPersonal'); toast(editId?'Personal actualizado':'Personal añadido'); renderPersonal();
+}
+
+async function eliminarPersonal(id) {
+  if (!confirm('¿Eliminar este miembro del personal?')) return;
+  DB.personal = (DB.personal||[]).filter(x=>x.id!==id);
+  await saveCol('personal'); renderPersonal(); toast('Personal eliminado');
 }
 
 function renderClubes() {
