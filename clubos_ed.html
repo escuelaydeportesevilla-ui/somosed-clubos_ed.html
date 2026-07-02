@@ -2313,7 +2313,9 @@ async function guardarEquipo() {
   const idx = DB.equipos.findIndex(e=>e.id===editEquipoId);
   if (idx>=0) DB.equipos[idx]=rec; else DB.equipos.push(rec);
   editEquipoId = null;
-  await saveCol('equipos'); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
+  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === rec.delegado);
+  if (per) per.equipoId = rec.id;
+  await saveCols(per ? ['equipos','personal'] : ['equipos']); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
 }
 
 async function eliminarEquipo(id) {
@@ -4536,7 +4538,9 @@ async function guardarEscuela() {
   } else {
     DB.escuelas.push(rec);
   }
-  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
+  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === rec.responsable);
+  if (per) per.escuelaId = rec.id;
+  await saveCols(per ? ['escuelas','personal'] : ['escuelas']); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
 }
 
 async function eliminarEscuela(id) {
