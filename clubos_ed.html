@@ -724,7 +724,7 @@ tbody td.center{text-align:center;}
                  style="padding:8px 12px;border:1px solid var(--gris-linea);border-radius:8px;font-size:13px;width:200px;">
           <div id="sugerenciasEquipo" style="display:none;position:absolute;top:100%;left:0;width:300px;max-height:220px;overflow-y:auto;background:white;border:1px solid var(--gris-linea);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:9999;margin-top:2px;"></div>
         </div>
-        <button class="btn btn-outline" id="btnExportarDelegados" onclick="exportarDelegadosPDF()" style="display:none">📄 Exportar delegados</button>
+        <button class="btn btn-outline" id="btnExportarDelegados" onclick="exportarDelegadosPDF()" style="display:none">📄 Exportar entrenadores</button>
         <button class="btn btn-rojo" id="btnNuevoEquipo" onclick="abrirModalEquipo()">+ Añadir equipo</button>
       </div>
       <div id="equiposContent"></div>
@@ -964,9 +964,9 @@ tbody td.center{text-align:center;}
         </select>
       </div>
       <div class="form-field"><label>Categoría</label><input id="eqCategoria" placeholder="Alevín, Benjamín..."></div>
-      <div class="form-field"><label>Delegado</label><input id="eqDelegado" placeholder="Nombre delegado"></div>
-      <div class="form-field"><label>Email delegado</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
-      <div class="form-field"><label>Teléfono delegado</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
+      <div class="form-field"><label>Entrenador</label><input id="eqDelegado" placeholder="Nombre entrenador"></div>
+      <div class="form-field"><label>Email entrenador</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
+      <div class="form-field"><label>Teléfono entrenador</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
       <div class="form-field">
         <label>Camiseta</label>
         <div id="paletaCamiseta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;"></div>
@@ -1962,7 +1962,7 @@ function renderEquipos() {
             ${e.delegado?'👤 '+e.delegado+'<br>':''}
             ${e.emailDelegado?'✉️ <a href="mailto:'+e.emailDelegado+'" style="color:var(--gris-suave);">'+e.emailDelegado+'</a><br>':''}
             ${e.telDelegado?'📞 <a href="tel:'+e.telDelegado+'" style="color:var(--gris-suave);">'+e.telDelegado+'</a>':''}
-           </div>` : (e.delegado&&(isAdmin||isClub) ? `<div style="font-size:11px;color:var(--gris-suave);">👤 ${e.delegado}</div>` : '');
+           </div>` : (e.delegado&&(isAdmin||isClub||isArbitro) ? `<div style="font-size:11px;color:var(--gris-suave);">👤 ${e.delegado}</div>` : '');
       h += `<div class="card-equipo" data-nombre="${(e.nombre||'').toLowerCase()}">
         <div class="ceq-kit">
           <div class="ceq-camiseta" style="background:${e.eq1Camiseta||'#ccc'};"></div>
@@ -1985,7 +1985,7 @@ function renderEquipos() {
         <th>Equipo</th><th>Equipación</th><th>Categoría</th>
         ${isAdmin?'<th>Club</th>':''}
         <th>Jugadores</th>
-        ${(isAdmin||isClub)?'<th>Delegado</th>':''}
+        ${(isAdmin||isClub||isArbitro)?'<th>Entrenador</th>':''}
         <th>Acciones</th>
       </tr></thead><tbody>`;
     equipos.forEach(e => {
@@ -2001,7 +2001,7 @@ function renderEquipos() {
         <td>${e.categoria||'—'}</td>
         ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${nombreClub(e.clubId)||'—'}</td>`:''}
         <td>${nJug}</td>
-        ${(isAdmin||isClub)?delCell:''}
+        ${(isAdmin||isClub||isArbitro)?delCell:''}
         <td>
           <button class="btn btn-outline btn-sm" onclick="abrirFichaEquipo('${e.id}')">📋</button>
           ${(isAdmin||isClub)?`<button class="btn btn-outline btn-sm" onclick="editarEquipo('${e.id}')">✏️</button>`:''}
@@ -2162,7 +2162,7 @@ function exportarDelegadosPDF() {
         <thead>
           <tr style="background:#f5f5f3;">
             <th style="padding:7px 10px;border:1px solid #ddd;text-align:left;">Equipo</th>
-            <th style="padding:7px 10px;border:1px solid #ddd;text-align:left;">Delegado</th>
+            <th style="padding:7px 10px;border:1px solid #ddd;text-align:left;">Entrenador</th>
             <th style="padding:7px 10px;border:1px solid #ddd;text-align:left;">Email</th>
             <th style="padding:7px 10px;border:1px solid #ddd;text-align:left;">Teléfono</th>
           </tr>
@@ -2180,7 +2180,7 @@ function exportarDelegadosPDF() {
 
   const ventana = window.open('','_blank');
   ventana.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <title>Delegados · ClubOS ED</title>
+    <title>Entrenadores · ClubOS ED</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#222;}
       h1{font-size:20px;margin-bottom:4px;color:#111;}
@@ -2188,7 +2188,7 @@ function exportarDelegadosPDF() {
       @media print{body{padding:16px;}}
     </style>
   </head><body>
-    <h1>📋 Directorio de Delegados · ClubOS ED</h1>
+    <h1>📋 Directorio de Entrenadores · ClubOS ED</h1>
     <div class="sub">Generado el ${new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})}</div>
     ${filas}
     <script>window.onload=function(){window.print();}<\/script>
@@ -4529,6 +4529,8 @@ async function guardarEscuela() {
 async function eliminarEscuela(id) {
   if (!confirm('¿Eliminar esta escuela? Los jugadores asignados perderán la vinculación.')) return;
   DB.escuelas = (DB.escuelas||[]).filter(x=>x.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
   // Desvincular jugadores
   (DB.jugadores||[]).forEach(j=>{ if(j.escuelaId===id) j.escuelaId=''; });
   await saveCols(['escuelas','jugadores']); renderEscuelas(); toast('Escuela eliminada');
@@ -4639,6 +4641,8 @@ async function guardarPersonal() {
 async function eliminarPersonal(id) {
   if (!confirm('¿Eliminar este miembro del personal?')) return;
   DB.personal = (DB.personal||[]).filter(x=>x.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
   await saveCol('personal'); renderPersonal(); toast('Personal eliminado');
 }
 
