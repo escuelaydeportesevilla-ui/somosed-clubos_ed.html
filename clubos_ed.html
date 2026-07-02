@@ -964,7 +964,7 @@ tbody td.center{text-align:center;}
         </select>
       </div>
       <div class="form-field"><label>Categoría</label><input id="eqCategoria" placeholder="Alevín, Benjamín..."></div>
-      <div class="form-field"><label>Delegado</label><select id="eqDelegado" onchange="_syncDelegadoContacto()"></select></div>
+      <div class="form-field"><label>Delegado</label><select id="eqDelegado"></select></div>
       <div class="form-field"><label>Email delegado</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
       <div class="form-field"><label>Teléfono delegado</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
       <div class="form-field">
@@ -2231,15 +2231,6 @@ function seleccionarEquipoBuscador(id) {
   editarEquipo(id);
 }
 
-function _syncDelegadoContacto() {
-  const nombre = document.getElementById('eqDelegado').value;
-  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === nombre);
-  if (per) {
-    document.getElementById('eqEmailDelegado').value = per.email    || '';
-    document.getElementById('eqTelDelegado').value    = per.telefono || '';
-  }
-}
-
 function _rellenarSelectPersonalNombre(selectId, valorActual) {
   const isAdmin = sesion.rol === 'admin';
   const activos = (DB.personal||[]).filter(p => p.activo !== false && (isAdmin || p.clubId===sesion.user));
@@ -2322,9 +2313,7 @@ async function guardarEquipo() {
   const idx = DB.equipos.findIndex(e=>e.id===editEquipoId);
   if (idx>=0) DB.equipos[idx]=rec; else DB.equipos.push(rec);
   editEquipoId = null;
-  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === rec.delegado);
-  if (per) per.equipoId = rec.id;
-  await saveCols(per ? ['equipos','personal'] : ['equipos']); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
+  await saveCol('equipos'); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
 }
 
 async function eliminarEquipo(id) {
@@ -4547,9 +4536,7 @@ async function guardarEscuela() {
   } else {
     DB.escuelas.push(rec);
   }
-  const per = (DB.personal||[]).find(x => (x.nombre+' '+(x.apellidos||'')).trim() === rec.responsable);
-  if (per) per.escuelaId = rec.id;
-  await saveCols(per ? ['escuelas','personal'] : ['escuelas']); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
+  await saveCol('escuelas'); cerrarModal('modalEscuela'); toast(editId?'Escuela actualizada':'Escuela añadida'); renderEscuelas();
 }
 
 async function eliminarEscuela(id) {
