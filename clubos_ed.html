@@ -4567,7 +4567,7 @@ function renderPersonal() {
       <div style="margin-top:10px;font-size:13px;color:var(--gris-suave);">
         ${p.telefono ? '📞 '+p.telefono+' &nbsp; ' : ''}${p.email ? '✉️ '+p.email : ''}
       </div>
-      ${(isAdmin||isClub) ? `
+      ${isAdmin ? `
       <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="editarPersonal('${p.id}')">✏️ Editar</button>
         <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarPersonal('${p.id}')">🗑️ Eliminar</button>
