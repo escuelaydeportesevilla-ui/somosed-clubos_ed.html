@@ -866,7 +866,7 @@ tbody td.center{text-align:center;}
     <div class="form-grid">
       <div class="form-field form-full"><label>Nombre de la escuela *</label><input id="escNombre" placeholder="Escuela de Baloncesto"></div>
       <div class="form-field"><label>Deporte</label><input id="escDeporte" placeholder="Fútbol, Baloncesto, Pádel…"></div>
-      <div class="form-field"><label>Responsable / Monitor</label><input id="escResponsable" placeholder="Nombre del monitor"></div>
+      <div class="form-field"><label>Responsable / Monitor</label><select id="escResponsable"></select></div>
     </div>
     <div style="display:flex;gap:16px;margin-top:12px;padding:12px;background:#f9f9f7;border-radius:10px;">
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
@@ -964,7 +964,7 @@ tbody td.center{text-align:center;}
         </select>
       </div>
       <div class="form-field"><label>Categoría</label><input id="eqCategoria" placeholder="Alevín, Benjamín..."></div>
-      <div class="form-field"><label>Delegado</label><input id="eqDelegado" placeholder="Nombre delegado"></div>
+      <div class="form-field"><label>Delegado</label><select id="eqDelegado"></select></div>
       <div class="form-field"><label>Email delegado</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
       <div class="form-field"><label>Teléfono delegado</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
       <div class="form-field">
@@ -2231,12 +2231,24 @@ function seleccionarEquipoBuscador(id) {
   editarEquipo(id);
 }
 
+function _rellenarSelectPersonalNombre(selectId, valorActual) {
+  const isAdmin = sesion.rol === 'admin';
+  const activos = (DB.personal||[]).filter(p => p.activo !== false && (isAdmin || p.clubId===sesion.user));
+  const nombres = activos.map(p => (p.nombre + ' ' + (p.apellidos||'')).trim());
+  let opciones = '<option value="">— Sin asignar —</option>' +
+    nombres.map(n => `<option value="${n}"${n===valorActual?' selected':''}>${n}</option>`).join('');
+  if (valorActual && !nombres.includes(valorActual)) {
+    opciones += `<option value="${valorActual}" selected>${valorActual} (no está en Personal)</option>`;
+  }
+  document.getElementById(selectId).innerHTML = opciones;
+}
+
 function abrirModalEquipo() {
   editEquipoId = null;
   document.getElementById('modalEquipoTitle').textContent = 'Nuevo equipo';
   document.getElementById('eqNombre').value    = '';
   document.getElementById('eqCategoria').value = '';
-  document.getElementById('eqDelegado').value  = '';
+  _rellenarSelectPersonalNombre('eqDelegado', '');
   document.getElementById('eqEmailDelegado').value = '';
   document.getElementById('eqTelDelegado').value   = '';
   document.getElementById('eq1CamisetaColor').value  = '#C8102E';
@@ -2258,7 +2270,7 @@ function editarEquipo(id) {
   document.getElementById('modalEquipoTitle').textContent = 'Editar equipo';
   document.getElementById('eqNombre').value    = e.nombre    ||'';
   document.getElementById('eqCategoria').value = e.categoria ||'';
-  document.getElementById('eqDelegado').value  = e.delegado  ||'';
+  _rellenarSelectPersonalNombre('eqDelegado', e.delegado||'');
   document.getElementById('eqEmailDelegado').value = e.emailDelegado||'';
   document.getElementById('eqTelDelegado').value   = e.telDelegado  ||'';
   document.getElementById('eq1CamisetaColor').value  = e.eq1Camiseta ||'#C8102E';
@@ -4486,7 +4498,8 @@ function renderEscuelas() {
 }
 
 function abrirModalEscuela() {
-  ['escNombre','escDeporte','escResponsable'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['escNombre','escDeporte'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  _rellenarSelectPersonalNombre('escResponsable', '');
   document.getElementById('escActiva').checked = true;
   document.getElementById('escEditId').value = '';
   const t = document.getElementById('modalEscuelaTitle'); if(t) t.textContent = 'Nueva escuela deportiva';
@@ -4497,7 +4510,7 @@ function editarEscuela(id) {
   const e = (DB.escuelas||[]).find(x=>x.id===id); if(!e) return;
   document.getElementById('escNombre').value      = e.nombre      ||'';
   document.getElementById('escDeporte').value     = e.deporte     ||'';
-  document.getElementById('escResponsable').value = e.responsable ||'';
+  _rellenarSelectPersonalNombre('escResponsable', e.responsable||'');
   document.getElementById('escActiva').checked    = e.activa !== false;
   document.getElementById('escEditId').value      = e.id;
   const t = document.getElementById('modalEscuelaTitle'); if(t) t.textContent = 'Editar escuela';
