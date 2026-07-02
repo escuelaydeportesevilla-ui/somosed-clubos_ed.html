@@ -1468,7 +1468,7 @@ function pedirSyncAntesDeLogout() {
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
   admin:    ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','escuelas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  club:     ['competicion','equipos','jugadores','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
@@ -1500,7 +1500,7 @@ function buildNav() {
   const btnNuevoEquipo = document.getElementById('btnNuevoEquipo');
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEscuela = document.getElementById('btnNuevaEscuela');
-  if (btnNuevaEscuela) btnNuevaEscuela.style.display = (esAdmin || esClub) ? '' : 'none';
+  if (btnNuevaEscuela) btnNuevaEscuela.style.display = esAdmin ? '' : 'none';
   const btnNuevoPersonal = document.getElementById('btnNuevoPersonal');
   if (btnNuevoPersonal) btnNuevoPersonal.style.display = esAdmin ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
@@ -4476,7 +4476,7 @@ function renderEscuelas() {
       <div style="margin-top:10px;display:flex;gap:16px;font-size:13px;">
         <span>👥 <strong>${nAlumnos}</strong> alumno${nAlumnos!==1?'s':''}</span>
       </div>
-      ${(isAdmin||isClub) ? `
+      ${isAdmin ? `
       <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="editarEscuela('${e.id}')">✏️ Editar</button>
         <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEscuela('${e.id}')">🗑️ Eliminar</button>
