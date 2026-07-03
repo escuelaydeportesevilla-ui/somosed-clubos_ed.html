@@ -828,7 +828,6 @@ tbody td.center{text-align:center;}
     <div class="tab-panel" id="panel-evaluaciones">
       <div class="section-header">
         <h2>📝 Evaluaciones</h2><div class="section-line"></div>
-        <button class="btn btn-outline" onclick="exportarEvaluacionesPDF()">📄 Exportar</button>
         <button class="btn btn-rojo" id="btnNuevaEvaluacion" onclick="abrirModalEvaluacion()">+ Nueva evaluación</button>
       </div>
       <div id="evaluacionesContent"></div>
@@ -1528,6 +1527,13 @@ function puedeEvaluar() {
   if (sesion.rol !== 'club') return false;
   const c = (DB.clubes||[]).find(x=>x.user===sesion.user);
   return !!(c && c.puedeEvaluar === true);
+}
+
+// Para un clubId dado (dueño de un jugador): ¿tiene datos sensibles habilitados?
+// Sin ficha de club (ej. jugadores propios de admin) = acceso completo por defecto.
+function clubTienePermisoEvaluar(clubId) {
+  const c = (DB.clubes||[]).find(x=>x.user===clubId);
+  return c ? c.puedeEvaluar === true : true;
 }
 
 function getDefaultTab() {
@@ -2880,8 +2886,8 @@ function editarJugador(id) {
   document.getElementById('jActivo').checked    = j.activo !== false;
   document.getElementById('jConvocado').checked = !!j.convocado;
 
-  // Secciones y campos privados: solo admin y club
-  const verPrivado = isAdmin || isClub;
+  // Secciones y campos privados: club siempre; admin solo si el club del jugador tiene permiso
+  const verPrivado = isClub || (isAdmin && clubTienePermisoEvaluar(j.clubId));
   ['seccionDatosPersonales','seccionTutor','seccionMedica'].forEach(sid=>{
     const el = document.getElementById(sid); if(el) el.style.display = verPrivado ? '' : 'none';
   });
@@ -2998,7 +3004,8 @@ async function guardarJugador() {
   const jugadorExistente = editId ? (DB.jugadores||[]).find(x=>x.id===editId) : null;
   const isAdmin = sesion.rol === 'admin';
   const isClub  = sesion.rol === 'club';
-  const verPrivado = isAdmin || isClub;
+  const clubIdOriginal = jugadorExistente ? jugadorExistente.clubId : sesion.user;
+  const verPrivado = isClub || (isAdmin && clubTienePermisoEvaluar(clubIdOriginal));
 
   const j = {
     id:        editId || uid(),
@@ -4726,24 +4733,36 @@ function renderEvaluaciones() {
     return;
   }
 
-  el.innerHTML = `<div class="cards-escuelas">` + lista.map(ev => {
-    const j = (DB.jugadores||[]).find(x=>x.id===ev.jugadorId);
+  // Agrupar por jugador
+  const porJugador = {};
+  lista.forEach(ev => {
+    if (!porJugador[ev.jugadorId]) porJugador[ev.jugadorId] = [];
+    porJugador[ev.jugadorId].push(ev);
+  });
+
+  el.innerHTML = Object.entries(porJugador).map(([jugadorId, evs]) => {
+    const j = (DB.jugadores||[]).find(x=>x.id===jugadorId);
     const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
-    return `
-    <div class="card-equipo" style="border-top:4px solid #2E4057;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div>
-          <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">📝 ${nombreJ}</div>
+    const tarjetas = evs.map(ev => `
+      <div class="card-equipo" style="border-top:4px solid #2E4057;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="font-size:12px;color:var(--gris-suave);">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
         </div>
+        ${ev.observacionesParaFamilia ? `<div style="margin-top:10px;font-size:13px;color:var(--gris-suave);">💬 ${ev.observacionesParaFamilia}</div>` : ''}
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+          <button class="btn btn-outline btn-sm" onclick="editarEvaluacion('${ev.id}')">✏️ Editar</button>
+          <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEvaluacion('${ev.id}')">🗑️ Eliminar</button>
+        </div>
+      </div>`).join('');
+    return `
+    <div style="margin-bottom:22px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div style="font-weight:800;font-size:1rem;">📝 ${nombreJ}</div>
+        <button class="btn btn-outline btn-sm" onclick="exportarFichaJugadorPDF('${jugadorId}')">📄 Exportar</button>
       </div>
-      ${ev.observacionesParaFamilia ? `<div style="margin-top:10px;font-size:13px;color:var(--gris-suave);">💬 ${ev.observacionesParaFamilia}</div>` : ''}
-      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
-        <button class="btn btn-outline btn-sm" onclick="editarEvaluacion('${ev.id}')">✏️ Editar</button>
-        <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEvaluacion('${ev.id}')">🗑️ Eliminar</button>
-      </div>
+      <div class="cards-escuelas">${tarjetas}</div>
     </div>`;
-  }).join('') + `</div>`;
+  }).join('');
 }
 
 function _rellenarSelectJugadorEval(jugadorIdSel) {
@@ -4813,20 +4832,20 @@ async function eliminarEvaluacion(id) {
   await saveCol('evaluaciones'); renderEvaluaciones(); toast('Evaluación eliminada');
 }
 
-function exportarEvaluacionesPDF() {
+function exportarFichaJugadorPDF(jugadorId) {
   if (!puedeEvaluar()) { toast('No tienes permiso para exportar evaluaciones'); return; }
   const misJugadoresIds = new Set(_misJugadoresEval().map(j=>j.id));
-  const lista = (DB.evaluaciones||[]).filter(ev=>misJugadoresIds.has(ev.jugadorId))
+  if (!misJugadoresIds.has(jugadorId)) { toast('No tienes acceso a este jugador'); return; }
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId);
+  const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
+  const lista = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===jugadorId)
     .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
-  if (!lista.length) { toast('No hay evaluaciones para exportar'); return; }
+  if (!lista.length) { toast('Este jugador no tiene evaluaciones'); return; }
 
-  const fichas = lista.map(ev => {
-    const j = (DB.jugadores||[]).find(x=>x.id===ev.jugadorId);
-    const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
-    return `
+  const fichas = lista.map(ev => `
     <div style="margin-bottom:28px;page-break-inside:avoid;border:1px solid #ddd;border-radius:6px;overflow:hidden;">
       <div style="background:#C8102E;color:white;padding:8px 14px;font-weight:700;font-size:14px;">
-        ${nombreJ} · ${ev.fecha||'—'}
+        ${ev.fecha||'—'}
       </div>
       <div style="padding:14px;font-size:13px;line-height:1.5;">
         <div><strong>Evaluador:</strong> ${ev.evaluador||'—'}</div>
@@ -4836,12 +4855,11 @@ function exportarEvaluacionesPDF() {
         <div style="margin-top:8px;"><strong>Actitud:</strong> ${ev.actitud||'—'}</div>
         <div style="margin-top:8px;padding:8px;background:#f5f5f3;border-radius:4px;"><strong>Observaciones para la familia:</strong> ${ev.observacionesParaFamilia||'—'}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 
   const ventana = window.open('','_blank');
   ventana.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
-    <title>Evaluaciones · ClubOS ED</title>
+    <title>Evaluación · ${nombreJ} · ClubOS ED</title>
     <style>
       body{font-family:Arial,sans-serif;padding:32px;color:#222;}
       h1{font-size:20px;margin-bottom:4px;color:#111;}
@@ -4849,7 +4867,7 @@ function exportarEvaluacionesPDF() {
       @media print{body{padding:16px;}}
     </style>
   </head><body>
-    <h1>📝 Evaluaciones de jugadores · ClubOS ED</h1>
+    <h1>📝 Ficha de evaluación · ${nombreJ}</h1>
     <div class="sub">Generado el ${new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})}</div>
     ${fichas}
     <script>window.onload=function(){window.print();}<\/script>
