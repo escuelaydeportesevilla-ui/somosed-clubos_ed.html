@@ -1384,7 +1384,7 @@ async function saveCols(cols) {
   await Promise.all(cols.map(c => syncColeccion(c)));
   setSyncStatus('ok');
 }
-function uid() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,7); }
+function uid() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,7) + Math.random().toString(36).slice(2,7); }
 
 // ══════════════════════════════════════════════════════
 //  LOGIN / SESIÓN
@@ -2017,7 +2017,7 @@ function renderEquipos() {
     let h = `<div class="cards-equipos">`;
     equipos.forEach(e => {
       const nJug = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
-      const contacto = (isAdmin||isClub) && (e.emailDelegado||e.telDelegado)
+      const contacto = (isAdmin||isClub||isArbitro) && (e.emailDelegado||e.telDelegado)
         ? `<div style="font-size:11px;color:var(--gris-suave);margin-top:2px;">
             ${e.delegado?'👤 '+e.delegado+'<br>':''}
             ${e.emailDelegado?'✉️ <a href="mailto:'+e.emailDelegado+'" style="color:var(--gris-suave);">'+e.emailDelegado+'</a><br>':''}
@@ -4376,7 +4376,7 @@ console.log('Familias: acceso directo (sin contraseña)');
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
         const pwdEnc = encodeURIComponent(pwd);
-        await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&ids=' + encodeURIComponent(JSON.stringify(ids)), { mode: 'no-cors' });
+        await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&col=' + encodeURIComponent(col) + '&ids=' + encodeURIComponent(JSON.stringify(ids)), { mode: 'no-cors' });
       }
 
       _pendienteSync = false;
@@ -4496,6 +4496,8 @@ console.log('Familias: acceso directo (sin contraseña)');
         const ids = Object.keys(DB._deleted);
         const url = SCRIPT_URL + '?action=deleteIds' + '&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(ids));
         await fetch(url, {mode:'no-cors'});
+        ids.forEach(id => delete DB._deleted[id]);
+        localStorage.setItem('clubos_ed', JSON.stringify(DB));
       }
       _pendienteSync = false;
       setSyncStatus('ok');
