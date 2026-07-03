@@ -824,6 +824,16 @@ tbody td.center{text-align:center;}
       <div id="personalContent"></div>
     </div>
 
+    <!-- ══ PANEL: EVALUACIONES ══ -->
+    <div class="tab-panel" id="panel-evaluaciones">
+      <div class="section-header">
+        <h2>📝 Evaluaciones</h2><div class="section-line"></div>
+        <button class="btn btn-outline" onclick="exportarEvaluacionesPDF()">📄 Exportar</button>
+        <button class="btn btn-rojo" id="btnNuevaEvaluacion" onclick="abrirModalEvaluacion()">+ Nueva evaluación</button>
+      </div>
+      <div id="evaluacionesContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-rojo" onclick="abrirModalClub()">+ Nuevo club</button>
@@ -848,6 +858,7 @@ tbody td.center{text-align:center;}
       <div class="form-field form-full"><label>Email de contacto</label><input id="cEmail" type="email" placeholder="contacto@club.com"></div>
       <div class="form-field form-full"><label>Teléfono de contacto</label><input id="cTel" placeholder="600 000 000"></div>
       <div class="form-field form-full"><label>Notas internas</label><textarea id="cNotas" rows="2" placeholder="Observaciones sobre el club..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="cPuedeEvaluar" style="width:auto;"> Puede crear evaluaciones de jugadores</label></div>
     </div>
     <input type="hidden" id="cEditId">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
@@ -915,6 +926,38 @@ tbody td.center{text-align:center;}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalPersonal')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarPersonal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalEvaluacion">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <h3 id="modalEvaluacionTitle">Nueva evaluación</h3>
+      <button class="modal-close" onclick="cerrarModal('modalEvaluacion')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field form-full"><label>Jugador *</label><select id="evJugador"></select></div>
+      <div class="form-field"><label>Fecha</label><input type="date" id="evFecha"></div>
+      <div class="form-field"><label>Evaluador</label><input id="evEvaluador" placeholder="Nombre del entrenador"></div>
+      <div class="form-field form-full"><label>Aspectos técnicos</label><textarea id="evTecnicos" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full"><label>Aspectos físicos</label><textarea id="evFisicos" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full"><label>Actitud</label><textarea id="evActitud" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+      <div class="form-field"><label>Valoración general</label>
+        <select id="evValoracion">
+          <option value="Excelente">⭐⭐⭐⭐⭐ Excelente</option>
+          <option value="Muy buena">⭐⭐⭐⭐ Muy buena</option>
+          <option value="Buena" selected>⭐⭐⭐ Buena</option>
+          <option value="Mejorable">⭐⭐ Mejorable</option>
+          <option value="Necesita refuerzo">⭐ Necesita refuerzo</option>
+        </select>
+      </div>
+      <div class="form-field form-full"><label>Observaciones para la familia</label><textarea id="evObsFamilia" rows="3" placeholder="Este texto es el que se compartirá con la familia..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
+    </div>
+    <input type="hidden" id="evEditId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalEvaluacion')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarEvaluacion()">Guardar</button>
     </div>
   </div>
 </div>
@@ -1467,24 +1510,33 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
+
+// Admin: siempre. Club: solo si su ficha tiene puedeEvaluar=true.
+function puedeEvaluar() {
+  if (sesion.rol === 'admin') return true;
+  if (sesion.rol !== 'club') return false;
+  const c = (DB.clubes||[]).find(x=>x.user===sesion.user);
+  return !!(c && c.puedeEvaluar === true);
+}
 
 function getDefaultTab() {
   return TABS_POR_ROL[sesion.rol]?.[0] || 'competicion';
 }
 
 function buildNav() {
-  const tabs = TABS_POR_ROL[sesion.rol] || [];
+  let tabs = TABS_POR_ROL[sesion.rol] || [];
+  if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones');
   const nav = document.getElementById('navBar');
   nav.innerHTML = tabs.map(t =>
     `<button class="nav-btn" data-tab="${t}" onclick="activarTab('${t}')">${TAB_LABELS[t]}</button>`
@@ -1505,6 +1557,8 @@ function buildNav() {
   if (btnNuevoPersonal) btnNuevoPersonal.style.display = esAdmin ? '' : 'none';
   const btnExp = document.getElementById('btnExportarDelegados');
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
+  const btnNuevaEval = document.getElementById('btnNuevaEvaluacion');
+  if (btnNuevaEval) btnNuevaEval.style.display = puedeEvaluar() ? '' : 'none';
 }
 
 function activarTab(tab) {
@@ -1529,7 +1583,7 @@ function renderTab(tab) {
     goleadores: renderGoleadores, actas: renderActas,
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
-    escuelas: renderEscuelas, personal: renderPersonal
+    escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones
   };
   if (fn[tab]) fn[tab]();
 }
@@ -4367,6 +4421,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.clubes?.length)        DB.clubes        = merge(DB.clubes,        d.clubes);
         if (d.escuelas?.length)      DB.escuelas      = merge(DB.escuelas,      d.escuelas);
         if (d.personal?.length)      DB.personal      = merge(DB.personal,      d.personal);
+        if (d.evaluaciones?.length)  DB.evaluaciones  = merge(DB.evaluaciones,  d.evaluaciones);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4397,6 +4452,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.clubes         = d.clubes         || DB.clubes || [];
         DB.escuelas       = d.escuelas       || [];
         DB.personal       = d.personal       || [];
+        DB.evaluaciones   = d.evaluaciones   || [];
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -4415,7 +4471,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','personal'];
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','personal','evaluaciones'];
       await Promise.all(cols.map(col => {
         const items = DB[col];
         if (!items || !items.length) return Promise.resolve();
@@ -4646,6 +4702,161 @@ async function eliminarPersonal(id) {
   await saveCol('personal'); renderPersonal(); toast('Personal eliminado');
 }
 
+// ══════════════════════════════════════════════════════
+//  EVALUACIONES
+// ══════════════════════════════════════════════════════
+function _misJugadoresEval() {
+  const isAdmin = sesion.rol === 'admin';
+  return isAdmin ? (DB.jugadores||[]) : (DB.jugadores||[]).filter(j=>j.clubId===sesion.user);
+}
+
+function renderEvaluaciones() {
+  const el = document.getElementById('evaluacionesContent');
+  if (!el) return;
+  if (!puedeEvaluar()) {
+    el.innerHTML = '<div class="empty-state"><div class="ei">🔒</div><p>Este club no tiene activado el módulo de evaluaciones.</p></div>';
+    return;
+  }
+  const misJugadoresIds = new Set(_misJugadoresEval().map(j=>j.id));
+  const lista = (DB.evaluaciones||[]).filter(ev=>misJugadoresIds.has(ev.jugadorId))
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state"><div class="ei">📝</div><p>No hay evaluaciones registradas.</p></div>';
+    return;
+  }
+
+  el.innerHTML = `<div class="cards-escuelas">` + lista.map(ev => {
+    const j = (DB.jugadores||[]).find(x=>x.id===ev.jugadorId);
+    const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
+    return `
+    <div class="card-equipo" style="border-top:4px solid #2E4057;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">📝 ${nombreJ}</div>
+          <div style="font-size:12px;color:var(--gris-suave);">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
+        </div>
+      </div>
+      ${ev.observacionesParaFamilia ? `<div style="margin-top:10px;font-size:13px;color:var(--gris-suave);">💬 ${ev.observacionesParaFamilia}</div>` : ''}
+      <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="editarEvaluacion('${ev.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEvaluacion('${ev.id}')">🗑️ Eliminar</button>
+      </div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function _rellenarSelectJugadorEval(jugadorIdSel) {
+  const sel = document.getElementById('evJugador');
+  const jugadores = _misJugadoresEval();
+  sel.innerHTML = '<option value="">— Seleccionar jugador —</option>' +
+    jugadores.map(j=>`<option value="${j.id}"${j.id===jugadorIdSel?' selected':''}>${j.nombre} ${j.apellidos||''}</option>`).join('');
+}
+
+function abrirModalEvaluacion() {
+  if (!puedeEvaluar()) { toast('No tienes permiso para crear evaluaciones'); return; }
+  _rellenarSelectJugadorEval('');
+  document.getElementById('evFecha').value = new Date().toISOString().slice(0,10);
+  document.getElementById('evEvaluador').value = sesion.nombre || '';
+  ['evTecnicos','evFisicos','evActitud','evObsFamilia'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('evValoracion').value = 'Buena';
+  document.getElementById('evEditId').value = '';
+  const t = document.getElementById('modalEvaluacionTitle'); if(t) t.textContent = 'Nueva evaluación';
+  abrirModal('modalEvaluacion');
+}
+
+function editarEvaluacion(id) {
+  const ev = (DB.evaluaciones||[]).find(x=>x.id===id); if(!ev) return;
+  _rellenarSelectJugadorEval(ev.jugadorId||'');
+  document.getElementById('evFecha').value       = ev.fecha       ||'';
+  document.getElementById('evEvaluador').value   = ev.evaluador   ||'';
+  document.getElementById('evTecnicos').value    = ev.aspectosTecnicos ||'';
+  document.getElementById('evFisicos').value     = ev.aspectosFisicos ||'';
+  document.getElementById('evActitud').value     = ev.actitud     ||'';
+  document.getElementById('evValoracion').value  = ev.valoracionGeneral ||'Buena';
+  document.getElementById('evObsFamilia').value  = ev.observacionesParaFamilia ||'';
+  document.getElementById('evEditId').value      = ev.id;
+  const t = document.getElementById('modalEvaluacionTitle'); if(t) t.textContent = 'Editar evaluación';
+  abrirModal('modalEvaluacion');
+}
+
+async function guardarEvaluacion() {
+  const editId = document.getElementById('evEditId').value;
+  const jugadorId = document.getElementById('evJugador').value;
+  if (!jugadorId) { toast('Selecciona un jugador'); return; }
+  const rec = {
+    id:                       editId || uid(),
+    jugadorId,
+    fecha:                    document.getElementById('evFecha').value,
+    evaluador:                document.getElementById('evEvaluador').value.trim(),
+    aspectosTecnicos:         document.getElementById('evTecnicos').value.trim(),
+    aspectosFisicos:          document.getElementById('evFisicos').value.trim(),
+    actitud:                  document.getElementById('evActitud').value.trim(),
+    valoracionGeneral:        document.getElementById('evValoracion').value,
+    observacionesParaFamilia: document.getElementById('evObsFamilia').value.trim(),
+  };
+  if (!DB.evaluaciones) DB.evaluaciones = [];
+  if (editId) {
+    const idx = DB.evaluaciones.findIndex(x=>x.id===editId);
+    if (idx>=0) DB.evaluaciones[idx]=rec; else DB.evaluaciones.push(rec);
+  } else {
+    DB.evaluaciones.push(rec);
+  }
+  await saveCol('evaluaciones'); cerrarModal('modalEvaluacion'); toast(editId?'Evaluación actualizada':'Evaluación creada'); renderEvaluaciones();
+}
+
+async function eliminarEvaluacion(id) {
+  if (!confirm('¿Eliminar esta evaluación?')) return;
+  DB.evaluaciones = (DB.evaluaciones||[]).filter(x=>x.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
+  await saveCol('evaluaciones'); renderEvaluaciones(); toast('Evaluación eliminada');
+}
+
+function exportarEvaluacionesPDF() {
+  if (!puedeEvaluar()) { toast('No tienes permiso para exportar evaluaciones'); return; }
+  const misJugadoresIds = new Set(_misJugadoresEval().map(j=>j.id));
+  const lista = (DB.evaluaciones||[]).filter(ev=>misJugadoresIds.has(ev.jugadorId))
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  if (!lista.length) { toast('No hay evaluaciones para exportar'); return; }
+
+  const fichas = lista.map(ev => {
+    const j = (DB.jugadores||[]).find(x=>x.id===ev.jugadorId);
+    const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
+    return `
+    <div style="margin-bottom:28px;page-break-inside:avoid;border:1px solid #ddd;border-radius:6px;overflow:hidden;">
+      <div style="background:#C8102E;color:white;padding:8px 14px;font-weight:700;font-size:14px;">
+        ${nombreJ} · ${ev.fecha||'—'}
+      </div>
+      <div style="padding:14px;font-size:13px;line-height:1.5;">
+        <div><strong>Evaluador:</strong> ${ev.evaluador||'—'}</div>
+        <div><strong>Valoración general:</strong> ${ev.valoracionGeneral||'—'}</div>
+        <div style="margin-top:8px;"><strong>Aspectos técnicos:</strong> ${ev.aspectosTecnicos||'—'}</div>
+        <div style="margin-top:8px;"><strong>Aspectos físicos:</strong> ${ev.aspectosFisicos||'—'}</div>
+        <div style="margin-top:8px;"><strong>Actitud:</strong> ${ev.actitud||'—'}</div>
+        <div style="margin-top:8px;padding:8px;background:#f5f5f3;border-radius:4px;"><strong>Observaciones para la familia:</strong> ${ev.observacionesParaFamilia||'—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const ventana = window.open('','_blank');
+  ventana.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    <title>Evaluaciones · ClubOS ED</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:32px;color:#222;}
+      h1{font-size:20px;margin-bottom:4px;color:#111;}
+      .sub{font-size:12px;color:#888;margin-bottom:28px;}
+      @media print{body{padding:16px;}}
+    </style>
+  </head><body>
+    <h1>📝 Evaluaciones de jugadores · ClubOS ED</h1>
+    <div class="sub">Generado el ${new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})}</div>
+    ${fichas}
+    <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  ventana.document.close();
+}
+
 function renderClubes() {
   const el = document.getElementById('clubesContent'); if (!el) return;
   if (sesion.rol !== 'admin') { el.innerHTML = ''; return; }
@@ -4703,6 +4914,7 @@ function abrirModalClub() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('cEditId').value = '';
+  document.getElementById('cPuedeEvaluar').checked = false;
   abrirModal('modalClub');
 }
 
@@ -4715,6 +4927,7 @@ function editarClub(id) {
   document.getElementById('cEmail').value  = c.email  || '';
   document.getElementById('cTel').value    = c.tel    || '';
   document.getElementById('cNotas').value  = c.observaciones  || '';
+  document.getElementById('cPuedeEvaluar').checked = c.puedeEvaluar === true;
   document.getElementById('cEditId').value = c.id;
   abrirModal('modalClub');
 }
@@ -4736,6 +4949,7 @@ async function guardarClub() {
     email:  document.getElementById('cEmail').value.trim(),
     tel:    document.getElementById('cTel').value.trim(),
     observaciones:  document.getElementById('cNotas').value.trim(),
+    puedeEvaluar:   document.getElementById('cPuedeEvaluar').checked,
   };
   if (!DB.clubes) DB.clubes = [];
   if (editId) {
