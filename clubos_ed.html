@@ -1291,6 +1291,7 @@ tbody td.center{text-align:center;}
     </div>
 
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" id="btnExportarFichaJug" style="display:none;margin-right:auto;" onclick="exportarFichaCompletaJugador()">📄 Exportar ficha</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalJugador')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarJugador()">Guardar jugador</button>
     </div>
@@ -2162,7 +2163,7 @@ function exportarEquiposPDF(soloCompId) {
   w.print();
 }
 
-const PALETA_COLORES = ['#C8102E','#1A56A0','#1A7A3C','#D4A017','#111111','#FFFFFF','#6E2C00','#4A235A'];
+const PALETA_COLORES = ['#C8102E','#1A56A0','#1A7A3C','#D4A017','#111111','#FFFFFF','#6E2C00','#4A235A','#F58220','#EC407A','#00838F','#8D9440','#607D8B','#C0C0C0'];
 
 function renderPaletaColor(containerId, inputId, colorActual) {
   const cont = document.getElementById(containerId);
@@ -2758,6 +2759,58 @@ function exportarJugadoresPDF(tipo, id) {
   w.print();
 }
 
+function exportarFichaCompletaJugador() {
+  const id = document.getElementById('jEditId').value;
+  const j = (DB.jugadores||[]).find(x=>x.id===id);
+  if (!j) { toast('Guarda el jugador antes de exportar'); return; }
+  const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+  const esc = (DB.escuelas||[]).find(e=>e.id===j.escuelaId);
+  const nombreCompleto = j.nombre + (j.apellidos?' '+j.apellidos:'');
+  const fila = (label,val) => val ? `<div style="margin-top:6px;"><strong>${label}:</strong> ${val}</div>` : '';
+
+  const w2 = window.open('', '_blank');
+  w2.document.write(`
+    <html><head><title>Ficha · ${nombreCompleto} · ClubOS ED</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:24px;color:#111;}
+      h1{font-size:20px;margin-bottom:4px;color:#111;}
+      .sub{font-size:12px;color:#888;margin-bottom:20px;}
+      h2{font-size:14px;color:#C8102E;border-bottom:2px solid #FADBD8;padding-bottom:4px;margin-top:24px;}
+    </style></head><body>
+    <h1>👤 Ficha de jugador · ${nombreCompleto}</h1>
+    <div class="sub">Generado el ${new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'})}</div>
+
+    <h2>Datos deportivos</h2>
+    ${fila('Dorsal', j.dorsal)}
+    ${fila('Posición', j.posicion)}
+    ${fila('Equipo', eq?.nombre)}
+    ${fila('Escuela', esc?.nombre)}
+    ${fila('Fecha nacimiento', j.fechaNac)}
+    ${fila('Altura', j.altura?j.altura+' cm':'')}
+    ${fila('Peso', j.peso?j.peso+' kg':'')}
+
+    <h2>Datos personales</h2>
+    ${fila('DNI', j.dni)}
+    ${fila('Nº licencia', j.nºlicencia)}
+    ${fila('Email', j.email)}
+    ${fila('Teléfono', j.telefono)}
+    ${fila('Fecha inscripción', j.fechaInscripcion)}
+
+    <h2>Tutor</h2>
+    ${fila('Nombre', j.tutorNombre)}
+    ${fila('Parentesco', j.tutorParentesco)}
+    ${fila('Teléfono', j.tutorTelefono)}
+    ${fila('Email', j.tutorEmail)}
+
+    <h2>Datos médicos</h2>
+    ${fila('Alergias', j.alergias)}
+    ${fila('Medicación', j.medicacion)}
+    ${fila('Observaciones médicas', j.observacionesMedicas)}
+    </body></html>`);
+  w2.document.close();
+  w2.print();
+}
+
 function filtrarJugadoresGlobal(texto) {
   const q = (texto||'').toLowerCase().trim();
   const el = document.getElementById('jugadoresContent');
@@ -2827,6 +2880,8 @@ function seleccionarJugadorBuscador(id) {
 function abrirModalJugador() {
   const isAdmin = sesion.rol === 'admin';
   const isClub  = sesion.rol === 'club';
+  const btnExpFicha = document.getElementById('btnExportarFichaJug');
+  if (btnExpFicha) btnExpFicha.style.display = 'none';
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
 
@@ -2888,6 +2943,8 @@ function editarJugador(id) {
 
   // Secciones y campos privados: club siempre; admin solo si el club del jugador tiene permiso
   const verPrivado = isClub || (isAdmin && clubTienePermisoEvaluar(j.clubId));
+  const btnExpFicha = document.getElementById('btnExportarFichaJug');
+  if (btnExpFicha) btnExpFicha.style.display = verPrivado ? '' : 'none';
   ['seccionDatosPersonales','seccionTutor','seccionMedica'].forEach(sid=>{
     const el = document.getElementById(sid); if(el) el.style.display = verPrivado ? '' : 'none';
   });
@@ -3665,7 +3722,10 @@ async function guardarGol() {
 }
 
 async function eliminarGol(id) {
-  DB.goleadores = DB.goleadores.filter(g=>g.id!==id); await saveCol('goleadores'); toast('Eliminado'); renderGoleadores();
+  DB.goleadores = DB.goleadores.filter(g=>g.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
+  await saveCol('goleadores'); toast('Eliminado'); renderGoleadores();
 }
 
 // ══════════════════════════════════════════════════════
