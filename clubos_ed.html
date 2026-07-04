@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 
 <title>ClubOS ED</title>
 <link rel="icon" type="image/png" href="clubos-logo.png?v=2">
@@ -1210,7 +1213,7 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Posición</label><select id="jPosicion"><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="10" min="1" max="99"></div>
       <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
-      <div class="form-field"><label>Escuela deportiva</label><select id="jEscuela"><option value="">— Sin asignar —</option></select></div>
+      <div class="form-field"><label>Escuelas deportivas (Ctrl/Cmd+clic para varias)</label><select id="jEscuela" multiple style="min-height:70px;"></select></div>
       <div class="form-field"><label>Altura (cm)</label><input type="number" id="jAltura" placeholder="165"></div>
       <div class="form-field"><label>Peso (kg)</label><input type="number" id="jPeso" placeholder="60"></div>
     </div>
@@ -1292,6 +1295,7 @@ tbody td.center{text-align:center;}
 
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" id="btnExportarFichaJug" style="display:none;margin-right:auto;" onclick="exportarFichaCompletaJugador()">📄 Exportar ficha</button>
+      <button class="btn btn-outline" id="btnDuplicarJugador" style="display:none;" onclick="duplicarJugador()">🔁 Duplicar en otro equipo</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalJugador')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarJugador()">Guardar jugador</button>
     </div>
@@ -2537,8 +2541,8 @@ function renderJugadores() {
   const misEquipos = (isAdmin||isArbitro) ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const misEscuelas = (isAdmin||isArbitro) ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
   const lista = (isAdmin||isArbitro) ? DB.jugadores : DB.jugadores.filter(j=>
-    misEquipos.some(e=>e.id===j.equipoId) || misEscuelas.some(e=>e.id===j.escuelaId) ||
-    (!j.equipoId && !j.escuelaId && j.clubId===sesion.user)
+    misEquipos.some(e=>e.id===j.equipoId) || misEscuelas.some(e=>(j.escuelaIds||[]).includes(e.id)) ||
+    (!j.equipoId && !(j.escuelaIds&&j.escuelaIds.length) && j.clubId===sesion.user)
   );
 
   const btnAdd = document.getElementById('btnAddJugador');
@@ -2559,7 +2563,8 @@ function renderJugadores() {
   const byEsc={};
   const sinNada=[];
   sinEquipo.forEach(j=>{
-    if (j.escuelaId) { if(!byEsc[j.escuelaId])byEsc[j.escuelaId]=[]; byEsc[j.escuelaId].push(j); }
+    const escIds = j.escuelaIds || (j.escuelaId ? [j.escuelaId] : []);
+    if (escIds.length) { escIds.forEach(eid=>{ if(!byEsc[eid])byEsc[eid]=[]; byEsc[eid].push(j); }); }
     else sinNada.push(j);
   });
 
@@ -2711,11 +2716,11 @@ function exportarJugadoresPDF(tipo, id) {
     const eq = (DB.equipos||[]).find(e=>e.id===id);
     titulo = eq?.nombre || 'Equipo';
   } else if (tipo === 'escuela') {
-    lista = (DB.jugadores||[]).filter(j=>j.escuelaId===id);
+    lista = (DB.jugadores||[]).filter(j=>(j.escuelaIds||[]).includes(id));
     const esc = (DB.escuelas||[]).find(e=>e.id===id);
     titulo = '🏫 ' + (esc?.nombre || 'Escuela');
   } else if (tipo === 'sinasignar') {
-    lista = (DB.jugadores||[]).filter(j=>!j.equipoId&&!j.escuelaId);
+    lista = (DB.jugadores||[]).filter(j=>!j.equipoId&&!(j.escuelaIds&&j.escuelaIds.length));
     titulo = 'Sin asignar';
   } else {
     lista = DB.jugadores||[];
@@ -2764,7 +2769,7 @@ function exportarFichaCompletaJugador() {
   const j = (DB.jugadores||[]).find(x=>x.id===id);
   if (!j) { toast('Guarda el jugador antes de exportar'); return; }
   const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
-  const esc = (DB.escuelas||[]).find(e=>e.id===j.escuelaId);
+  const escNombres = ((j.escuelaIds||[]).map(eid=>(DB.escuelas||[]).find(e=>e.id===eid)?.nombre).filter(Boolean)).join(', ');
   const nombreCompleto = j.nombre + (j.apellidos?' '+j.apellidos:'');
   const fila = (label,val) => val ? `<div style="margin-top:6px;"><strong>${label}:</strong> ${val}</div>` : '';
 
@@ -2784,7 +2789,7 @@ function exportarFichaCompletaJugador() {
     ${fila('Dorsal', j.dorsal)}
     ${fila('Posición', j.posicion)}
     ${fila('Equipo', eq?.nombre)}
-    ${fila('Escuela', esc?.nombre)}
+    ${fila('Escuelas', escNombres)}
     ${fila('Fecha nacimiento', j.fechaNac)}
     ${fila('Altura', j.altura?j.altura+' cm':'')}
     ${fila('Peso', j.peso?j.peso+' kg':'')}
@@ -2809,6 +2814,21 @@ function exportarFichaCompletaJugador() {
     </body></html>`);
   w2.document.close();
   w2.print();
+}
+
+async function duplicarJugador() {
+  const id = document.getElementById('jEditId').value;
+  const original = (DB.jugadores||[]).find(x=>x.id===id);
+  if (!original) { toast('Guarda el jugador antes de duplicar'); return; }
+  if (!confirm('Se creará una copia de ' + original.nombre + ' para inscribirla en otro equipo. ¿Continuar?')) return;
+  const copia = { ...original, id: uid(), equipoId: '', convocado: false };
+  if (!DB.jugadores) DB.jugadores = [];
+  DB.jugadores.push(copia);
+  await saveCol('jugadores');
+  cerrarModal('modalJugador');
+  toast('Jugador duplicado. Asigna ahora el nuevo equipo.');
+  renderJugadores();
+  editarJugador(copia.id);
 }
 
 function filtrarJugadoresGlobal(texto) {
@@ -2882,6 +2902,8 @@ function abrirModalJugador() {
   const isClub  = sesion.rol === 'club';
   const btnExpFicha = document.getElementById('btnExportarFichaJug');
   if (btnExpFicha) btnExpFicha.style.display = 'none';
+  const btnDup = document.getElementById('btnDuplicarJugador');
+  if (btnDup) btnDup.style.display = 'none';
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
 
@@ -2889,7 +2911,7 @@ function abrirModalJugador() {
   sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}">${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
 
   const selE = document.getElementById('jEscuela');
-  selE.innerHTML = '<option value="">— Sin asignar —</option>' + misEscuelas.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  selE.innerHTML = misEscuelas.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
 
   ['jNombre','jApellidos','jFechaNac','jDorsal','jAltura','jPeso',
    'jDni','jLicencia','jEmail','jTelefono','jFechaInscripcion',
@@ -2924,10 +2946,11 @@ function editarJugador(id) {
   const sel = document.getElementById('jEquipo');
   sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
 
-  // Escuelas
+  // Escuelas (multi-selección)
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
   const selE = document.getElementById('jEscuela');
-  selE.innerHTML = '<option value="">— Sin asignar —</option>' + misEscuelas.map(e=>`<option value="${e.id}"${e.id===j.escuelaId?' selected':''}>${e.nombre}</option>`).join('');
+  const escuelaIdsJug = j.escuelaIds || (j.escuelaId ? [j.escuelaId] : []); // compatibilidad con datos antiguos
+  selE.innerHTML = misEscuelas.map(e=>`<option value="${e.id}"${escuelaIdsJug.includes(e.id)?' selected':''}>${e.nombre}</option>`).join('');
 
   // Campos básicos
   document.getElementById('jNombre').value    = j.nombre    ||'';
@@ -2945,6 +2968,8 @@ function editarJugador(id) {
   const verPrivado = isClub || (isAdmin && clubTienePermisoEvaluar(j.clubId));
   const btnExpFicha = document.getElementById('btnExportarFichaJug');
   if (btnExpFicha) btnExpFicha.style.display = verPrivado ? '' : 'none';
+  const btnDup = document.getElementById('btnDuplicarJugador');
+  if (btnDup) btnDup.style.display = (isAdmin||isClub) ? '' : 'none';
   ['seccionDatosPersonales','seccionTutor','seccionMedica'].forEach(sid=>{
     const el = document.getElementById(sid); if(el) el.style.display = verPrivado ? '' : 'none';
   });
@@ -3072,7 +3097,8 @@ async function guardarJugador() {
     posicion:  document.getElementById('jPosicion').value,
     dorsal:    document.getElementById('jDorsal').value,
     equipoId:  document.getElementById('jEquipo').value,
-    escuelaId: document.getElementById('jEscuela').value,
+    escuelaIds: Array.from(document.getElementById('jEscuela').selectedOptions).map(o=>o.value),
+    escuelaId: '', // deprecado, se mantiene por compatibilidad con datos antiguos
     altura:    document.getElementById('jAltura').value,
     peso:      document.getElementById('jPeso').value,
     activo:    document.getElementById('jActivo').checked,
@@ -4587,7 +4613,7 @@ function renderEscuelas() {
   }
 
   el.innerHTML = `<div class="cards-escuelas">` + lista.map(e => {
-    const nAlumnos = (DB.jugadores||[]).filter(j => j.escuelaId === e.id).length;
+    const nAlumnos = (DB.jugadores||[]).filter(j => (j.escuelaIds||[]).includes(e.id)).length;
     const estado   = e.activa ? '<span style="color:#1A7A3C;font-weight:700;">● Activa</span>' : '<span style="color:#999;">● Inactiva</span>';
     return `
     <div class="card-equipo" style="border-top:4px solid #1A56A0;">
@@ -4604,6 +4630,7 @@ function renderEscuelas() {
       ${isAdmin ? `
       <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="editarEscuela('${e.id}')">✏️ Editar</button>
+        <button class="btn btn-outline btn-sm" onclick="exportarJugadoresPDF('escuela','${e.id}')">📄 Exportar</button>
         <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;" onclick="eliminarEscuela('${e.id}')">🗑️ Eliminar</button>
       </div>` : ''}
     </div>`;
@@ -4657,7 +4684,7 @@ async function eliminarEscuela(id) {
   if (!DB._deleted) DB._deleted = {};
   DB._deleted[id] = Date.now();
   // Desvincular jugadores
-  (DB.jugadores||[]).forEach(j=>{ if(j.escuelaId===id) j.escuelaId=''; });
+  (DB.jugadores||[]).forEach(j=>{ if(j.escuelaIds&&j.escuelaIds.includes(id)) j.escuelaIds = j.escuelaIds.filter(x=>x!==id); });
   await saveCols(['escuelas','jugadores']); renderEscuelas(); toast('Escuela eliminada');
 }
 
