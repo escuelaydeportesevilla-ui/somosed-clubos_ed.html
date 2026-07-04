@@ -1561,10 +1561,15 @@ function buildNav() {
   const esAdmin = sesion.rol === 'admin';
   const esClub  = sesion.rol === 'club';
   const esArb   = sesion.rol === 'arbitro';
-  ['btnNuevaComp','btnNuevoPartido','btnNuevaNoticia','btnNuevoPatr','btnGestionSedes','btnRecalcularGoleadores'].forEach(id => {
+  ['btnNuevaComp','btnNuevoPartido','btnNuevoPatr','btnGestionSedes','btnRecalcularGoleadores'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = esAdmin ? '' : 'none';
   });
+  const btnNuevaNoticia = document.getElementById('btnNuevaNoticia');
+  if (btnNuevaNoticia) {
+    btnNuevaNoticia.style.display = (esAdmin || esClub) ? '' : 'none';
+    btnNuevaNoticia.textContent = esClub ? '+ Nota privada (agenda)' : '+ Nueva noticia';
+  }
   const btnNuevoEquipo = document.getElementById('btnNuevoEquipo');
   if (btnNuevoEquipo) btnNuevoEquipo.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEscuela = document.getElementById('btnNuevaEscuela');
@@ -4047,10 +4052,6 @@ let editNoticiaId = null;
 function renderNoticias() {
   const el = document.getElementById('noticiasContent');
   const esAdmin = sesion.rol === 'admin';
-  // Botón añadir solo para admin
-  const addBtn = esAdmin
-    ? '<button class="btn btn-primary" style="margin-bottom:16px;" onclick="abrirModalNoticia()">+ Nueva noticia</button>'
-    : (sesion.rol==='club' ? '<button class="btn btn-primary" style="margin-bottom:16px;" onclick="abrirModalNoticia()">+ Nota privada (agenda)</button>' : '');
   const todasNoticias = DB.noticias.filter(n => {
     if (n.destinatario === '__privado__') return n.autor === sesion.user;
     if (esAdmin) return true;
@@ -4060,7 +4061,7 @@ function renderNoticias() {
     return false;
   });
   if (!todasNoticias.length) {
-    el.innerHTML = addBtn + '<div class="empty-state"><div class="ei">📰</div><p>No hay noticias publicadas aún.</p></div>'; return;
+    el.innerHTML = '<div class="empty-state"><div class="ei">📰</div><p>No hay noticias publicadas aún.</p></div>'; return;
   }
   const catBadge = {general:'#E8F0FB',resultado:'#D5F5E3',convocatoria:'#FBF5E0',aviso:'#FDECEA'};
   const catColor = {general:'#1A56A0',resultado:'#1A7A3C',convocatoria:'#8B6914',aviso:'#9B0D22'};
