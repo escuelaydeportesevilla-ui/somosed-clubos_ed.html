@@ -1213,8 +1213,11 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Posición</label><select id="jPosicion"><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="10" min="1" max="99"></div>
       <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
-      <div class="form-field form-full"><label>Escuelas deportivas</label>
-        <div id="jEscuelaBox" style="border:1px solid var(--gris-linea);border-radius:6px;padding:8px;max-height:160px;overflow-y:auto;"></div>
+      <div class="form-field form-full">
+        <details style="border:1px solid var(--gris-linea);border-radius:6px;">
+          <summary style="padding:8px 10px;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;">Escuelas deportivas</summary>
+          <div id="jEscuelaBox" style="padding:8px 10px;border-top:1px solid var(--gris-linea);max-height:160px;overflow-y:auto;"></div>
+        </details>
       </div>
       <div class="form-field"><label>Altura (cm)</label><input type="number" id="jAltura" placeholder="165"></div>
       <div class="form-field"><label>Peso (kg)</label><input type="number" id="jPeso" placeholder="60"></div>
@@ -2536,12 +2539,13 @@ function imprimirFichaEquipo() {
 function _pintarCheckboxEscuelas(misEscuelas, seleccionadas) {
   const box = document.getElementById('jEscuelaBox');
   const sinEscuela = !seleccionadas.length;
+  const estiloLinea = 'display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;opacity:1;margin:0;';
   box.innerHTML = `
-    <label style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;">
+    <label style="${estiloLinea}">
       <input type="checkbox" data-esc="" ${sinEscuela?'checked':''} onchange="_toggleEscuelaCheck(this)"> <em>Sin escuela</em>
     </label>` +
     misEscuelas.map(e=>`
-    <label style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;">
+    <label style="${estiloLinea}">
       <input type="checkbox" data-esc="${e.id}" ${seleccionadas.includes(e.id)?'checked':''} onchange="_toggleEscuelaCheck(this)"> ${e.nombre}
     </label>`).join('');
 }
