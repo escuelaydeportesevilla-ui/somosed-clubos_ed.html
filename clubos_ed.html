@@ -1213,7 +1213,9 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Posición</label><select id="jPosicion"><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="10" min="1" max="99"></div>
       <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
-      <div class="form-field"><label>Escuelas deportivas (Ctrl/Cmd+clic para varias)</label><select id="jEscuela" multiple style="min-height:70px;"></select></div>
+      <div class="form-field form-full"><label>Escuelas deportivas</label>
+        <div id="jEscuelaBox" style="border:1px solid var(--gris-linea);border-radius:6px;padding:8px;max-height:160px;overflow-y:auto;"></div>
+      </div>
       <div class="form-field"><label>Altura (cm)</label><input type="number" id="jAltura" placeholder="165"></div>
       <div class="form-field"><label>Peso (kg)</label><input type="number" id="jPeso" placeholder="60"></div>
     </div>
@@ -2531,6 +2533,33 @@ function imprimirFichaEquipo() {
 // ══════════════════════════════════════════════════════
 //  JUGADORES (Club)
 // ══════════════════════════════════════════════════════
+function _pintarCheckboxEscuelas(misEscuelas, seleccionadas) {
+  const box = document.getElementById('jEscuelaBox');
+  const sinEscuela = !seleccionadas.length;
+  box.innerHTML = `
+    <label style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;">
+      <input type="checkbox" data-esc="" ${sinEscuela?'checked':''} onchange="_toggleEscuelaCheck(this)"> <em>Sin escuela</em>
+    </label>` +
+    misEscuelas.map(e=>`
+    <label style="display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;">
+      <input type="checkbox" data-esc="${e.id}" ${seleccionadas.includes(e.id)?'checked':''} onchange="_toggleEscuelaCheck(this)"> ${e.nombre}
+    </label>`).join('');
+}
+
+function _toggleEscuelaCheck(chk) {
+  const box = document.getElementById('jEscuelaBox');
+  const checks = Array.from(box.querySelectorAll('input[type=checkbox]'));
+  if (chk.dataset.esc === '') {
+    // Marcar "Sin escuela" desmarca todas las demás
+    if (chk.checked) checks.forEach(c=>{ if(c!==chk) c.checked=false; });
+  } else {
+    // Marcar cualquier escuela desmarca "Sin escuela"
+    if (chk.checked) checks.find(c=>c.dataset.esc==='').checked = false;
+    // Si no queda ninguna marcada, volver a marcar "Sin escuela"
+    if (!checks.some(c=>c.dataset.esc!==''&&c.checked)) checks.find(c=>c.dataset.esc==='').checked = true;
+  }
+}
+
 function renderJugadores() {
   const el = document.getElementById('jugadoresContent');
   const isAdmin   = sesion.rol==='admin';
@@ -2910,8 +2939,7 @@ function abrirModalJugador() {
   const sel = document.getElementById('jEquipo');
   sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}">${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
 
-  const selE = document.getElementById('jEscuela');
-  selE.innerHTML = misEscuelas.map(e=>`<option value="${e.id}">${e.nombre}</option>`).join('');
+  _pintarCheckboxEscuelas(misEscuelas, []);
 
   ['jNombre','jApellidos','jFechaNac','jDorsal','jAltura','jPeso',
    'jDni','jLicencia','jEmail','jTelefono','jFechaInscripcion',
@@ -2946,11 +2974,10 @@ function editarJugador(id) {
   const sel = document.getElementById('jEquipo');
   sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
 
-  // Escuelas (multi-selección)
+  // Escuelas (checkboxes, "Sin escuela" excluyente con el resto)
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
-  const selE = document.getElementById('jEscuela');
   const escuelaIdsJug = j.escuelaIds || (j.escuelaId ? [j.escuelaId] : []); // compatibilidad con datos antiguos
-  selE.innerHTML = misEscuelas.map(e=>`<option value="${e.id}"${escuelaIdsJug.includes(e.id)?' selected':''}>${e.nombre}</option>`).join('');
+  _pintarCheckboxEscuelas(misEscuelas, escuelaIdsJug);
 
   // Campos básicos
   document.getElementById('jNombre').value    = j.nombre    ||'';
@@ -3097,7 +3124,7 @@ async function guardarJugador() {
     posicion:  document.getElementById('jPosicion').value,
     dorsal:    document.getElementById('jDorsal').value,
     equipoId:  document.getElementById('jEquipo').value,
-    escuelaIds: Array.from(document.getElementById('jEscuela').selectedOptions).map(o=>o.value),
+    escuelaIds: Array.from(document.querySelectorAll('#jEscuelaBox input[data-esc]:checked')).map(c=>c.dataset.esc).filter(Boolean),
     escuelaId: '', // deprecado, se mantiene por compatibilidad con datos antiguos
     altura:    document.getElementById('jAltura').value,
     peso:      document.getElementById('jPeso').value,
