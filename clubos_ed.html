@@ -1210,7 +1210,7 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Nombre *</label><input id="jNombre" placeholder="Nombre"></div>
       <div class="form-field"><label>Apellidos *</label><input id="jApellidos" placeholder="Apellidos"></div>
       <div class="form-field"><label>Fecha de nacimiento</label><input type="date" id="jFechaNac"></div>
-      <div class="form-field"><label>Posición</label><select id="jPosicion"><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
+      <div class="form-field"><label>Posición</label><select id="jPosicion"><option value="">— Sin especificar —</option><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="10" min="1" max="99"></div>
       <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
       <div class="form-field form-full">
@@ -2761,14 +2761,19 @@ function exportarJugadoresPDF(tipo, id) {
   }
   if (!lista.length) { toast('No hay jugadores para exportar'); return; }
 
+  const esEscuela = tipo === 'escuela';
   const body = `<h2>${titulo}</h2>
     <table>
-      <thead><tr><th>#</th><th>Jugador</th><th>Posición</th><th>Estado</th><th>Convocado</th></tr></thead>
+      <thead><tr>${esEscuela ? '<th>Jugador</th><th>Fecha nacimiento</th><th>Estado</th>' : '<th>#</th><th>Jugador</th><th>Posición</th><th>Estado</th><th>Convocado</th>'}</tr></thead>
       <tbody>
         ${lista.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).map(j => {
           const activo = j.activo!==false&&j.activo!=='false';
           const convocado = j.convocado===true||j.convocado==='true';
-          return `<tr>
+          return esEscuela ? `<tr>
+            <td>${j.nombre}${j.apellidos?' '+j.apellidos:''}</td>
+            <td>${j.fechaNac||'—'}</td>
+            <td>${activo?'Activo':'Inactivo'}</td>
+          </tr>` : `<tr>
             <td>${j.dorsal||'—'}</td>
             <td>${j.nombre}${j.apellidos?' '+j.apellidos:''}</td>
             <td>${j.posicion||'—'}</td>
