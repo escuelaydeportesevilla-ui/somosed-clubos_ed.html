@@ -2542,11 +2542,11 @@ function _pintarCheckboxEscuelas(misEscuelas, seleccionadas) {
   const estiloLinea = 'display:block;text-align:left;padding:5px 0;cursor:pointer;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;opacity:1;margin:0;';
   box.innerHTML = `
     <label style="${estiloLinea}">
-      <input type="checkbox" data-esc="" ${sinEscuela?'checked':''} onchange="_toggleEscuelaCheck(this)" style="vertical-align:middle;margin-right:8px;"><em>Sin escuela</em>
+      <input type="checkbox" data-esc="" ${sinEscuela?'checked':''} onchange="_toggleEscuelaCheck(this)" style="width:16px;height:16px;vertical-align:middle;margin-right:8px;padding:0;"><em>Sin escuela</em>
     </label>` +
     misEscuelas.map(e=>`
     <label style="${estiloLinea}">
-      <input type="checkbox" data-esc="${e.id}" ${seleccionadas.includes(e.id)?'checked':''} onchange="_toggleEscuelaCheck(this)" style="vertical-align:middle;margin-right:8px;">${e.nombre}
+      <input type="checkbox" data-esc="${e.id}" ${seleccionadas.includes(e.id)?'checked':''} onchange="_toggleEscuelaCheck(this)" style="width:16px;height:16px;vertical-align:middle;margin-right:8px;padding:0;">${e.nombre}
     </label>`).join('');
 }
 
