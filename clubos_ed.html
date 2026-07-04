@@ -1126,7 +1126,7 @@ tbody td.center{text-align:center;}
       <div class="form-field form-full"><label>Contenido</label><textarea id="nTexto" placeholder="Escribe la noticia aquí…"></textarea></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="nFecha"></div>
       <div class="form-field"><label>Categoría</label><select id="nCategoria"><option value="general">General</option><option value="resultado">Resultado</option><option value="convocatoria">Convocatoria</option><option value="aviso">Aviso</option></select></div>
-      <div class="form-field"><label>Destinatario</label><select id="nDestinatario"></select></div>
+      <div class="form-field" id="nDestinatarioWrap"><label>Destinatario</label><select id="nDestinatario"></select></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="cerrarModal('modalNoticia')">Cancelar</button>
@@ -4050,8 +4050,9 @@ function renderNoticias() {
   // Botón añadir solo para admin
   const addBtn = esAdmin
     ? '<button class="btn btn-primary" style="margin-bottom:16px;" onclick="abrirModalNoticia()">+ Nueva noticia</button>'
-    : '';
+    : (sesion.rol==='club' ? '<button class="btn btn-primary" style="margin-bottom:16px;" onclick="abrirModalNoticia()">+ Nota privada (agenda)</button>' : '');
   const todasNoticias = DB.noticias.filter(n => {
+    if (n.destinatario === '__privado__') return n.autor === sesion.user;
     if (esAdmin) return true;
     const dest = n.destinatario || 'todos';
     if (dest === 'todos') return true;
@@ -4073,7 +4074,7 @@ function renderNoticias() {
         </div>
         <div class="noticia-titulo">${n.titulo}</div>
         <div class="noticia-texto">${n.texto}</div>
-        ${sesion.rol==='admin'?`<div class="noticia-actions">
+        ${(sesion.rol==='admin'&&n.destinatario!=='__privado__') || (n.destinatario==='__privado__'&&n.autor===sesion.user) ?`<div class="noticia-actions">
           <button class="btn btn-outline btn-xs" onclick="editarNoticia('${n.id}')">✏️ Editar</button>
           <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarNoticia('${n.id}')">🗑️ Eliminar</button>
         </div>`:''}
@@ -4083,11 +4084,17 @@ function renderNoticias() {
 
 function abrirModalNoticia() {
   editNoticiaId = null;
-  document.getElementById('modalNoticiaTitle').textContent = 'Nueva noticia';
+  document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Nueva nota privada' : 'Nueva noticia';
   ['nTitulo','nTexto'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('nFecha').value = _hoyLocal();
   document.getElementById('nCategoria').value = 'general';
-  _poblarDestinatarios('todos');
+  const wrapDest = document.getElementById('nDestinatarioWrap');
+  if (sesion.rol==='club') {
+    if (wrapDest) wrapDest.style.display='none';
+  } else {
+    if (wrapDest) wrapDest.style.display='';
+    _poblarDestinatarios('todos');
+  }
   abrirModal('modalNoticia');
 }
 
@@ -4103,12 +4110,18 @@ function _poblarDestinatarios(valorActual) {
 function editarNoticia(id) {
   editNoticiaId = id;
   const n = DB.noticias.find(x=>x.id===id); if (!n) return;
-  document.getElementById('modalNoticiaTitle').textContent = 'Editar noticia';
+  document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Editar nota privada' : 'Editar noticia';
   document.getElementById('nTitulo').value    = n.titulo||'';
   document.getElementById('nTexto').value     = n.texto||'';
   document.getElementById('nFecha').value     = n.fecha||'';
   document.getElementById('nCategoria').value = n.categoria||'general';
-  _poblarDestinatarios(n.destinatario||'todos');
+  const wrapDest = document.getElementById('nDestinatarioWrap');
+  if (sesion.rol==='club') {
+    if (wrapDest) wrapDest.style.display='none';
+  } else {
+    if (wrapDest) wrapDest.style.display='';
+    _poblarDestinatarios(n.destinatario||'todos');
+  }
   abrirModal('modalNoticia');
 }
 
@@ -4118,7 +4131,8 @@ async function guardarNoticia() {
     texto:        document.getElementById('nTexto').value.trim(),
     fecha:        document.getElementById('nFecha').value,
     categoria:    document.getElementById('nCategoria').value,
-    destinatario: document.getElementById('nDestinatario').value || 'todos',
+    destinatario: sesion.rol==='club' ? '__privado__' : (document.getElementById('nDestinatario').value || 'todos'),
+    autor:        sesion.user,
   };
   if (!datos.titulo) { toast('El título es obligatorio'); return; }
   if (editNoticiaId) {
