@@ -786,7 +786,10 @@ tbody td.center{text-align:center;}
 
     <!-- ══ PANEL: SUGERENCIAS ══ -->
     <div class="tab-panel" id="panel-sugerencias">
-      <div class="section-header"><h2>💬 Sugerencias</h2><div class="section-line"></div></div>
+      <div class="section-header">
+        <h2>💬 Sugerencias</h2><div class="section-line"></div>
+        <button class="btn btn-rojo" id="btnSolicitarInscripcion" style="display:none;" onclick="abrirModalSolicitudFamilia()">📋 Solicitar inscripción de jugador/a</button>
+      </div>
       <div id="sugerenciasContent"></div>
     </div>
 
@@ -959,6 +962,41 @@ tbody td.center{text-align:center;}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalEvaluacion')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarEvaluacion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalSolicitudFamilia">
+  <div class="modal-box" style="max-width:560px;">
+    <div class="modal-header">
+      <h3>Solicitud de inscripción</h3>
+      <button class="modal-close" onclick="cerrarModal('modalSolicitudFamilia')">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-field"><label>Nombre *</label><input id="sfNombre"></div>
+      <div class="form-field"><label>Apellidos</label><input id="sfApellidos"></div>
+      <div class="form-field"><label>Fecha nacimiento</label><input type="date" id="sfFechaNac"></div>
+      <div class="form-field"><label>Categoría orientativa</label>
+        <select id="sfCategoria">
+          <option value="">— Sin especificar —</option>
+          <option>Prebenjamín</option><option>Benjamín</option><option>Alevín</option>
+          <option>Infantil</option><option>Cadete</option><option>Juvenil</option><option>Otro</option>
+        </select>
+      </div>
+      <div class="form-field"><label>DNI/NIE (si tiene)</label><input id="sfDni"></div>
+      <div class="form-field"><label>Email de contacto</label><input type="email" id="sfEmail"></div>
+      <div class="form-field"><label>Teléfono de contacto</label><input type="tel" id="sfTelefono"></div>
+      <div class="form-field"><label>Nombre del tutor/a</label><input id="sfTutorNombre"></div>
+      <div class="form-field"><label>Parentesco</label><input id="sfTutorParentesco"></div>
+      <div class="form-field"><label>Teléfono del tutor/a</label><input type="tel" id="sfTutorTelefono"></div>
+      <div class="form-field"><label>Email del tutor/a</label><input type="email" id="sfTutorEmail"></div>
+      <div class="form-field form-full"><label>Alergias</label><textarea id="sfAlergias" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full"><label>Medicación</label><textarea id="sfMedicacion" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full"><label>Observaciones médicas</label><textarea id="sfObsMedicas" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalSolicitudFamilia')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="enviarSolicitudFamilia()">Enviar solicitud</button>
     </div>
   </div>
 </div>
@@ -1579,6 +1617,8 @@ function buildNav() {
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEval = document.getElementById('btnNuevaEvaluacion');
   if (btnNuevaEval) btnNuevaEval.style.display = puedeEvaluar() ? '' : 'none';
+  const btnSolicitud = document.getElementById('btnSolicitarInscripcion');
+  if (btnSolicitud) btnSolicitud.style.display = (sesion.rol==='familias') ? '' : 'none';
 }
 
 function activarTab(tab) {
@@ -2615,6 +2655,7 @@ function renderJugadores() {
         <div class="cj-info">
           <div class="cj-nombre">${j.nombre}${j.apellidos?' '+j.apellidos:''}</div>
           <div class="cj-meta">${j.posicion||''}</div>
+          ${j.origen ? `<div style="margin-top:2px;"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:#FEF3CD;color:#8A6D00;">📥 Solicitud ${j.categoriaOrientativa?'· '+j.categoriaOrientativa:''}</span></div>` : ''}
           <div class="cj-badges">
             ${puedeEditar
               ?`<button class="btn-xs" style="background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};border:none;border-radius:6px;" onclick="toggleActivo('${j.id}')">${activo?'Activo':'Inactivo'}</button>
@@ -2871,6 +2912,42 @@ async function duplicarJugador() {
   toast('Jugador duplicado. Asigna ahora el nuevo equipo.');
   renderJugadores();
   editarJugador(copia.id);
+}
+
+function abrirModalSolicitudFamilia() {
+  ['sfNombre','sfApellidos','sfFechaNac','sfDni','sfEmail','sfTelefono',
+   'sfTutorNombre','sfTutorParentesco','sfTutorTelefono','sfTutorEmail',
+   'sfAlergias','sfMedicacion','sfObsMedicas'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+  document.getElementById('sfCategoria').value = '';
+  abrirModal('modalSolicitudFamilia');
+}
+
+async function enviarSolicitudFamilia() {
+  const nombre = document.getElementById('sfNombre').value.trim();
+  if (!nombre) { toast('El nombre es obligatorio'); return; }
+  const datos = {
+    nombre,
+    apellidos:            document.getElementById('sfApellidos').value.trim(),
+    fechaNac:              document.getElementById('sfFechaNac').value,
+    categoriaOrientativa:  document.getElementById('sfCategoria').value,
+    dni:                   document.getElementById('sfDni').value.trim(),
+    email:                 document.getElementById('sfEmail').value.trim(),
+    telefono:              document.getElementById('sfTelefono').value.trim(),
+    tutorNombre:           document.getElementById('sfTutorNombre').value.trim(),
+    tutorParentesco:       document.getElementById('sfTutorParentesco').value.trim(),
+    tutorTelefono:         document.getElementById('sfTutorTelefono').value.trim(),
+    tutorEmail:            document.getElementById('sfTutorEmail').value.trim(),
+    alergias:              document.getElementById('sfAlergias').value.trim(),
+    medicacion:            document.getElementById('sfMedicacion').value.trim(),
+    observacionesMedicas:  document.getElementById('sfObsMedicas').value.trim(),
+    origen: 'app_familias',
+  };
+  try {
+    const url = SCRIPT_URL + '?action=inscribirJugador&datos=' + encodeURIComponent(JSON.stringify(datos));
+    await fetch(url, { mode: 'no-cors' });
+  } catch(e) {}
+  cerrarModal('modalSolicitudFamilia');
+  toast('Solicitud enviada. El club la revisará en breve.');
 }
 
 function filtrarJugadoresGlobal(texto) {
