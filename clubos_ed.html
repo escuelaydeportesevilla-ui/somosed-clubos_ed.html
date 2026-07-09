@@ -783,6 +783,7 @@ tbody td.center{text-align:center;}
           <option value="convocatoria">Convocatoria</option>
           <option value="aviso">Aviso</option>
         </select>
+        <select id="filtroDestinatarioNoticias" onchange="filtrarNoticias()" style="display:none;padding:8px 10px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;max-width:170px;"></select>
         <button class="btn btn-rojo" id="btnNuevaNoticia" onclick="abrirModalNoticia()" style="display:none">+ Nueva noticia</button>
       </div>
       <div id="noticiasContent"></div>
@@ -4241,10 +4242,12 @@ let editNoticiaId = null;
 function filtrarNoticias() {
   const q = (document.getElementById('buscadorNoticias')?.value||'').toLowerCase().trim();
   const cat = document.getElementById('filtroCategoriaNoticias')?.value||'';
+  const dest = document.getElementById('filtroDestinatarioNoticias')?.value||'';
   document.querySelectorAll('#noticiasContent .noticia-card').forEach(el => {
     const okTexto = !q || (el.getAttribute('data-texto')||'').includes(q);
     const okCat = !cat || el.getAttribute('data-categoria') === cat;
-    el.style.display = (okTexto && okCat) ? '' : 'none';
+    const okDest = !dest || el.getAttribute('data-destinatario') === dest;
+    el.style.display = (okTexto && okCat && okDest) ? '' : 'none';
   });
 }
 
@@ -4265,7 +4268,7 @@ function renderNoticias() {
   const catBadge = {general:'#E8F0FB',resultado:'#D5F5E3',convocatoria:'#FBF5E0',aviso:'#FDECEA'};
   const catColor = {general:'#1A56A0',resultado:'#1A7A3C',convocatoria:'#8B6914',aviso:'#9B0D22'};
   el.innerHTML = [...todasNoticias].reverse().map(n => `
-    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
+    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
       <div class="noticia-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
@@ -4280,6 +4283,21 @@ function renderNoticias() {
         </div>`:''}
       </div>
     </div>`).join('');
+
+  const selDest = document.getElementById('filtroDestinatarioNoticias');
+  if (selDest) {
+    if (esAdmin) {
+      selDest.style.display = '';
+      const valorActual = selDest.value;
+      selDest.innerHTML = '<option value="">Todos los destinatarios</option>' +
+        '<option value="todos">📢 Público (Todos)</option>' +
+        '<option value="__privado__">🔒 Privadas</option>' +
+        (DB.clubes||[]).map(c => `<option value="${c.user}">${_etiquetaDestinatarioClub(c.user)}</option>`).join('');
+      selDest.value = valorActual || '';
+    } else {
+      selDest.style.display = 'none';
+    }
+  }
 }
 
 function abrirModalNoticia() {
