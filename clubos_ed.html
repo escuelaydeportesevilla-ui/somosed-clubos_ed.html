@@ -626,6 +626,11 @@ tbody td.center{text-align:center;}
         <div class="lc-role">Árbitro</div>
         <div class="lc-desc">Acceso al calendario y redacción de actas</div>
       </div>
+      <div class="login-card" style="--color-rol:var(--verde)" onclick="abrirLoginFamiliaJugador()">
+        <div class="lc-icon">⭐</div>
+        <div class="lc-role">Mi Jugador</div>
+        <div class="lc-desc">Acceso con clave a la evaluación de tu hijo/a</div>
+      </div>
     </div>
   </div>
 
@@ -653,12 +658,12 @@ tbody td.center{text-align:center;}
     <h3 id="loginModalTitle">Acceso</h3>
     <p id="loginModalDesc">Introduce tus credenciales</p>
     <div class="login-error" id="loginError">Usuario o contraseña incorrectos</div>
-    <div class="lf">
+    <div class="lf" id="loginUserWrap">
       <label>Usuario</label>
       <input type="text" id="loginUser" placeholder="usuario" autocomplete="username">
     </div>
     <div class="lf">
-      <label>Contraseña</label>
+      <label id="loginPassLabel">Contraseña</label>
       <input type="password" id="loginPass" placeholder="••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn-login" onclick="doLogin()">Entrar</button>
@@ -845,6 +850,8 @@ tbody td.center{text-align:center;}
       <div id="clubesContent"></div>
     </div>
   </div>
+
+  <div id="vistaFamiliaJugador" style="display:none;max-width:640px;margin:24px auto;padding:0 16px 64px;"></div>
 </div>
 
 <!-- MODALES -->
@@ -863,6 +870,16 @@ tbody td.center{text-align:center;}
       <div class="form-field form-full"><label>Teléfono de contacto</label><input id="cTel" placeholder="600 000 000"></div>
       <div class="form-field form-full"><label>Notas internas</label><textarea id="cNotas" rows="2" placeholder="Observaciones sobre el club..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea></div>
       <div class="form-field form-full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="cPuedeEvaluar" style="width:auto;"> Puede crear evaluaciones de jugadores</label></div>
+      <div class="form-field form-full">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="cEsFamilia" style="width:auto;" onchange="toggleWrapFamilia()"> Acceso "Mi Jugador" (familia, vista restringida)</label>
+      </div>
+      <div class="form-field form-full" id="wrapFamiliaJugador" style="display:none;">
+        <label>Jugador/a vinculado/a</label>
+        <input id="cFamiliaBuscar" placeholder="Escribe el nombre del jugador…" autocomplete="off" oninput="filtrarFamiliaJugador(this.value)">
+        <div id="cFamiliaSugerencias" style="position:relative;"></div>
+        <input type="hidden" id="cFamiliaJugadorId">
+        <div id="cFamiliaSeleccionado" style="margin-top:6px;font-size:12px;color:var(--gris-suave);"></div>
+      </div>
     </div>
     <input type="hidden" id="cEditId">
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
@@ -1445,10 +1462,25 @@ function abrirLogin(rol) {
   document.getElementById('loginModalTitle').textContent = titles[rol];
   document.getElementById('loginModalDesc').textContent  = descs[rol];
   document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginUserWrap').style.display = '';
+  document.getElementById('loginPassLabel').textContent = 'Contraseña';
   document.getElementById('loginUser').value = '';
   document.getElementById('loginPass').value = '';
   document.getElementById('loginModal').classList.add('open');
   setTimeout(() => document.getElementById('loginUser').focus(), 200);
+}
+
+function abrirLoginFamiliaJugador() {
+  rolPendiente = 'familia_jugador';
+  document.getElementById('loginModalTitle').textContent = 'Mi Jugador';
+  document.getElementById('loginModalDesc').textContent  = 'Introduce la clave que te ha dado el club';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('loginUserWrap').style.display = 'none';
+  document.getElementById('loginPassLabel').textContent = 'Clave de acceso';
+  document.getElementById('loginUser').value = '';
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginModal').classList.add('open');
+  setTimeout(() => document.getElementById('loginPass').focus(), 200);
 }
 
 function cerrarLogin() {
@@ -1456,8 +1488,14 @@ function cerrarLogin() {
 }
 
 function doLogin() {
-  const u = document.getElementById('loginUser').value.trim().toLowerCase();
   const p = document.getElementById('loginPass').value;
+
+  if (rolPendiente === 'familia_jugador') {
+    doLoginFamiliaJugador(p);
+    return;
+  }
+
+  const u = document.getElementById('loginUser').value.trim().toLowerCase();
 
   // 1. Buscar en credenciales fijas (admin, árbitro, clubes legacy)
   let match = Object.values(CRED).find(c => c.user.toLowerCase() === u && c.pass === p && c.rol === rolPendiente);
@@ -1503,6 +1541,28 @@ async function doLoginRemoto(u, p) {
   }
 }
 
+async function doLoginFamiliaJugador(clave) {
+  if (!clave) { document.getElementById('loginError').style.display = 'block'; return; }
+  const btnLogin = document.querySelector('#loginModal .btn-login');
+  if (btnLogin) { btnLogin.disabled = true; btnLogin.textContent = 'Verificando...'; }
+  try {
+    const url = SCRIPT_URL + '?action=checkFamilia&clave=' + encodeURIComponent(clave);
+    const j = await jsonpFetch(url, 8000);
+    if (j && j.ok && j.jugadorId) {
+      cerrarLogin();
+      iniciarSesion({ user: j.user, pass: clave, rol: 'club', nombre: j.nombre || 'Familia', esFamilia: true, jugadorId: j.jugadorId });
+    } else {
+      document.getElementById('loginError').textContent = 'Clave incorrecta';
+      document.getElementById('loginError').style.display = 'block';
+    }
+  } catch(e) {
+    document.getElementById('loginError').textContent = 'Error de conexión';
+    document.getElementById('loginError').style.display = 'block';
+  } finally {
+    if (btnLogin) { btnLogin.disabled = false; btnLogin.textContent = 'Entrar'; }
+  }
+}
+
 function entrarDirecto(rol) {
   iniciarSesion({ rol, nombre: 'Familia' });
 }
@@ -1513,16 +1573,28 @@ function iniciarSesion(cred) {
   localStorage.setItem('clubos_ed_sesion', JSON.stringify(cred));
   document.getElementById('portada').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.getElementById('rolBadge').textContent = cred.rol.charAt(0).toUpperCase() + cred.rol.slice(1);
+  document.getElementById('rolBadge').textContent = cred.esFamilia ? 'Mi Jugador' : (cred.rol.charAt(0).toUpperCase() + cred.rol.slice(1));
   document.getElementById('tbUserName').textContent = cred.nombre || '';
   const btnRecarga = document.getElementById('btnRecargaTotal');
   if (btnRecarga) btnRecarga.style.display = (cred.rol === 'admin') ? 'flex' : 'none';
+  const btnSyncTop = document.getElementById('btnSync');
+  if (btnSyncTop) btnSyncTop.style.display = cred.esFamilia ? 'none' : '';
 
   const subtexts = { admin: 'ClubOS ED · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
   document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'ClubOS ED';
   document.getElementById('tbSub').classList.toggle('visible-mobile', cred.rol === 'club');
 
   buildNav();
+
+  if (cred.esFamilia) {
+    document.querySelector('.main').style.display = 'none';
+    document.getElementById('vistaFamiliaJugador').style.display = 'block';
+    manualSync().then(() => renderVistaFamiliaJugador()).catch(() => renderVistaFamiliaJugador());
+    return;
+  }
+  document.querySelector('.main').style.display = '';
+  document.getElementById('vistaFamiliaJugador').style.display = 'none';
+
   activarTab(getDefaultTab());
   renderAll();
 
@@ -1588,6 +1660,7 @@ function getDefaultTab() {
 }
 
 function buildNav() {
+  if (sesion.esFamilia) { document.getElementById('navBar').innerHTML = ''; return; }
   let tabs = TABS_POR_ROL[sesion.rol] || [];
   if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones');
   const nav = document.getElementById('navBar');
@@ -2025,6 +2098,15 @@ function nombreClub(clubId) {
   if (!clubId || clubId === 'cbedadmin') return 'ClubOS ED';
   const c = (DB.clubes||[]).find(c => c.user === clubId);
   return c ? c.nombre : clubId;
+}
+
+function _etiquetaDestinatarioClub(clubId) {
+  const c = (DB.clubes||[]).find(x=>x.user===clubId);
+  if (c && c.esFamilia) {
+    const j = (DB.jugadores||[]).find(x=>x.id===c.jugadorId);
+    return '👨‍👩‍👧 Familia de ' + (j ? (j.nombre+' '+(j.apellidos||'')) : c.nombre);
+  }
+  return nombreClub(clubId);
 }
 
 function renderEquipos() {
@@ -4147,7 +4229,7 @@ function renderNoticias() {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
           <span class="noticia-fecha">${_limpiarFecha(n.fecha)||''}</span>
-          ${esAdmin && n.destinatario && n.destinatario!=='todos' ? `<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF0FB;color:#1A56A0;">→ ${n.destinatario==='__privado__'?'🔒 Privado':nombreClub(n.destinatario)}</span>` : ''}
+          ${esAdmin && n.destinatario && n.destinatario!=='todos' ? `<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF0FB;color:#1A56A0;">→ ${n.destinatario==='__privado__'?'🔒 Privado':_etiquetaDestinatarioClub(n.destinatario)}</span>` : ''}
         </div>
         <div class="noticia-titulo">${n.titulo}</div>
         <div class="noticia-texto">${n.texto}</div>
@@ -4180,7 +4262,13 @@ function _poblarDestinatarios(valorActual) {
   const clubes = DB.clubes || [];
   sel.innerHTML = '<option value="todos">📢 Todos</option>' +
     '<option value="__privado__">🔒 Privado (solo yo, a modo de agenda)</option>' +
-    clubes.map(c => `<option value="${c.user}">${c.nombre}</option>`).join('');
+    clubes.map(c => {
+      if (c.esFamilia) {
+        const j = (DB.jugadores||[]).find(x=>x.id===c.jugadorId);
+        return `<option value="${c.user}">👨‍👩‍👧 Familia de ${j?(j.nombre+' '+(j.apellidos||'')):c.nombre}</option>`;
+      }
+      return `<option value="${c.user}">${c.nombre}</option>`;
+    }).join('');
   sel.value = valorActual || 'todos';
 }
 
@@ -4379,6 +4467,74 @@ async function eliminarPatr(id) {
 // ══════════════════════════════════════════════════════
 //  SUGERENCIAS
 // ══════════════════════════════════════════════════════
+function renderVistaFamiliaJugador() {
+  const cont = document.getElementById('vistaFamiliaJugador');
+  if (!cont) return;
+  const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
+  if (!j) {
+    cont.innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><p>No se ha encontrado el jugador/a vinculado/a. Contacta con el club.</p></div>';
+    return;
+  }
+  const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+  const escNombres = ((j.escuelaIds||[]).map(eid=>(DB.escuelas||[]).find(e=>e.id===eid)?.nombre).filter(Boolean)).join(', ');
+
+  const evaluaciones = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===j.id)
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+
+  const noticias = (DB.noticias||[]).filter(n=>n.destinatario===sesion.user)
+    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+
+  cont.innerHTML = `
+    <div style="background:var(--marino,#0B1F3A);color:#fff;border-radius:14px;padding:20px;margin-bottom:20px;">
+      <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;">Mi Jugador/a</div>
+      <div style="font-size:1.4rem;font-weight:800;">${j.nombre} ${j.apellidos||''}</div>
+      <div style="font-size:13px;opacity:.85;margin-top:4px;">${eq?('🏟️ '+eq.nombre):'Sin equipo asignado'}${escNombres?' · 🏫 '+escNombres:''}</div>
+    </div>
+
+    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📝 Evaluaciones</h2>
+    <div id="famEvaluacionesList" style="margin-bottom:28px;">
+      ${!evaluaciones.length ? '<div class="empty-state"><div class="ei">📝</div><p>Todavía no hay evaluaciones registradas.</p></div>' :
+        evaluaciones.map(ev => `
+        <div class="card-equipo" style="border-top:4px solid #2E4057;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
+          ${ev.observacionesParaFamilia ? `<div style="font-size:13px;">💬 ${ev.observacionesParaFamilia}</div>` : ''}
+        </div>`).join('')}
+    </div>
+
+    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📰 Noticias para ti</h2>
+    <div style="margin-bottom:28px;">
+      ${!noticias.length ? '<div class="empty-state"><div class="ei">📰</div><p>No tienes noticias.</p></div>' :
+        noticias.map(n => `
+        <div class="card-equipo" style="margin-bottom:12px;">
+          <div style="font-weight:700;margin-bottom:4px;">${n.titulo||''}</div>
+          <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${n.fecha||''}</div>
+          <div style="font-size:13px;">${n.texto||''}</div>
+        </div>`).join('')}
+    </div>
+
+    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
+    <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
+    <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
+  `;
+}
+
+async function enviarSugerenciaFamilia() {
+  const texto = document.getElementById('famSugTexto').value.trim();
+  if (!texto) { toast('Escribe algo antes de enviar'); return; }
+  const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
+  const nombreRemitente = j ? ('Familia de ' + j.nombre + ' ' + (j.apellidos||'')) : 'Familia';
+  if (!DB.sugerencias) DB.sugerencias = [];
+  DB.sugerencias.push({
+    id: uid(),
+    nombre: nombreRemitente,
+    texto,
+    fecha: new Date().toLocaleDateString('es-ES')
+  });
+  await saveCol('sugerencias');
+  document.getElementById('famSugTexto').value = '';
+  toast('Sugerencia enviada, gracias');
+}
+
 function renderSugerencias() {
   const el = document.getElementById('sugerenciasContent');
   const esAdmin    = sesion.rol==='admin';
@@ -5109,7 +5265,7 @@ function renderClubes() {
         </tr></thead>
         <tbody>
           ${lista.map(c => `<tr>
-            <td style="font-weight:600;">${c.nombre||'—'}</td>
+            <td style="font-weight:600;">${c.nombre||'—'}${c.esFamilia?' <span style="font-size:9px;font-weight:700;padding:2px 6px;border-radius:8px;background:#D5F5E3;color:#1A7A3C;">⭐ FAMILIA</span>':''}</td>
             <td><code style="background:#f0f0ee;padding:2px 6px;border-radius:4px;font-size:12px;">${c.user||'—'}</code></td>
             <td style="font-size:13px;">${c.email||'—'}</td>
             <td style="font-size:13px;">${c.tel||'—'}</td>
@@ -5145,11 +5301,15 @@ function renderClubes() {
 
 function abrirModalClub() {
   document.getElementById('modalClubTitle').textContent = 'Nuevo club';
-  ['cNombre','cUser','cPass','cEmail','cTel','cNotas'].forEach(id => {
+  ['cNombre','cUser','cPass','cEmail','cTel','cNotas','cFamiliaBuscar'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   document.getElementById('cEditId').value = '';
   document.getElementById('cPuedeEvaluar').checked = false;
+  document.getElementById('cEsFamilia').checked = false;
+  document.getElementById('cFamiliaJugadorId').value = '';
+  document.getElementById('cFamiliaSeleccionado').textContent = '';
+  document.getElementById('wrapFamiliaJugador').style.display = 'none';
   abrirModal('modalClub');
 }
 
@@ -5163,8 +5323,40 @@ function editarClub(id) {
   document.getElementById('cTel').value    = c.tel    || '';
   document.getElementById('cNotas').value  = c.observaciones  || '';
   document.getElementById('cPuedeEvaluar').checked = c.puedeEvaluar === true;
+  document.getElementById('cEsFamilia').checked = c.esFamilia === true;
+  document.getElementById('wrapFamiliaJugador').style.display = c.esFamilia === true ? '' : 'none';
+  document.getElementById('cFamiliaJugadorId').value = c.jugadorId || '';
+  document.getElementById('cFamiliaBuscar').value = '';
+  const jVinculado = (DB.jugadores||[]).find(j=>j.id===c.jugadorId);
+  document.getElementById('cFamiliaSeleccionado').textContent = jVinculado ? ('✅ Vinculado a: ' + jVinculado.nombre + ' ' + (jVinculado.apellidos||'')) : '';
   document.getElementById('cEditId').value = c.id;
   abrirModal('modalClub');
+}
+
+function toggleWrapFamilia() {
+  const on = document.getElementById('cEsFamilia').checked;
+  document.getElementById('wrapFamiliaJugador').style.display = on ? '' : 'none';
+}
+
+function filtrarFamiliaJugador(texto) {
+  const cont = document.getElementById('cFamiliaSugerencias');
+  const q = (texto||'').toLowerCase().trim();
+  if (!q) { cont.innerHTML=''; return; }
+  const res = (DB.jugadores||[]).filter(j =>
+    (j.nombre+' '+(j.apellidos||'')).toLowerCase().includes(q)
+  ).slice(0,8);
+  if (!res.length) { cont.innerHTML = '<div style="font-size:12px;color:var(--gris-suave);padding:4px 0;">Sin resultados</div>'; return; }
+  cont.innerHTML = `<div style="position:absolute;z-index:50;background:#fff;border:1px solid var(--gris-linea);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.12);max-height:180px;overflow-y:auto;width:100%;">` +
+    res.map(j => `<div style="padding:8px 10px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--gris-linea);" onclick="seleccionarFamiliaJugador('${j.id}')">${j.nombre} ${j.apellidos||''}</div>`).join('') +
+    `</div>`;
+}
+
+function seleccionarFamiliaJugador(jugadorId) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  document.getElementById('cFamiliaJugadorId').value = jugadorId;
+  document.getElementById('cFamiliaBuscar').value = '';
+  document.getElementById('cFamiliaSugerencias').innerHTML = '';
+  document.getElementById('cFamiliaSeleccionado').textContent = '✅ Vinculado a: ' + j.nombre + ' ' + (j.apellidos||'');
 }
 
 async function guardarClub() {
@@ -5175,6 +5367,9 @@ async function guardarClub() {
   if (!nombre) { toast('El nombre del club es obligatorio'); return; }
   if (!user)   { toast('El usuario es obligatorio'); return; }
   if (!pass)   { toast('La contraseña es obligatoria'); return; }
+  const esFamiliaChk = document.getElementById('cEsFamilia').checked;
+  const jugadorIdChk = document.getElementById('cFamiliaJugadorId').value;
+  if (esFamiliaChk && !jugadorIdChk) { toast('Selecciona el jugador/a vinculado/a'); return; }
   // Verificar usuario duplicado
   const duplicado = (DB.clubes||[]).find(c => c.user === user && c.id !== editId);
   if (duplicado) { toast('Ese usuario ya existe'); return; }
@@ -5185,6 +5380,8 @@ async function guardarClub() {
     tel:    document.getElementById('cTel').value.trim(),
     observaciones:  document.getElementById('cNotas').value.trim(),
     puedeEvaluar:   document.getElementById('cPuedeEvaluar').checked,
+    esFamilia:      document.getElementById('cEsFamilia').checked,
+    jugadorId:      document.getElementById('cFamiliaJugadorId').value || '',
   };
   if (!DB.clubes) DB.clubes = [];
   if (editId) {
