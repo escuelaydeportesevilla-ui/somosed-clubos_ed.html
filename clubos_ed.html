@@ -775,6 +775,14 @@ tbody td.center{text-align:center;}
     <div class="tab-panel" id="panel-noticias">
       <div class="section-header">
         <h2>📰 Noticias</h2><div class="section-line"></div>
+        <input type="text" id="buscadorNoticias" placeholder="🔎 Buscar…" oninput="filtrarNoticias()" style="max-width:180px;padding:8px 12px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;">
+        <select id="filtroCategoriaNoticias" onchange="filtrarNoticias()" style="padding:8px 10px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;">
+          <option value="">Todas las categorías</option>
+          <option value="general">General</option>
+          <option value="resultado">Resultado</option>
+          <option value="convocatoria">Convocatoria</option>
+          <option value="aviso">Aviso</option>
+        </select>
         <button class="btn btn-rojo" id="btnNuevaNoticia" onclick="abrirModalNoticia()" style="display:none">+ Nueva noticia</button>
       </div>
       <div id="noticiasContent"></div>
@@ -838,6 +846,7 @@ tbody td.center{text-align:center;}
     <div class="tab-panel" id="panel-evaluaciones">
       <div class="section-header">
         <h2>📝 Evaluaciones</h2><div class="section-line"></div>
+        <input type="text" id="buscadorEvaluaciones" placeholder="🔎 Buscar jugador…" oninput="filtrarEvaluaciones(this.value)" style="max-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;">
         <button class="btn btn-rojo" id="btnNuevaEvaluacion" onclick="abrirModalEvaluacion()">+ Nueva evaluación</button>
       </div>
       <div id="evaluacionesContent"></div>
@@ -4229,6 +4238,16 @@ async function guardarActa() {
 //  NOTICIAS
 // ══════════════════════════════════════════════════════
 let editNoticiaId = null;
+function filtrarNoticias() {
+  const q = (document.getElementById('buscadorNoticias')?.value||'').toLowerCase().trim();
+  const cat = document.getElementById('filtroCategoriaNoticias')?.value||'';
+  document.querySelectorAll('#noticiasContent .noticia-card').forEach(el => {
+    const okTexto = !q || (el.getAttribute('data-texto')||'').includes(q);
+    const okCat = !cat || el.getAttribute('data-categoria') === cat;
+    el.style.display = (okTexto && okCat) ? '' : 'none';
+  });
+}
+
 function renderNoticias() {
   const el = document.getElementById('noticiasContent');
   const esAdmin = sesion.rol === 'admin';
@@ -4246,7 +4265,7 @@ function renderNoticias() {
   const catBadge = {general:'#E8F0FB',resultado:'#D5F5E3',convocatoria:'#FBF5E0',aviso:'#FDECEA'};
   const catColor = {general:'#1A56A0',resultado:'#1A7A3C',convocatoria:'#8B6914',aviso:'#9B0D22'};
   el.innerHTML = [...todasNoticias].reverse().map(n => `
-    <div class="noticia-card">
+    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
       <div class="noticia-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
@@ -5127,6 +5146,13 @@ function _misJugadoresEval() {
   return isAdmin ? (DB.jugadores||[]) : (DB.jugadores||[]).filter(j=>j.clubId===sesion.user);
 }
 
+function filtrarEvaluaciones(texto) {
+  const q = (texto||'').toLowerCase().trim();
+  document.querySelectorAll('#evaluacionesContent [data-nombre-eval]').forEach(el => {
+    el.style.display = el.getAttribute('data-nombre-eval').includes(q) ? '' : 'none';
+  });
+}
+
 function renderEvaluaciones() {
   const el = document.getElementById('evaluacionesContent');
   if (!el) return;
@@ -5165,7 +5191,7 @@ function renderEvaluaciones() {
         </div>
       </div>`).join('');
     return `
-    <div style="margin-bottom:22px;">
+    <div style="margin-bottom:22px;" data-nombre-eval="${nombreJ.toLowerCase()}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <div style="font-weight:800;font-size:1rem;">📝 ${nombreJ}</div>
         <button class="btn btn-outline btn-sm" onclick="exportarFichaJugadorPDF('${jugadorId}')">📄 Exportar</button>
