@@ -1230,6 +1230,7 @@ tbody td.center{text-align:center;}
         <input type="hidden" id="patrLogoUrl">
       </div>
       <div class="form-field form-full"><label>Descripción</label><input id="patrDesc" placeholder="Breve descripción"></div>
+      <div class="form-field form-full"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="patrFijo" style="width:auto;"> 🔒 Patrocinador fijo (protegido, requiere clave maestra)</label></div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="cerrarModal('modalPatr')">Cancelar</button>
@@ -4403,11 +4404,13 @@ function renderPatrocinadores() {
       ${imgSrc ? `<img src="${imgSrc}" alt="${p.nombre}">` : `<div style="height:60px;display:flex;align-items:center;justify-content:center;font-size:2rem">🤝</div>`}
       <div class="patr-nombre">${p.nombre}</div>
       <div class="patr-nivel nivel-${p.nivel}">● ${p.nivel}</div>
+      ${p.fijo?'<div style="font-size:10px;font-weight:700;color:#8A6D00;margin-top:2px;">🔒 PROTEGIDO</div>':''}
       ${p.desc?`<div style="font-size:11px;color:var(--gris-suave);margin-top:4px">${p.desc}</div>`:''}
       ${p.web?`<a href="${p.web}" target="_blank" style="font-size:11px;color:var(--azul);margin-top:4px;display:block">${p.web}</a>`:''}
       ${sesion.rol==='admin'?`<div class="patr-actions">
         <button class="btn btn-outline btn-xs" onclick="editarPatr('${p.id}')">✏️</button>
-        <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarPatr('${p.id}')">🗑️</button>
+        ${p.fijo?'':`<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarPatr('${p.id}')">🗑️</button>`}
+        ${p.fijo?`<button class="btn btn-xs btn-outline" onclick="eliminarPatr('${p.id}')">🔒 Eliminar</button>`:''}
       </div>`:''}
     </div>`;
   }).join('') + '</div>';
@@ -4422,18 +4425,26 @@ function abrirModalPatr() {
   document.getElementById('patrLogoPreviewWrap').style.display = 'none';
   window._patrLogoChanged = false;
   document.getElementById('patrNivel').value = 'oro';
+  document.getElementById('patrFijo').checked = false;
   abrirModal('modalPatr');
 }
 
 function editarPatr(id) {
-  editPatrId = id;
   const p = DB.patrocinadores.find(x=>x.id===id); if (!p) return;
+  window._claveMaestraPatr = '';
+  if (p.fijo) {
+    const clave = window.prompt('Este patrocinador está protegido. Introduce la clave maestra para editarlo:');
+    if (!clave) { toast('Operación cancelada'); return; }
+    window._claveMaestraPatr = clave;
+  }
+  editPatrId = id;
   document.getElementById('modalPatrTitle').textContent = 'Editar patrocinador';
   document.getElementById('patrNombre').value = p.nombre||'';
   document.getElementById('patrNivel').value  = p.nivel||'oro';
   document.getElementById('patrWeb').value    = p.web||'';
   document.getElementById('patrLogoUrl').value = p.logoUrl||'';
   document.getElementById('patrDesc').value   = p.desc||'';
+  document.getElementById('patrFijo').checked = p.fijo === true;
   document.getElementById('patrLogoFile').value = '';
   window._patrLogoChanged = false;
   const wrap = document.getElementById('patrLogoPreviewWrap');
@@ -4497,17 +4508,52 @@ async function guardarPatr() {
     web:    document.getElementById('patrWeb').value.trim(),
     logoUrl: document.getElementById('patrLogoUrl').value.trim(),
     desc:   document.getElementById('patrDesc').value.trim(),
+    fijo:   document.getElementById('patrFijo').checked,
   };
   if (!datos.nombre) { toast('El nombre es obligatorio'); return; }
+
+  const existente = editPatrId ? DB.patrocinadores.find(p=>p.id===editPatrId) : null;
+  const eraFijo = existente && existente.fijo === true;
+  const seraFijo = datos.fijo === true;
 
   const logoCambiado = !!window._patrLogoChanged;
   let id;
   if (editPatrId) {
     id = editPatrId;
+  } else {
+    id = uid();
+  }
+  const registroCompleto = editPatrId ? { ...existente, ...datos, id } : { id, logo:'', ...datos };
+
+  if (eraFijo || seraFijo) {
+    // Vía segura: requiere clave maestra, no pasa por el sync genérico.
+    const clave = window._claveMaestraPatr || window.prompt('Este patrocinador es fijo. Introduce la clave maestra para guardarlo:');
+    if (!clave) { toast('Operación cancelada'); return; }
+    const pwdAdmin = encodeURIComponent(sesion.rol==='admin'?'cbed2627':'');
+    try {
+      const url = SCRIPT_URL + '?action=guardarPatrocinadorSeguro&pwd=' + pwdAdmin
+        + '&datos=' + encodeURIComponent(JSON.stringify(registroCompleto))
+        + '&claveMaestra=' + encodeURIComponent(clave);
+      const resp = await jsonpFetch(url, 8000);
+      if (!resp || !resp.ok) { toast((resp&&resp.error)||'Clave maestra incorrecta'); return; }
+    } catch(e) { toast('Error de conexión'); return; }
+    window._claveMaestraPatr = '';
+    if (editPatrId) {
+      const idx = DB.patrocinadores.findIndex(p=>p.id===editPatrId);
+      if (idx>=0) DB.patrocinadores[idx] = registroCompleto;
+    } else {
+      DB.patrocinadores.push(registroCompleto);
+    }
+    localStorage.setItem('clubos_ed', JSON.stringify(DB));
+    cerrarModal('modalPatr'); toast('Patrocinador guardado'); renderPatrocinadores();
+    if (logoCambiado) await syncLogoPatrocinador(id, datos.logoUrl);
+    return;
+  }
+
+  if (editPatrId) {
     const idx = DB.patrocinadores.findIndex(p=>p.id===editPatrId);
     if (idx>=0) DB.patrocinadores[idx] = { ...DB.patrocinadores[idx], ...datos };
   } else {
-    id = uid();
     DB.patrocinadores.push({ id, logo: '', ...datos });
   }
   window._patrLogoChanged = false;
@@ -4516,6 +4562,23 @@ async function guardarPatr() {
 }
 
 async function eliminarPatr(id) {
+  const p = DB.patrocinadores.find(x=>x.id===id);
+  if (p && p.fijo) {
+    const clave = window.prompt('Este patrocinador está protegido. Introduce la clave maestra para eliminarlo:');
+    if (!clave) { toast('Operación cancelada'); return; }
+    if (!confirm('¿Eliminar patrocinador protegido "' + p.nombre + '"?')) return;
+    const pwdAdmin = encodeURIComponent(sesion.rol==='admin'?'cbed2627':'');
+    try {
+      const url = SCRIPT_URL + '?action=eliminarPatrocinadorSeguro&pwd=' + pwdAdmin
+        + '&id=' + encodeURIComponent(id) + '&claveMaestra=' + encodeURIComponent(clave);
+      const resp = await jsonpFetch(url, 8000);
+      if (!resp || !resp.ok) { toast((resp&&resp.error)||'Clave maestra incorrecta'); return; }
+    } catch(e) { toast('Error de conexión'); return; }
+    DB.patrocinadores = DB.patrocinadores.filter(x=>x.id!==id);
+    localStorage.setItem('clubos_ed', JSON.stringify(DB));
+    toast('Eliminado'); renderPatrocinadores();
+    return;
+  }
   if (!confirm('¿Eliminar patrocinador?')) return;
   DB.patrocinadores = DB.patrocinadores.filter(p=>p.id!==id);
   if (!DB._deleted) DB._deleted = {};
