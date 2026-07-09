@@ -1159,7 +1159,7 @@ tbody td.center{text-align:center;}
     </div>
     <div class="form-grid">
       <div class="form-field"><label>Competición</label><select id="pCompeticion" onchange="actualizarEquiposPorCompeticion()"></select></div>
-      <div class="form-field"><label>Jornada</label><input id="pJornada" placeholder="Jornada 1" type="number" min="1"></div>
+      <div class="form-field"><label>Jornada</label><input id="pJornada" placeholder="Ej: 1, Final, Playoff…" type="text"></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="pFecha"></div>
       <div class="form-field"><label>Hora</label><input type="time" id="pHora"></div>
       <div class="form-field"><label>Sede</label><select id="pSede" onchange="actualizarCamposSede()"></select></div>
@@ -1937,9 +1937,6 @@ function abrirGeneradorCalendario(compId) {
   const hoy = _hoyLocal();
   document.getElementById('genFechaIni').value = hoy;
   document.getElementById('genFormato').value = 'liga1';
-  document.getElementById('genSegVuelta').checked = false;
-  document.getElementById('genPlayoff').value = 'no';
-  document.getElementById('genTercer').checked = false;
   actualizarResumenGenerador();
   abrirModal('modalGeneradorCalendario');
 }
@@ -1950,6 +1947,17 @@ function _equiposDeCompeticion(compId) {
 
 // Helpers de fecha en LOCAL (sin pasar por UTC), para evitar que una fecha se desplace
 // un día según el huso horario del navegador (p.ej. "2026-06-23" convirtiéndose en "2026-06-22").
+// Ordena jornadas numéricas primero (1,2,3...) y las de texto (Final, Playoff...) al final, alfabéticamente
+function _ordenarJornadas(a, b) {
+  const na = Number(a), nb = Number(b);
+  const aEsNum = a !== '' && !isNaN(na);
+  const bEsNum = b !== '' && !isNaN(nb);
+  if (aEsNum && bEsNum) return na - nb;
+  if (aEsNum) return -1;
+  if (bEsNum) return 1;
+  return String(a).localeCompare(String(b));
+}
+
 function _hoyLocal() {
   const d = new Date();
   return _formatearFechaISO(d);
@@ -2012,7 +2020,6 @@ function actualizarResumenGenerador() {
   if (!genCompeticionId) { el.innerHTML = ''; return; }
   const equipos = _equiposDeCompeticion(genCompeticionId);
   const formato = document.getElementById('genFormato').value;
-  const segVuelta = document.getElementById('genSegVuelta').checked;
   const diaSemana = document.getElementById('genDiaSemana').value;
   const fechaIni = document.getElementById('genFechaIni').value || _hoyLocal();
 
@@ -2054,7 +2061,6 @@ async function generarCalendarioFinal() {
     if (!confirm('Esta competición ya tiene partidos generados. Si continúas, se eliminarán los partidos existentes y se generará un calendario nuevo. ¿Continuar?')) return;
   }
 
-  const segVuelta  = document.getElementById('genSegVuelta').checked;
   const diaSemana  = document.getElementById('genDiaSemana').value;
   const hora       = document.getElementById('genHora').value || '18:00';
   const fechaIni   = document.getElementById('genFechaIni').value || _hoyLocal();
@@ -3515,7 +3521,7 @@ function renderCalendario() {
   el.innerHTML = Object.entries(compGroups).map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
     const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
-    const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort((a,b)=>a-b);
+    const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     const contId = 'calComp_' + compId;
 
     return `<div style="margin-bottom:14px;">
@@ -3532,7 +3538,7 @@ function renderCalendario() {
         ${jornadas.map(j => {
           const partidos = partidosComp.filter(p=>p.jornada==j);
           return `<div class="jornada-section">
-            <div class="jornada-title">Jornada ${j}</div>
+            <div class="jornada-title">${/^\d+$/.test(String(j))?'Jornada '+j:j}</div>
             ${partidos.map(p => {
               const local = DB.equipos.find(e=>e.id===p.localId);
               const visit = DB.equipos.find(e=>e.id===p.visitanteId);
@@ -3596,10 +3602,10 @@ function exportarCalendarioPDF(soloCompId) {
   let body = Object.entries(compGroups).map(([compId, partidosComp]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
     const compNombre = comp?.nombre || 'Sin competición asignada';
-    const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort((a,b)=>a-b);
+    const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     return `<h2>${compNombre}</h2>` + jornadas.map(j => {
       const partidos = partidosComp.filter(p=>p.jornada==j);
-      return `<h3>Jornada ${j}</h3>
+      return `<h3>${/^\d+$/.test(String(j))?'Jornada '+j:j}</h3>
       <table>
         <colgroup>
           <col style="width:26%"><col style="width:10%"><col style="width:26%">
@@ -3728,7 +3734,7 @@ async function guardarPartido() {
 
   const datos = {
     competicionId:  document.getElementById('pCompeticion').value || '',
-    jornada:        parseInt(document.getElementById('pJornada').value)||1,
+    jornada:        document.getElementById('pJornada').value.trim() || '1',
     fecha:          document.getElementById('pFecha').value,
     hora:           document.getElementById('pHora').value,
     sedeId:         sedeId,
@@ -5639,29 +5645,6 @@ async function eliminarClub(id) {
         <div>
           <label style="font-size:12px;font-weight:700;display:block;margin-bottom:4px;">Fecha de inicio</label>
           <input id="genFechaIni" type="date" style="width:100%;padding:9px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;" onchange="actualizarResumenGenerador()">
-        </div>
-      </div>
-
-      <div style="background:#F5F5F0;border-radius:10px;padding:14px;margin-bottom:16px;">
-        <div style="font-size:12px;font-weight:700;margin-bottom:8px;">Opciones adicionales</div>
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
-            <input type="checkbox" id="genSegVuelta" onchange="actualizarResumenGenerador()" style="width:16px;height:16px;">
-            Añadir segunda vuelta (liga)
-          </label>
-          <div style="display:flex;align-items:center;gap:10px;">
-            <label style="font-size:13px;min-width:140px;">Añadir playoff final:</label>
-            <select id="genPlayoff" onchange="actualizarResumenGenerador()" style="flex:1;padding:7px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;">
-              <option value="no">No</option>
-              <option value="2">Top 2 (Final)</option>
-              <option value="4">Top 4 (Semifinales + Final)</option>
-              <option value="8">Top 8 (Cuartos + Semis + Final)</option>
-            </select>
-          </div>
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;">
-            <input type="checkbox" id="genTercer" onchange="actualizarResumenGenerador()" style="width:16px;height:16px;">
-            Partido por el 3er y 4º puesto
-          </label>
         </div>
       </div>
 
