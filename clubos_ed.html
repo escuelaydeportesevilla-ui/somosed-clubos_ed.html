@@ -1845,11 +1845,15 @@ function editarCompeticion(id) {
 function editarComp() { if(DB.competiciones?.length===1) editarCompeticion(DB.competiciones[0].id); }
 async function eliminarCompeticion(id) {
   if (!confirm('¿Eliminar esta competición y sus partidos?')) return;
+  const partidosAfectados = (DB.partidos||[]).filter(x => x.competicionId === id);
+  const goleadoresAfectados = (DB.goleadores||[]).filter(x => x.competicionId === id);
   DB.competiciones = (DB.competiciones||[]).filter(x => x.id !== id);
   DB.partidos      = (DB.partidos||[]).filter(x => x.competicionId !== id);
   DB.goleadores    = (DB.goleadores||[]).filter(x => x.competicionId !== id);
   if (!DB._deleted) DB._deleted = {};
   DB._deleted[id] = Date.now();
+  partidosAfectados.forEach(p => { DB._deleted[p.id] = Date.now(); });
+  goleadoresAfectados.forEach(g => { DB._deleted[g.id] = Date.now(); });
   await saveCols(['competiciones','partidos','goleadores']); renderAll();
 }
 
@@ -3479,6 +3483,19 @@ function _limpiarHora(v) {
   return s;
 }
 
+async function eliminarPartidosHuerfanos(compId) {
+  const partidos = (DB.partidos||[]).filter(p => p.competicionId === compId);
+  const goleadores = (DB.goleadores||[]).filter(g => g.competicionId === compId);
+  if (!partidos.length) { toast('No hay partidos huérfanos en este grupo'); return; }
+  if (!confirm(`Se eliminarán ${partidos.length} partido(s) de una competición que ya no existe. ¿Continuar?`)) return;
+  if (!DB._deleted) DB._deleted = {};
+  partidos.forEach(p => { DB._deleted[p.id] = Date.now(); });
+  goleadores.forEach(g => { DB._deleted[g.id] = Date.now(); });
+  DB.partidos = (DB.partidos||[]).filter(p => p.competicionId !== compId);
+  DB.goleadores = (DB.goleadores||[]).filter(g => g.competicionId !== compId);
+  await saveCols(['partidos','goleadores']); toast('Partidos huérfanos eliminados'); renderCalendario();
+}
+
 function renderCalendario() {
   const el = document.getElementById('calendarioContent');
   if (!DB.partidos.length) {
@@ -3506,7 +3523,10 @@ function renderCalendario() {
            font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
            padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
         <span><span id="${contId}_icon">▶</span> ${compNombre} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${partidosComp.length} partidos)</span></span>
+        <span style="display:flex;gap:6px;">
         ${esAdmin||true ? `<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarCalendarioPDF('${compId}')">📄 Exportar</button>` : ''}
+        ${esAdmin && !comp && compId!=='__none__' ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="event.stopPropagation();eliminarPartidosHuerfanos('${compId}')">🗑️ Eliminar huérfanos</button>` : ''}
+        </span>
       </div>
       <div id="${contId}" style="display:none;padding-top:12px;">
         ${jornadas.map(j => {
