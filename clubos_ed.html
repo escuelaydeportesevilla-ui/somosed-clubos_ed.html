@@ -1097,6 +1097,12 @@ tbody td.center{text-align:center;}
         <label>Pantalón</label>
         <div id="paletaPantalon" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;"></div>
       </div>
+      <div class="form-field form-full" id="wrapReasignarClub" style="display:none;">
+        <label>Club propietario (admin)</label>
+        <select id="eqReasignarClub">
+          <option value="__sin_cambio__">— No cambiar —</option>
+        </select>
+      </div>
     </div>
 
     <div style="margin-top:14px;display:flex;align-items:center;gap:10px;">
@@ -2478,6 +2484,7 @@ function abrirModalEquipo() {
   const sel     = document.getElementById('eqCompeticion');
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
     comps.map(c=>`<option value="${c.id}">${c.nombre}${c.activa===false?' (inactiva)':''}</option>`).join('');
+  document.getElementById('wrapReasignarClub').style.display = 'none';
   abrirModal('modalEquipo');
 }
 
@@ -2500,6 +2507,19 @@ function editarEquipo(id) {
   const sel     = document.getElementById('eqCompeticion');
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
     comps.map(c=>`<option value="${c.id}"${c.id===e.competicionId?' selected':''}>${c.nombre}</option>`).join('');
+
+  const wrapReasig = document.getElementById('wrapReasignarClub');
+  if (isAdmin) {
+    wrapReasig.style.display = '';
+    const selReasig = document.getElementById('eqReasignarClub');
+    const actual = nombreClub(e.clubId);
+    selReasig.innerHTML = `<option value="__sin_cambio__">— No cambiar (actual: ${actual}) —</option>` +
+      '<option value="cbedadmin">ClubOS ED (Admin)</option>' +
+      (DB.clubes||[]).map(c=>`<option value="${c.user}">${_etiquetaDestinatarioClub(c.user)}</option>`).join('');
+    selReasig.value = '__sin_cambio__';
+  } else {
+    wrapReasig.style.display = 'none';
+  }
   abrirModal('modalEquipo');
 }
 
@@ -2513,6 +2533,19 @@ async function guardarEquipo() {
   if (!eq1Camiseta || eq1Camiseta === '#000000' && !confirm('El color de camiseta es negro. ¿Confirmas?')) {
     // solo validamos que existan
   }
+  const equipoExistente = editEquipoId ? (DB.equipos||[]).find(e=>e.id===editEquipoId) : null;
+  const reasignarSel = document.getElementById('eqReasignarClub');
+  let clubIdFinal;
+  if (reasignarSel && reasignarSel.value !== '__sin_cambio__') {
+    if (!confirm('Vas a reasignar este equipo a otro club. Sus jugadores pasarán también a depender de ese club en pantalla. ¿Continuar?')) return;
+    clubIdFinal = reasignarSel.value;
+  } else if (equipoExistente) {
+    // Editar un equipo existente NUNCA cambia su dueño por sí solo
+    clubIdFinal = equipoExistente.clubId || 'cbedadmin';
+  } else {
+    // Equipo nuevo: pertenece a quien lo crea
+    clubIdFinal = sesion.rol==='admin' ? 'cbedadmin' : (sesion.user || '');
+  }
   const rec = {
     id:             editEquipoId || ('eq_'+Date.now()),
     nombre:         nombre.toUpperCase(),
@@ -2522,7 +2555,7 @@ async function guardarEquipo() {
     delegado:       document.getElementById('eqDelegado').value,
     emailDelegado:  document.getElementById('eqEmailDelegado').value.trim(),
     telDelegado:    document.getElementById('eqTelDelegado').value.trim(),
-    clubId:         sesion.rol==='admin' ? 'cbedadmin' : (sesion.user || ''),
+    clubId:         clubIdFinal,
     eq1Camiseta:    eq1Camiseta,
     eq1Pantalon:    eq1Pantalon,
   };
