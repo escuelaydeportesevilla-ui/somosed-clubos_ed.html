@@ -1777,45 +1777,57 @@ function renderCompeticion() {
     const nP   = (DB.partidos||[]).filter(p=>p.competicionId===c.id).length;
     const nJug = (DB.partidos||[]).filter(p=>p.competicionId===c.id && p.estado==='jugado').length;
     const activa = c.activa !== false;
-    const isFamilia = sesion.rol === 'familias' || sesion.rol === 'club' || sesion.rol === 'arbitro';
-    const equiposComp = isFamilia
+    const puedeVerEquipos = true; // todos los perfiles ven el listado de equipos de la competición
+    const equiposComp = puedeVerEquipos
       ? (DB.equipos||[]).filter(e=>e.competicionId===c.id).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''))
       : [];
-    return `<div class="comp-banner" style="margin-bottom:16px;${!activa?'opacity:.6;':''}">
+    const bodyId = 'compBody_' + c.id;
+    return `<div class="comp-banner" style="margin-bottom:2px;cursor:pointer;${!activa?'opacity:.6;':''}" onclick="toggleCompeticionBody('${bodyId}', event)">
       <div>
-        <div class="comp-banner-title">${c.nombre}</div>
+        <div class="comp-banner-title"><span id="${bodyId}_icon">▶</span> ${c.nombre}</div>
         <div class="comp-banner-meta">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}</div>
         ${c.fechaInicio?`<div class="comp-banner-meta" style="margin-top:4px">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
       </div>
       <div class="comp-banner-badges" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:rgba(150,150,150,.3);color:#999;':''}">${activa?'✅ Activa':'⏸ Inactiva'}</span>
         ${isAdmin ? `
-          ${nEq>=2?`<button class="btn btn-sm" style="background:#117A65;color:white;border:none;" onclick="abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>`:''}
-          <button class="btn btn-outline btn-sm" onclick="editarCompeticion('${c.id}')" style="border-color:rgba(255,255,255,.3);color:white;">✏️</button>
-          <button class="btn btn-sm" style="background:rgba(200,16,46,.7);color:white;border:none;" onclick="eliminarCompeticion('${c.id}')">🗑</button>
+          ${nEq>=2?`<button class="btn btn-sm" style="background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>`:''}
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarCompeticion('${c.id}')" style="border-color:rgba(255,255,255,.3);color:white;">✏️</button>
+          <button class="btn btn-sm" style="background:rgba(200,16,46,.7);color:white;border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑</button>
         ` : ''}
       </div>
     </div>
-    <div class="stats-row" style="margin-bottom:${isFamilia?'12px':'24px'};">
-      <div class="stat-card"><div class="sv">${nEq}</div><div class="sl">Equipos</div></div>
-      <div class="stat-card"><div class="sv">${nP}</div><div class="sl">Partidos</div></div>
-      <div class="stat-card"><div class="sv">${nJug}</div><div class="sl">Jugados</div></div>
-      <div class="stat-card"><div class="sv">${nP-nJug}</div><div class="sl">Pendientes</div></div>
-    </div>
-    ${isFamilia ? `
-    <div style="margin-bottom:24px;">
-      <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🏟️ Equipos inscritos (${equiposComp.length})</div>
-      ${equiposComp.length ? `<div style="display:flex;flex-direction:column;gap:6px;">
-        ${equiposComp.map(e => {
-          const nJugEq = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
-          return `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:8px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-            <span style="font-weight:600;font-size:13px;">${e.nombre}</span>
-            <span style="font-size:11px;color:var(--gris-suave);">${e.categoria||'—'} · ${nJugEq} jugadores</span>
-          </div>`;
-        }).join('')}
-      </div>` : `<div style="font-size:12px;color:var(--gris-suave);">Aún no hay equipos inscritos en esta competición.</div>`}
-    </div>` : ''}`;
+    <div id="${bodyId}" style="display:none;margin-bottom:16px;">
+      <div class="stats-row" style="margin-bottom:12px;">
+        <div class="stat-card"><div class="sv">${nEq}</div><div class="sl">Equipos</div></div>
+        <div class="stat-card"><div class="sv">${nP}</div><div class="sl">Partidos</div></div>
+        <div class="stat-card"><div class="sv">${nJug}</div><div class="sl">Jugados</div></div>
+        <div class="stat-card"><div class="sv">${nP-nJug}</div><div class="sl">Pendientes</div></div>
+      </div>
+      <div style="margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🏟️ Equipos inscritos (${equiposComp.length})</div>
+        ${equiposComp.length ? `<div style="display:flex;flex-direction:column;gap:6px;">
+          ${equiposComp.map(e => {
+            const nJugEq = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
+            return `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:8px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
+              <span style="font-weight:600;font-size:13px;">${e.nombre}</span>
+              <span style="font-size:11px;color:var(--gris-suave);">${e.categoria||'—'} · ${nJugEq} jugadores</span>
+            </div>`;
+          }).join('')}
+        </div>` : `<div style="font-size:12px;color:var(--gris-suave);">Aún no hay equipos inscritos en esta competición.</div>`}
+      </div>
+    </div>`;
   }).join('');
+}
+
+function toggleCompeticionBody(bodyId, ev) {
+  if (ev) ev.stopPropagation();
+  const body = document.getElementById(bodyId);
+  const icon = document.getElementById(bodyId + '_icon');
+  if (!body) return;
+  const abierto = body.style.display !== 'none';
+  body.style.display = abierto ? 'none' : '';
+  if (icon) icon.textContent = abierto ? '▶' : '▼';
 }
 
 function nuevaCompeticion() {
@@ -2141,6 +2153,13 @@ function _autolink(texto) {
   return esc.replace(/(https?:\/\/[^\s<]+)/g, url =>
     `<a href="${url}" target="_blank" rel="noopener" style="color:var(--rojo);text-decoration:underline;word-break:break-all;">${url}</a>`
   );
+}
+
+// Etiqueta legible de competición: nombre + categoría/temporada si existen,
+// para distinguir competiciones con el mismo nombre pero distinta categoría.
+function _etiquetaCompeticion(c) {
+  const extra = [c.categoria, c.temporada].filter(Boolean).join(' · ');
+  return extra ? `${c.nombre} (${extra})` : c.nombre;
 }
 
 function nombreClub(clubId) {
@@ -2493,7 +2512,7 @@ function abrirModalEquipo() {
   const comps   = (DB.competiciones||[]).filter(c=>isAdmin||c.activa!==false);
   const sel     = document.getElementById('eqCompeticion');
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
-    comps.map(c=>`<option value="${c.id}">${c.nombre}${c.activa===false?' (inactiva)':''}</option>`).join('');
+    comps.map(c=>`<option value="${c.id}">${_etiquetaCompeticion(c)}${c.activa===false?' (inactiva)':''}</option>`).join('');
   document.getElementById('wrapReasignarClub').style.display = 'none';
   abrirModal('modalEquipo');
 }
@@ -2516,7 +2535,7 @@ function editarEquipo(id) {
   const comps   = (DB.competiciones||[]).filter(c=>isAdmin||c.activa!==false);
   const sel     = document.getElementById('eqCompeticion');
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
-    comps.map(c=>`<option value="${c.id}"${c.id===e.competicionId?' selected':''}>${c.nombre}</option>`).join('');
+    comps.map(c=>`<option value="${c.id}"${c.id===e.competicionId?' selected':''}>${_etiquetaCompeticion(c)}</option>`).join('');
 
   const wrapReasig = document.getElementById('wrapReasignarClub');
   if (isAdmin) {
@@ -3670,7 +3689,7 @@ function actualizarCamposSede(selectedCampo) {
 function poblarSelectCompeticiones(selectId, selected) {
   const sel = document.getElementById(selectId);
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
-    (DB.competiciones||[]).map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${c.nombre}</option>`).join('');
+    (DB.competiciones||[]).map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${_etiquetaCompeticion(c)}</option>`).join('');
 }
 
 function abrirModalPartido(compIdPreseleccionada) {
