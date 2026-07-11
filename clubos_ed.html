@@ -1209,7 +1209,12 @@ tbody td.center{text-align:center;}
       <div class="form-field form-full"><label>Contenido</label><textarea id="nTexto" placeholder="Escribe la noticia aquí…"></textarea></div>
       <div class="form-field"><label>Fecha</label><input type="date" id="nFecha"></div>
       <div class="form-field"><label>Categoría</label><select id="nCategoria"><option value="general">General</option><option value="resultado">Resultado</option><option value="convocatoria">Convocatoria</option><option value="aviso">Aviso</option></select></div>
-      <div class="form-field" id="nDestinatarioWrap"><label>Destinatario</label><select id="nDestinatario"></select></div>
+      <div class="form-field form-full" id="nDestinatarioWrap">
+        <details style="border:1px solid var(--gris-linea);border-radius:6px;">
+          <summary style="padding:8px 10px;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;">Destinatarios</summary>
+          <div id="nDestinatarioBox" style="padding:8px 10px;border-top:1px solid var(--gris-linea);max-height:220px;overflow-y:auto;"></div>
+        </details>
+      </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="cerrarModal('modalNoticia')">Cancelar</button>
@@ -4325,7 +4330,7 @@ function filtrarNoticias() {
   document.querySelectorAll('#noticiasContent .noticia-card').forEach(el => {
     const okTexto = !q || (el.getAttribute('data-texto')||'').includes(q);
     const okCat = !cat || el.getAttribute('data-categoria') === cat;
-    const okDest = !dest || el.getAttribute('data-destinatario') === dest;
+    const okDest = !dest || el.getAttribute('data-destinatario') === dest || (el.getAttribute('data-destinatarios')||'').split(',').includes(dest);
     el.style.display = (okTexto && okCat && okDest) ? '' : 'none';
   });
 }
@@ -4336,6 +4341,7 @@ function renderNoticias() {
   const todasNoticias = DB.noticias.filter(n => {
     if (n.destinatario === '__privado__') return n.autor === sesion.user;
     if (esAdmin) return true;
+    if (n.destinatarios && n.destinatarios.length) return n.destinatarios.includes(sesion.user);
     const dest = n.destinatario || 'todos';
     if (dest === 'todos') return true;
     if (sesion.rol === 'club') return dest === sesion.user;
@@ -4347,12 +4353,12 @@ function renderNoticias() {
   const catBadge = {general:'#E8F0FB',resultado:'#D5F5E3',convocatoria:'#FBF5E0',aviso:'#FDECEA'};
   const catColor = {general:'#1A56A0',resultado:'#1A7A3C',convocatoria:'#8B6914',aviso:'#9B0D22'};
   el.innerHTML = [...todasNoticias].reverse().map(n => `
-    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
+    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-destinatarios="${(n.destinatarios||[]).join(',')}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
       <div class="noticia-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
           <span class="noticia-fecha">${_limpiarFecha(n.fecha)||''}</span>
-          ${esAdmin && n.destinatario && n.destinatario!=='todos' ? `<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF0FB;color:#1A56A0;">→ ${n.destinatario==='__privado__'?'🔒 Privado':_etiquetaDestinatarioClub(n.destinatario)}</span>` : ''}
+          ${esAdmin && n.destinatario && n.destinatario!=='todos' ? `<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF0FB;color:#1A56A0;">→ ${n.destinatario==='__privado__'?'🔒 Privado':(n.destinatarios&&n.destinatarios.length>1?n.destinatarios.map(_etiquetaDestinatarioClub).join(', '):_etiquetaDestinatarioClub(n.destinatario))}</span>` : ''}
         </div>
         <div class="noticia-titulo">${n.titulo}</div>
         <div class="noticia-texto">${_autolink(n.texto)}</div>
@@ -4390,24 +4396,58 @@ function abrirModalNoticia() {
     if (wrapDest) wrapDest.style.display='none';
   } else {
     if (wrapDest) wrapDest.style.display='';
-    _poblarDestinatarios('todos');
+    _poblarDestinatarios('todos', []);
   }
   abrirModal('modalNoticia');
 }
 
-function _poblarDestinatarios(valorActual) {
-  const sel = document.getElementById('nDestinatario');
+function _poblarDestinatarios(destinatarioActual, destinatariosActual) {
+  const box = document.getElementById('nDestinatarioBox');
   const clubes = DB.clubes || [];
-  sel.innerHTML = '<option value="todos">📢 Todos</option>' +
-    '<option value="__privado__">🔒 Privado (solo yo, a modo de agenda)</option>' +
+  const marcados = Array.isArray(destinatariosActual) ? destinatariosActual : [];
+  const esTodos = destinatarioActual === 'todos' || (!marcados.length && destinatarioActual !== '__privado__');
+  const esPrivado = destinatarioActual === '__privado__';
+
+  const estiloLinea = 'display:block;text-align:left;padding:5px 0;cursor:pointer;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;opacity:1;margin:0;';
+  const chk = (val, checked) => `<input type="checkbox" data-dest="${val}" ${checked?'checked':''} onchange="_toggleDestinatarioCheck(this)" style="vertical-align:middle;margin-right:8px;">`;
+
+  box.innerHTML =
+    `<label style="${estiloLinea}">${chk('todos', esTodos)}📢 Todos</label>` +
+    `<label style="${estiloLinea}">${chk('__privado__', esPrivado)}🔒 Privado (solo yo, a modo de agenda)</label>` +
+    `<div style="border-top:1px solid var(--gris-linea);margin:6px 0;"></div>` +
     clubes.map(c => {
-      if (c.esFamilia) {
-        const j = (DB.jugadores||[]).find(x=>x.id===c.jugadorId);
-        return `<option value="${c.user}">👨‍👩‍👧 Familia de ${j?(j.nombre+' '+(j.apellidos||'')):c.nombre}</option>`;
-      }
-      return `<option value="${c.user}">${c.nombre}</option>`;
+      const etiqueta = _etiquetaDestinatarioClub(c.user);
+      return `<label style="${estiloLinea}">${chk(c.user, marcados.includes(c.user))}${etiqueta}</label>`;
     }).join('');
-  sel.value = valorActual || 'todos';
+}
+
+function _toggleDestinatarioCheck(chk) {
+  const box = document.getElementById('nDestinatarioBox');
+  const checks = Array.from(box.querySelectorAll('input[type=checkbox]'));
+  const val = chk.dataset.dest;
+  if (val === 'todos' || val === '__privado__') {
+    // Marcar Todos/Privado desmarca cualquier otra cosa (son excluyentes)
+    if (chk.checked) checks.forEach(c => { if (c !== chk) c.checked = false; });
+    else chk.checked = true; // no se puede dejar sin ninguno marcado
+  } else {
+    // Marcar un destinatario concreto desmarca Todos/Privado
+    if (chk.checked) {
+      checks.find(c => c.dataset.dest === 'todos').checked = false;
+      checks.find(c => c.dataset.dest === '__privado__').checked = false;
+    }
+    // Si no queda nada marcado, volver a "Todos" por defecto
+    const algoMarcado = checks.some(c => c.checked);
+    if (!algoMarcado) checks.find(c => c.dataset.dest === 'todos').checked = true;
+  }
+}
+
+function _leerDestinatariosSeleccionados() {
+  const box = document.getElementById('nDestinatarioBox');
+  const marcados = Array.from(box.querySelectorAll('input[type=checkbox]:checked')).map(c => c.dataset.dest);
+  if (marcados.includes('todos')) return { destinatario: 'todos', destinatarios: [] };
+  if (marcados.includes('__privado__')) return { destinatario: '__privado__', destinatarios: [] };
+  if (!marcados.length) return { destinatario: 'todos', destinatarios: [] };
+  return { destinatario: marcados.length===1 ? marcados[0] : 'multi', destinatarios: marcados };
 }
 
 function editarNoticia(id) {
@@ -4423,18 +4463,20 @@ function editarNoticia(id) {
     if (wrapDest) wrapDest.style.display='none';
   } else {
     if (wrapDest) wrapDest.style.display='';
-    _poblarDestinatarios(n.destinatario||'todos');
+    _poblarDestinatarios(n.destinatario||'todos', n.destinatarios||[]);
   }
   abrirModal('modalNoticia');
 }
 
 async function guardarNoticia() {
+  const seleccionDest = sesion.rol==='club' ? { destinatario: '__privado__', destinatarios: [] } : _leerDestinatariosSeleccionados();
   const datos = {
     titulo:       document.getElementById('nTitulo').value.trim(),
     texto:        document.getElementById('nTexto').value.trim(),
     fecha:        document.getElementById('nFecha').value,
     categoria:    document.getElementById('nCategoria').value,
-    destinatario: sesion.rol==='club' ? '__privado__' : (document.getElementById('nDestinatario').value || 'todos'),
+    destinatario: seleccionDest.destinatario,
+    destinatarios: seleccionDest.destinatarios,
     autor:        sesion.user,
   };
   if (!datos.titulo) { toast('El título es obligatorio'); return; }
