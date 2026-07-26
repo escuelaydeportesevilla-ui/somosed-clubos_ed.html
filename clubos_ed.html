@@ -544,6 +544,26 @@ tbody td.center{text-align:center;}
   .tabla-equipos-desktop{display:block;}
 }
 
+/* ── Menú de navegación: versión compacta anclada, solo escritorio ── */
+@media (min-width:769px){
+  .nav-toggle-btn{width:auto;border-bottom:none;padding:13px 20px;border-radius:8px;}
+  .nav-toggle-btn:hover{background:var(--rojo-suave);}
+  .nav-bar{
+    left:20px;right:auto;top:calc(100% + 4px);
+    width:560px;max-width:calc(100vw - 40px);
+    border-radius:12px;
+    display:grid;grid-template-columns:repeat(3,1fr);
+    padding:8px;gap:2px;
+  }
+  .nav-bar.expanded{max-height:none;overflow:visible;}
+  .nav-bar .nav-btn{
+    width:auto;text-align:left;border-bottom:none;border-radius:8px;
+    padding:11px 14px;font-size:11px;
+  }
+  .nav-bar .nav-btn:hover{background:var(--crema);}
+  .nav-bar .nav-btn.active{background:var(--rojo-suave);}
+}
+
 /* ── Escuelas: grid de tarjetas ── */
 .cards-escuelas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
 .cards-escuelas .card-equipo{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
