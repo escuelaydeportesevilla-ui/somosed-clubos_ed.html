@@ -1074,12 +1074,18 @@ tbody td.center{text-align:center;}
     <div class="form-grid">
       <div class="form-field"><label>Nombre *</label><input id="sfNombre"></div>
       <div class="form-field"><label>Apellidos</label><input id="sfApellidos"></div>
-      <div class="form-field"><label>Fecha nacimiento</label><input type="date" id="sfFechaNac"></div>
+      <div class="form-field"><label>Fecha nacimiento</label><input type="date" id="sfFechaNac" onchange="autoSeleccionarCategoriaFamilia()"></div>
       <div class="form-field"><label>Categoría orientativa</label>
         <select id="sfCategoria">
           <option value="">— Sin especificar —</option>
-          <option>Prebenjamín</option><option>Benjamín</option><option>Alevín</option>
-          <option>Infantil</option><option>Cadete</option><option>Juvenil</option><option>Otro</option>
+          <option value="Chiquifútbol">Chiquifútbol (2021-2022)</option>
+          <option value="Prebenjamín">Prebenjamín (2019-2020)</option>
+          <option value="Benjamín">Benjamín (2017-2018)</option>
+          <option value="Alevín">Alevín (2015-2016)</option>
+          <option value="Infantil">Infantil (2013-2014)</option>
+          <option value="Cadete">Cadete</option>
+          <option value="Juvenil">Juvenil</option>
+          <option value="Otro">Otro</option>
         </select>
       </div>
       <div class="form-field"><label>DNI/NIE (si tiene)</label><input id="sfDni"></div>
@@ -3174,6 +3180,23 @@ function abrirModalSolicitudFamilia() {
    'sfAlergias','sfMedicacion','sfObsMedicas'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   document.getElementById('sfCategoria').value = '';
   abrirModal('modalSolicitudFamilia');
+}
+
+// Rangos de nacimiento por categoría (temporada 2026/27). Ajustar cada temporada si cambian.
+const RANGOS_CATEGORIA_FAMILIA = [
+  { valor: 'Chiquifútbol', desde: 2021, hasta: 2022 },
+  { valor: 'Prebenjamín',  desde: 2019, hasta: 2020 },
+  { valor: 'Benjamín',     desde: 2017, hasta: 2018 },
+  { valor: 'Alevín',       desde: 2015, hasta: 2016 },
+  { valor: 'Infantil',     desde: 2013, hasta: 2014 },
+];
+
+function autoSeleccionarCategoriaFamilia() {
+  const fecha = document.getElementById('sfFechaNac').value;
+  if (!fecha) return;
+  const anio = parseInt(fecha.slice(0,4), 10);
+  const match = RANGOS_CATEGORIA_FAMILIA.find(r => anio >= r.desde && anio <= r.hasta);
+  if (match) document.getElementById('sfCategoria').value = match.valor;
 }
 
 async function enviarSolicitudFamilia() {

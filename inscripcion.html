@@ -37,12 +37,18 @@
         <div><label>Apellidos</label><input id="fApellidos"></div>
       </div>
       <div class="row">
-        <div><label>Fecha de nacimiento</label><input type="date" id="fFechaNac"></div>
+        <div><label>Fecha de nacimiento</label><input type="date" id="fFechaNac" onchange="autoSeleccionarCategoria()"></div>
         <div><label>Categoría orientativa</label>
           <select id="fCategoria">
             <option value="">— Sin especificar —</option>
-            <option>Prebenjamín</option><option>Benjamín</option><option>Alevín</option>
-            <option>Infantil</option><option>Cadete</option><option>Juvenil</option><option>Otro</option>
+            <option value="Chiquifútbol">Chiquifútbol (2021-2022)</option>
+            <option value="Prebenjamín">Prebenjamín (2019-2020)</option>
+            <option value="Benjamín">Benjamín (2017-2018)</option>
+            <option value="Alevín">Alevín (2015-2016)</option>
+            <option value="Infantil">Infantil (2013-2014)</option>
+            <option value="Cadete">Cadete</option>
+            <option value="Juvenil">Juvenil</option>
+            <option value="Otro">Otro</option>
           </select>
         </div>
       </div>
@@ -78,6 +84,23 @@
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz14N_o4O2ASTBNLAwGrWnm3q_4XHNfBLWVhlaEe3HPflIRq_YHnVmYjb1EMtx3EUWa/exec';
+
+// Rangos de nacimiento por categoría (temporada 2026/27). Ajustar cada temporada si cambian.
+const RANGOS_CATEGORIA = [
+  { valor: 'Chiquifútbol', desde: 2021, hasta: 2022 },
+  { valor: 'Prebenjamín',  desde: 2019, hasta: 2020 },
+  { valor: 'Benjamín',     desde: 2017, hasta: 2018 },
+  { valor: 'Alevín',       desde: 2015, hasta: 2016 },
+  { valor: 'Infantil',     desde: 2013, hasta: 2014 },
+];
+
+function autoSeleccionarCategoria() {
+  const fecha = document.getElementById('fFechaNac').value;
+  if (!fecha) return;
+  const anio = parseInt(fecha.slice(0,4), 10);
+  const match = RANGOS_CATEGORIA.find(r => anio >= r.desde && anio <= r.hasta);
+  if (match) document.getElementById('fCategoria').value = match.valor;
+}
 
 async function enviarInscripcion() {
   const nombre = document.getElementById('fNombre').value.trim();
