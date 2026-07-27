@@ -362,6 +362,12 @@ tbody td.center{text-align:center;}
 }
 .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--rojo);background:var(--blanco);}
 .form-field textarea{min-height:70px;resize:vertical;}
+.btn-editor{background:white;border:1px solid var(--gris-linea);border-radius:4px;padding:5px 9px;font-size:13px;cursor:pointer;color:var(--gris-texto);}
+.btn-editor:hover{background:var(--rojo-suave);border-color:var(--rojo);}
+#nTextoRico:empty:before{content:attr(placeholder);color:#999;}
+#nTextoRico ul, #nTextoRico ol{margin-left:20px;}
+#nTextoRico h2{font-size:1.3em;font-weight:800;margin:6px 0;}
+#nTextoRico h3{font-size:1.1em;font-weight:700;margin:6px 0;}
 
 /* ── MODAL ── */
 .modal{
@@ -890,8 +896,10 @@ tbody td.center{text-align:center;}
 
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
+        <button class="btn btn-outline" onclick="abrirModalGrupoClubes()">🗂️ Grupos de clubes</button>
         <button class="btn btn-rojo" onclick="abrirModalClub()">+ Nuevo club</button>
       </div>
+      <div id="gruposClubesContent" style="margin-bottom:16px;"></div>
       <div id="clubesContent"></div>
     </div>
   </div>
@@ -930,6 +938,39 @@ tbody td.center{text-align:center;}
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalClub')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarClub()">Guardar club</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalGrupoClubes">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-header">
+      <h3>Grupos de clubes</h3>
+      <button class="modal-close" onclick="cerrarModal('modalGrupoClubes')">✕</button>
+    </div>
+    <button class="btn btn-rojo btn-sm" style="margin-bottom:12px;" onclick="abrirModalGrupoClubEdit()">+ Nuevo grupo</button>
+    <div id="listaGruposClubes"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalGrupoClubes')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalGrupoClubEdit">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="modal-header">
+      <h3 id="modalGrupoClubEditTitle">Nuevo grupo de clubes</h3>
+      <button class="modal-close" onclick="cerrarModal('modalGrupoClubEdit')">✕</button>
+    </div>
+    <div class="form-field form-full"><label>Nombre del grupo</label><input id="gcNombre" placeholder="Ej: Categoría Alevín, Zona Norte…"></div>
+    <div class="form-field form-full" style="margin-top:10px;">
+      <label>Clubes miembros</label>
+      <div id="gcMiembrosBox" style="border:1px solid var(--gris-linea);border-radius:6px;padding:8px;max-height:220px;overflow-y:auto;"></div>
+    </div>
+    <input type="hidden" id="gcEditId">
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalGrupoClubEdit')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarGrupoClub()">Guardar grupo</button>
     </div>
   </div>
 </div>
@@ -1271,7 +1312,28 @@ tbody td.center{text-align:center;}
     </div>
     <div class="form-grid">
       <div class="form-field form-full"><label>Título</label><input id="nTitulo" placeholder="Título de la noticia"></div>
-      <div class="form-field form-full"><label>Contenido</label><textarea id="nTexto" placeholder="Escribe la noticia aquí…"></textarea></div>
+      <div class="form-field form-full">
+        <label>Contenido</label>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--crema);border:1px solid var(--gris-linea);border-bottom:none;border-radius:6px 6px 0 0;padding:6px;">
+          <button type="button" class="btn-editor" onclick="_formatoNoticia('bold')" title="Negrita" style="font-weight:900;">B</button>
+          <button type="button" class="btn-editor" onclick="_formatoNoticia('italic')" title="Cursiva" style="font-style:italic;">I</button>
+          <button type="button" class="btn-editor" onclick="_formatoNoticia('underline')" title="Subrayado" style="text-decoration:underline;">S</button>
+          <span style="width:1px;background:var(--gris-linea);margin:2px 4px;"></span>
+          <select onchange="_formatoNoticiaBloque(this.value); this.selectedIndex=0;" class="btn-editor" style="font-size:12px;">
+            <option value="">Título…</option>
+            <option value="h2">Título grande</option>
+            <option value="h3">Título mediano</option>
+            <option value="p">Texto normal</option>
+          </select>
+          <span style="width:1px;background:var(--gris-linea);margin:2px 4px;"></span>
+          <button type="button" class="btn-editor" onclick="_formatoNoticia('insertUnorderedList')" title="Lista con viñetas">• Lista</button>
+          <button type="button" class="btn-editor" onclick="_formatoNoticia('insertOrderedList')" title="Lista numerada">1. Lista</button>
+          <span style="width:1px;background:var(--gris-linea);margin:2px 4px;"></span>
+          <button type="button" class="btn-editor" onclick="_insertarImagenNoticia()" title="Insertar imagen">🖼️ Imagen</button>
+        </div>
+        <div id="nTextoRico" contenteditable="true" placeholder="Escribe la noticia aquí…"
+             style="min-height:140px;max-height:340px;overflow-y:auto;border:1px solid var(--gris-linea);border-radius:0 0 6px 6px;padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.5;background:white;"></div>
+      </div>
       <div class="form-field"><label>Fecha</label><input type="date" id="nFecha"></div>
       <div class="form-field"><label>Categoría</label><select id="nCategoria"><option value="general">General</option><option value="resultado">Resultado</option><option value="convocatoria">Convocatoria</option><option value="aviso">Aviso</option></select></div>
       <div class="form-field form-full" id="nDestinatarioWrap">
@@ -1697,6 +1759,7 @@ function iniciarSesion(cred) {
 
   activarTab(getDefaultTab());
   renderAll();
+  actualizarBadgeSugerencias();
 
   // Admin: forzar recarga desde servidor al iniciar sesión
   if (cred.rol === 'admin') {
@@ -3417,7 +3480,7 @@ function renderListaNotas(notas) {
           <button class="btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:11px;" onclick="borrarNota('${n.id}')">🗑️</button>
         </span>
       </div>
-      <div style="white-space:pre-wrap;line-height:1.5;">${_autolink(n.texto)}</div>
+      <div style="white-space:pre-wrap;line-height:1.5;">${_renderTextoNoticia(n.texto)}</div>
     </div>
   `).join('');
 }
@@ -4430,6 +4493,47 @@ function filtrarNoticias() {
   });
 }
 
+function _ordenarNoticias(lista) {
+  return [...lista].sort((a,b) => {
+    const da = a.destacada ? 1 : 0, db = b.destacada ? 1 : 0;
+    if (da !== db) return db - da;
+    const oa = a.orden || 0, ob = b.orden || 0;
+    if (oa !== ob) return ob - oa;
+    return (b.fecha||'').localeCompare(a.fecha||''); // noticias antiguas sin 'orden': por fecha, más reciente primero
+  });
+}
+
+async function toggleDestacadaNoticia(id) {
+  const n = DB.noticias.find(x=>x.id===id); if (!n) return;
+  n.destacada = !n.destacada;
+  await saveCol('noticias'); renderNoticias();
+}
+
+async function moverNoticia(id, direccion) {
+  const esAdmin = sesion.rol === 'admin';
+  const todasNoticias = DB.noticias.filter(n => {
+    if (n.destinatario === '__privado__') return n.autor === sesion.user;
+    if (esAdmin) return true;
+    if (n.destinatarios && n.destinatarios.length) return n.destinatarios.includes(sesion.user);
+    const dest = n.destinatario || 'todos';
+    if (dest === 'todos') return true;
+    if (sesion.rol === 'club') return dest === sesion.user;
+    return false;
+  });
+  const lista = _ordenarNoticias(todasNoticias);
+  if (lista.some(n => !n.orden)) {
+    lista.forEach((n, i) => { n.orden = (lista.length - i) * 1000; });
+  }
+  const idx = lista.findIndex(n=>n.id===id);
+  const destIdx = direccion === 'arriba' ? idx-1 : idx+1;
+  if (idx<0 || destIdx<0 || destIdx>=lista.length) return;
+  const a = DB.noticias.find(n=>n.id===lista[idx].id);
+  const b = DB.noticias.find(n=>n.id===lista[destIdx].id);
+  const ordenA = a.orden || 0, ordenB = b.orden || 0;
+  a.orden = ordenB; b.orden = ordenA;
+  await saveCol('noticias'); renderNoticias();
+}
+
 function renderNoticias() {
   const el = document.getElementById('noticiasContent');
   const esAdmin = sesion.rol === 'admin';
@@ -4447,8 +4551,10 @@ function renderNoticias() {
   }
   const catBadge = {general:'#E8F0FB',resultado:'#D5F5E3',convocatoria:'#FBF5E0',aviso:'#FDECEA'};
   const catColor = {general:'#1A56A0',resultado:'#1A7A3C',convocatoria:'#8B6914',aviso:'#9B0D22'};
-  el.innerHTML = [...todasNoticias].reverse().map(n => `
-    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-destinatarios="${(n.destinatarios||[]).join(',')}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}">
+  const listaOrdenada = _ordenarNoticias(todasNoticias);
+  el.innerHTML = listaOrdenada.map((n, idx) => `
+    <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-destinatarios="${(n.destinatarios||[]).join(',')}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}" style="${n.destacada?'border:2px solid #D4A017;':''}">
+      ${n.destacada?'<div style="font-size:10px;font-weight:700;color:#8A6D00;background:#FBF5E0;padding:3px 10px;border-radius:6px 6px 0 0;margin:-1px -1px 8px -1px;">⭐ DESTACADA</div>':''}
       <div class="noticia-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
@@ -4456,9 +4562,13 @@ function renderNoticias() {
           ${esAdmin && n.destinatario && n.destinatario!=='todos' ? `<span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:#EAF0FB;color:#1A56A0;">→ ${n.destinatario==='__privado__'?'🔒 Privado':(n.destinatarios&&n.destinatarios.length>1?n.destinatarios.map(_etiquetaDestinatarioClub).join(', '):_etiquetaDestinatarioClub(n.destinatario))}</span>` : ''}
         </div>
         <div class="noticia-titulo">${n.titulo}</div>
-        <div class="noticia-texto">${_autolink(n.texto)}</div>
+        <div class="noticia-texto">${_renderTextoNoticia(n.texto)}</div>
         ${(sesion.rol==='admin'&&n.destinatario!=='__privado__') || (n.destinatario==='__privado__'&&n.autor===sesion.user) ?`<div class="noticia-actions">
           <button class="btn btn-outline btn-xs" onclick="editarNoticia('${n.id}')">✏️ Editar</button>
+          <button class="btn btn-outline btn-xs" onclick="duplicarNoticia('${n.id}')">📋 Duplicar</button>
+          ${sesion.rol==='admin'?`<button class="btn btn-outline btn-xs" onclick="toggleDestacadaNoticia('${n.id}')">${n.destacada?'⭐ Quitar destacado':'☆ Destacar'}</button>
+          <button class="btn btn-outline btn-xs" onclick="moverNoticia('${n.id}','arriba')" ${idx===0?'disabled':''}>↑</button>
+          <button class="btn btn-outline btn-xs" onclick="moverNoticia('${n.id}','abajo')" ${idx===listaOrdenada.length-1?'disabled':''}>↓</button>`:''}
           <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarNoticia('${n.id}')">🗑️ Eliminar</button>
         </div>`:''}
       </div>
@@ -4480,10 +4590,59 @@ function renderNoticias() {
   }
 }
 
+function _formatoNoticia(comando) {
+  document.getElementById('nTextoRico').focus();
+  document.execCommand(comando, false, null);
+}
+function _formatoNoticiaBloque(tag) {
+  if (!tag) return;
+  document.getElementById('nTextoRico').focus();
+  document.execCommand('formatBlock', false, tag);
+}
+
+// Convierte un enlace de Google Drive (compartir) a formato directamente visualizable
+function _convertirEnlaceDrive(url) {
+  const m = url.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (m) return `https://lh3.googleusercontent.com/d/${m[1]}`;
+  const m2 = url.match(/drive\.google\.com\/open\?id=([^&]+)/);
+  if (m2) return `https://lh3.googleusercontent.com/d/${m2[1]}`;
+  return url;
+}
+
+function _insertarImagenNoticia() {
+  const url = window.prompt('Pega el enlace de la imagen (por ejemplo, un enlace para compartir de Google Drive):');
+  if (!url) return;
+  const urlFinal = _convertirEnlaceDrive(url.trim());
+  document.getElementById('nTextoRico').focus();
+  document.execCommand('insertHTML', false,
+    `<br><img src="${urlFinal}" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;" onerror="this.style.border='1px dashed #C8102E';this.style.padding='10px';this.alt='⚠️ No se pudo cargar la imagen';"><br>`
+  );
+}
+function _esHTML(texto) {
+  return /<[a-z][\s\S]*>/i.test(texto || '');
+}
+
+// Al editar: si es texto plano antiguo, lo convierte a HTML básico para el editor
+function _cargarTextoEnEditor(texto) {
+  if (!texto) return '';
+  if (_esHTML(texto)) return texto;
+  return texto.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+
+// Al mostrar: renderiza el HTML del editor (o texto plano antiguo con saltos de línea) + autolink de URLs sueltas
+function _renderTextoNoticia(texto) {
+  if (!texto) return '';
+  const html = _cargarTextoEnEditor(texto);
+  return html.replace(/(https?:\/\/[^\s<"]+)/g, url =>
+    `<a href="${url}" target="_blank" rel="noopener" style="color:var(--rojo);text-decoration:underline;word-break:break-all;">${url}</a>`
+  );
+}
+
 function abrirModalNoticia() {
   editNoticiaId = null;
   document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Nueva nota privada' : 'Nueva noticia';
-  ['nTitulo','nTexto'].forEach(id=>document.getElementById(id).value='');
+  ['nTitulo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nTextoRico').innerHTML = '';
   document.getElementById('nFecha').value = _hoyLocal();
   document.getElementById('nCategoria').value = 'general';
   const wrapDest = document.getElementById('nDestinatarioWrap');
@@ -4499,6 +4658,7 @@ function abrirModalNoticia() {
 function _poblarDestinatarios(destinatarioActual, destinatariosActual) {
   const box = document.getElementById('nDestinatarioBox');
   const clubes = DB.clubes || [];
+  const grupos = DB.gruposclubes || [];
   const marcados = Array.isArray(destinatariosActual) ? destinatariosActual : [];
   const esTodos = destinatarioActual === 'todos' || (!marcados.length && destinatarioActual !== '__privado__');
   const esPrivado = destinatarioActual === '__privado__';
@@ -4506,19 +4666,36 @@ function _poblarDestinatarios(destinatarioActual, destinatariosActual) {
   const estiloLinea = 'display:block;text-align:left;padding:5px 0;cursor:pointer;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;opacity:1;margin:0;';
   const chk = (val, checked) => `<input type="checkbox" data-dest="${val}" ${checked?'checked':''} onchange="_toggleDestinatarioCheck(this)" style="vertical-align:middle;margin-right:8px;">`;
 
+  const seccionGrupos = grupos.length ? `
+    <div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin:8px 0 4px;">🗂️ Grupos (selección rápida)</div>
+    ${grupos.map(g => `<label style="${estiloLinea}"><input type="checkbox" data-grupo="${g.id}" onchange="_toggleGrupoCheck(this)" style="vertical-align:middle;margin-right:8px;">${g.nombre} <span style="color:var(--gris-suave);">(${(g.miembros||[]).length})</span></label>`).join('')}
+    <div style="border-top:1px solid var(--gris-linea);margin:6px 0;"></div>` : '';
+
   box.innerHTML =
     `<label style="${estiloLinea}">${chk('todos', esTodos)}📢 Todos</label>` +
     `<label style="${estiloLinea}">${chk('__privado__', esPrivado)}🔒 Privado (solo yo, a modo de agenda)</label>` +
     `<div style="border-top:1px solid var(--gris-linea);margin:6px 0;"></div>` +
+    seccionGrupos +
     clubes.map(c => {
       const etiqueta = _etiquetaDestinatarioClub(c.user);
       return `<label style="${estiloLinea}">${chk(c.user, marcados.includes(c.user))}${etiqueta}</label>`;
     }).join('');
 }
 
+function _toggleGrupoCheck(chkGrupo) {
+  const g = (DB.gruposclubes||[]).find(x=>x.id===chkGrupo.dataset.grupo);
+  if (!g) return;
+  const box = document.getElementById('nDestinatarioBox');
+  const miembros = g.miembros || [];
+  miembros.forEach(user => {
+    const chkClub = box.querySelector(`input[data-dest="${user}"]`);
+    if (chkClub) { chkClub.checked = chkGrupo.checked; _toggleDestinatarioCheck(chkClub); }
+  });
+}
+
 function _toggleDestinatarioCheck(chk) {
   const box = document.getElementById('nDestinatarioBox');
-  const checks = Array.from(box.querySelectorAll('input[type=checkbox]'));
+  const checks = Array.from(box.querySelectorAll('input[data-dest]'));
   const val = chk.dataset.dest;
   if (val === 'todos' || val === '__privado__') {
     // Marcar Todos/Privado desmarca cualquier otra cosa (son excluyentes)
@@ -4538,11 +4715,30 @@ function _toggleDestinatarioCheck(chk) {
 
 function _leerDestinatariosSeleccionados() {
   const box = document.getElementById('nDestinatarioBox');
-  const marcados = Array.from(box.querySelectorAll('input[type=checkbox]:checked')).map(c => c.dataset.dest);
+  const marcados = Array.from(box.querySelectorAll('input[data-dest]:checked')).map(c => c.dataset.dest);
   if (marcados.includes('todos')) return { destinatario: 'todos', destinatarios: [] };
   if (marcados.includes('__privado__')) return { destinatario: '__privado__', destinatarios: [] };
   if (!marcados.length) return { destinatario: 'todos', destinatarios: [] };
   return { destinatario: marcados.length===1 ? marcados[0] : 'multi', destinatarios: marcados };
+}
+
+function duplicarNoticia(id) {
+  const n = DB.noticias.find(x=>x.id===id); if (!n) return;
+  editNoticiaId = null;
+  document.getElementById('modalNoticiaTitle').textContent = 'Nueva noticia (copia)';
+  document.getElementById('nTitulo').value = 'Copia de ' + (n.titulo||'');
+  document.getElementById('nTextoRico').innerHTML = _cargarTextoEnEditor(n.texto||'');
+  document.getElementById('nFecha').value = _hoyLocal();
+  document.getElementById('nCategoria').value = n.categoria||'general';
+  const wrapDest = document.getElementById('nDestinatarioWrap');
+  if (sesion.rol==='club') {
+    if (wrapDest) wrapDest.style.display='none';
+  } else {
+    if (wrapDest) wrapDest.style.display='';
+    _poblarDestinatarios(n.destinatario||'todos', n.destinatarios||[]);
+  }
+  abrirModal('modalNoticia');
+  toast('Copia lista para revisar y guardar');
 }
 
 function editarNoticia(id) {
@@ -4550,7 +4746,7 @@ function editarNoticia(id) {
   const n = DB.noticias.find(x=>x.id===id); if (!n) return;
   document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Editar nota privada' : 'Editar noticia';
   document.getElementById('nTitulo').value    = n.titulo||'';
-  document.getElementById('nTexto').value     = n.texto||'';
+  document.getElementById('nTextoRico').innerHTML = _cargarTextoEnEditor(n.texto||'');
   document.getElementById('nFecha').value     = n.fecha||'';
   document.getElementById('nCategoria').value = n.categoria||'general';
   const wrapDest = document.getElementById('nDestinatarioWrap');
@@ -4565,9 +4761,10 @@ function editarNoticia(id) {
 
 async function guardarNoticia() {
   const seleccionDest = sesion.rol==='club' ? { destinatario: '__privado__', destinatarios: [] } : _leerDestinatariosSeleccionados();
+  const esNueva = !editNoticiaId;
   const datos = {
     titulo:       document.getElementById('nTitulo').value.trim(),
-    texto:        document.getElementById('nTexto').value.trim(),
+    texto:        document.getElementById('nTextoRico').innerHTML.trim(),
     fecha:        document.getElementById('nFecha').value,
     categoria:    document.getElementById('nCategoria').value,
     destinatario: seleccionDest.destinatario,
@@ -4579,9 +4776,25 @@ async function guardarNoticia() {
     const idx = DB.noticias.findIndex(n=>n.id===editNoticiaId);
     if (idx>=0) DB.noticias[idx] = { ...DB.noticias[idx], ...datos };
   } else {
-    DB.noticias.push({ id: uid(), ...datos });
+    DB.noticias.push({ id: uid(), orden: Date.now(), destacada: false, ...datos });
   }
   await saveCol('noticias'); cerrarModal('modalNoticia'); toast('Noticia publicada'); renderNoticias();
+
+  // Aviso por email: solo noticias nuevas dirigidas a clubes/familias concretos (no "Todos" ni privadas)
+  if (esNueva && sesion.rol === 'admin') {
+    const destinatariosAviso = seleccionDest.destinatarios.length
+      ? seleccionDest.destinatarios
+      : (seleccionDest.destinatario && seleccionDest.destinatario!=='todos' && seleccionDest.destinatario!=='__privado__' ? [seleccionDest.destinatario] : []);
+    if (destinatariosAviso.length) {
+      try {
+        const url = SCRIPT_URL + '?action=enviarAvisoNoticia&pwd=cbed2627'
+          + '&destinatarios=' + encodeURIComponent(JSON.stringify(destinatariosAviso))
+          + '&titulo=' + encodeURIComponent(datos.titulo);
+        const resp = await jsonpFetch(url, 8000);
+        if (resp && resp.ok && resp.enviados) toast(`Aviso enviado por email a ${resp.enviados} destinatario(s)`);
+      } catch(e) { /* el aviso es un extra; si falla, la noticia ya está guardada igualmente */ }
+    }
+  }
 }
 
 async function eliminarNoticia(id) {
@@ -4818,8 +5031,12 @@ function renderVistaFamiliaJugador() {
   const evaluaciones = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===j.id)
     .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
 
-  const noticias = (DB.noticias||[]).filter(n=>n.destinatario===sesion.user)
-    .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
+  const noticias = _ordenarNoticias((DB.noticias||[]).filter(n => {
+    if (n.destinatario === '__privado__') return false;
+    if (n.destinatario === 'todos' || !n.destinatario) return true;
+    if (n.destinatarios && n.destinatarios.length) return n.destinatarios.includes(sesion.user);
+    return n.destinatario === sesion.user;
+  }));
 
   cont.innerHTML = `
     <div style="background:var(--marino,#0B1F3A);color:#fff;border-radius:14px;padding:20px;margin-bottom:20px;">
@@ -4846,11 +5063,28 @@ function renderVistaFamiliaJugador() {
         <div class="card-equipo" style="margin-bottom:12px;">
           <div style="font-weight:700;margin-bottom:4px;">${n.titulo||''}</div>
           <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${n.fecha||''}</div>
-          <div style="font-size:13px;">${_autolink(n.texto)}</div>
+          <div style="font-size:13px;">${_renderTextoNoticia(n.texto)}</div>
+        </div>`).join('')}
+    </div>
+
+    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Mis sugerencias</h2>
+    <div style="margin-bottom:20px;">
+      ${!(DB.sugerencias||[]).length ? '<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Aún no has enviado ninguna.</div>' :
+        [...DB.sugerencias].reverse().map(s => `
+        <div class="card-equipo" style="margin-bottom:10px;">
+          <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${s.paraAlias?' · Para: '+s.paraAlias:''}</div>
+          <div style="font-size:13px;margin-top:4px;">${s.texto}</div>
+          ${(s.respuestas||[]).map(r => `
+            <div style="margin-top:8px;margin-left:12px;padding:8px 10px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
+              <div style="font-size:10px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
+              <div style="font-size:12px;margin-top:2px;">${r.texto}</div>
+            </div>`).join('') || '<div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">Aún sin respuesta.</div>'}
         </div>`).join('')}
     </div>
 
     <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
+    <label style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);display:block;margin-bottom:4px;">¿Para quién es? (opcional)</label>
+    <input id="famSugPara" placeholder="Ej: entrenador Javier, monitor de porteros…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;">
     <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
     <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
   `;
@@ -4880,6 +5114,7 @@ function abrirFichaEvaluacionFamilia(evId) {
 async function enviarSugerenciaFamilia() {
   const texto = document.getElementById('famSugTexto').value.trim();
   if (!texto) { toast('Escribe algo antes de enviar'); return; }
+  const paraAlias = document.getElementById('famSugPara').value.trim();
   const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
   const nombreRemitente = j ? ('Familia de ' + j.nombre + ' ' + (j.apellidos||'')) : 'Familia';
   if (!DB.sugerencias) DB.sugerencias = [];
@@ -4887,14 +5122,43 @@ async function enviarSugerenciaFamilia() {
     id: uid(),
     nombre: nombreRemitente,
     texto,
-    fecha: new Date().toLocaleDateString('es-ES')
+    paraAlias,
+    fecha: new Date().toLocaleDateString('es-ES'),
+    origenUser: sesion.user,
+    leida: false
   });
   await saveCol('sugerencias');
-  document.getElementById('famSugTexto').value = '';
   toast('Sugerencia enviada, gracias');
+  renderVistaFamiliaJugador();
+}
+
+function actualizarBadgeSugerencias() {
+  const btn = document.querySelector('.nav-btn[data-tab="sugerencias"]');
+  if (!btn) return;
+  let badge = btn.querySelector('.badge-sug-nuevas');
+  if (sesion.rol !== 'admin') { if (badge) badge.remove(); return; }
+  const nuevas = (DB.sugerencias||[]).filter(s => !s.leida).length;
+  if (!nuevas) { if (badge) badge.remove(); return; }
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.className = 'badge-sug-nuevas';
+    badge.style.cssText = 'display:inline-block;background:var(--rojo);color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px;margin-left:6px;vertical-align:middle;';
+    btn.appendChild(badge);
+  }
+  badge.textContent = nuevas;
+}
+
+async function marcarSugerenciasLeidas() {
+  if (sesion.rol !== 'admin') return;
+  const noLeidas = (DB.sugerencias||[]).filter(s => !s.leida);
+  if (!noLeidas.length) return;
+  noLeidas.forEach(s => { s.leida = true; });
+  await saveCol('sugerencias');
+  actualizarBadgeSugerencias();
 }
 
 function renderSugerencias() {
+  if (sesion.rol === 'admin') setTimeout(marcarSugerenciasLeidas, 1500);
   const el = document.getElementById('sugerenciasContent');
   const esAdmin    = sesion.rol==='admin';
   const esFamilias = sesion.rol==='familias';
@@ -4917,9 +5181,19 @@ function renderSugerencias() {
   } else if (esAdmin) {
     html += [...DB.sugerencias].reverse().map(s => `
       <div class="sug-card">
-        <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}</div>
+        <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}${s.paraAlias?` · <span style="color:var(--rojo);font-weight:700;">Para: ${s.paraAlias}</span>`:''}</div>
         <div class="sug-texto">${s.texto}</div>
+        ${(s.respuestas||[]).map(r => `
+          <div style="margin-top:10px;margin-left:16px;padding:8px 12px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
+            <div style="font-size:11px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
+            <div style="font-size:13px;margin-top:2px;">${r.texto}</div>
+          </div>`).join('')}
+        <div id="sugResponderBox_${s.id}" style="display:none;margin-top:10px;">
+          <textarea id="sugRespuestaTexto_${s.id}" rows="2" placeholder="Escribe tu respuesta…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea>
+          <button class="btn btn-rojo btn-sm" style="margin-top:6px;" onclick="responderSugerencia('${s.id}')">Enviar respuesta</button>
+        </div>
         <div class="sug-actions">
+          <button class="btn btn-outline btn-xs" onclick="document.getElementById('sugResponderBox_${s.id}').style.display='';">💬 Responder</button>
           <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarSug('${s.id}')">🗑️ Eliminar</button>
         </div>
       </div>`).join('');
@@ -4936,12 +5210,30 @@ async function guardarSug() {
     id: uid(),
     nombre: document.getElementById('sugNombre').value.trim() || 'Anónimo',
     texto,
-    fecha: new Date().toLocaleDateString('es-ES')
+    fecha: new Date().toLocaleDateString('es-ES'),
+    origenUser: (sesion.rol==='club') ? sesion.user : '',
+    leida: false
   });
   window._sugEnviada = true;
   document.getElementById('sugTexto').value = '';
   document.getElementById('sugNombre').value = '';
   await saveCol('sugerencias'); cerrarModal('modalSug'); toast('Sugerencia enviada, gracias'); renderSugerencias();
+}
+
+async function responderSugerencia(id) {
+  const textarea = document.getElementById('sugRespuestaTexto_' + id);
+  const texto = textarea.value.trim();
+  if (!texto) { toast('Escribe algo antes de enviar'); return; }
+  const s = DB.sugerencias.find(x=>x.id===id); if (!s) return;
+  if (!s.respuestas) s.respuestas = [];
+  s.respuestas.push({
+    texto,
+    autor: sesion.nombre || 'Coordinador',
+    fecha: new Date().toLocaleDateString('es-ES')
+  });
+  await saveCol('sugerencias');
+  toast('Respuesta enviada');
+  renderSugerencias();
 }
 
 async function eliminarSug(id) {
@@ -5135,11 +5427,7 @@ console.log('Familias: acceso directo (sin contraseña)');
           (remote||[]).forEach(x => { if (x?.id && !del[x.id]) map[x.id] = {...x}; });
           (local||[]).forEach(x  => {
             if (!x?.id || del[x.id]) return;
-            if (map[x.id]) {
-              const merged = {...map[x.id]};
-              Object.keys(x).forEach(k => { if (x[k] !== '' && x[k] !== undefined && x[k] !== null) merged[k] = x[k]; });
-              map[x.id] = merged;
-            } else { map[x.id] = {...x}; }
+            if (!map[x.id]) map[x.id] = {...x}; // el servidor aún no tiene este registro (recién creado localmente)
           });
           Object.keys(del).forEach(k => delete map[k]);
           return Object.values(map);
@@ -5158,9 +5446,11 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.escuelas?.length)      DB.escuelas      = merge(DB.escuelas,      d.escuelas);
         if (d.personal?.length)      DB.personal      = merge(DB.personal,      d.personal);
         if (d.evaluaciones?.length)  DB.evaluaciones  = merge(DB.evaluaciones,  d.evaluaciones);
+        if (d.gruposclubes?.length)  DB.gruposclubes  = merge(DB.gruposclubes,  d.gruposclubes);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
+        actualizarBadgeSugerencias();
       } else { setSyncStatus('local'); }
     } catch(e) { setSyncStatus('error'); }
   }
@@ -5182,16 +5472,18 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.actas          = d.actas          || [];
         DB.noticias       = d.noticias       || [];
         DB.goleadores     = d.goleadores     || [];
-        DB.sugerencias    = d.sugerencias    || DB.sugerencias || [];
-        DB.patrocinadores = d.patrocinadores || DB.patrocinadores || [];
+        DB.sugerencias    = (d.sugerencias && d.sugerencias.length) ? d.sugerencias : (DB.sugerencias || []);
+        DB.patrocinadores = (d.patrocinadores && d.patrocinadores.length) ? d.patrocinadores : (DB.patrocinadores || []);
         DB.sedes          = d.sedes          || [];
-        DB.clubes         = d.clubes         || DB.clubes || [];
+        DB.clubes         = (d.clubes && d.clubes.length) ? d.clubes : (DB.clubes || []);
         DB.escuelas       = d.escuelas       || [];
         DB.personal       = d.personal       || [];
         DB.evaluaciones   = d.evaluaciones   || [];
+        DB.gruposclubes   = d.gruposclubes   || [];
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
+        actualizarBadgeSugerencias();
         if (!silencioso) toast('Datos recargados desde el servidor');
       } else { setSyncStatus('error'); if (!silencioso) toast('No se pudo recargar'); }
     } catch(e) { setSyncStatus('error'); if (!silencioso) toast('Error al recargar'); }
@@ -5704,6 +5996,71 @@ function renderClubes() {
           </div>
         </div>`).join('')}
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  GRUPOS DE CLUBES
+// ══════════════════════════════════════════════════════
+function abrirModalGrupoClubes() {
+  renderListaGruposClubes();
+  abrirModal('modalGrupoClubes');
+}
+
+function renderListaGruposClubes() {
+  const el = document.getElementById('listaGruposClubes');
+  const grupos = DB.gruposclubes || [];
+  if (!grupos.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:16px 0;"><p style="font-size:13px;color:var(--gris-suave);">No hay grupos creados todavía.</p></div>';
+    return;
+  }
+  el.innerHTML = grupos.map(g => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--gris-linea);border-radius:6px;margin-bottom:6px;">
+      <div>
+        <div style="font-weight:600;font-size:13px;">${g.nombre}</div>
+        <div style="font-size:11px;color:var(--gris-suave);">${(g.miembros||[]).length} club(es)</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-outline btn-xs" onclick="abrirModalGrupoClubEdit('${g.id}')">✏️</button>
+        <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="eliminarGrupoClub('${g.id}')">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function abrirModalGrupoClubEdit(id) {
+  const g = id ? (DB.gruposclubes||[]).find(x=>x.id===id) : null;
+  document.getElementById('modalGrupoClubEditTitle').textContent = g ? 'Editar grupo' : 'Nuevo grupo de clubes';
+  document.getElementById('gcNombre').value = g ? g.nombre : '';
+  document.getElementById('gcEditId').value = g ? g.id : '';
+  const box = document.getElementById('gcMiembrosBox');
+  const miembros = g ? (g.miembros||[]) : [];
+  box.innerHTML = (DB.clubes||[]).map(c => `
+    <label style="display:block;text-align:left;padding:5px 0;cursor:pointer;font-size:13px;">
+      <input type="checkbox" data-club="${c.user}" ${miembros.includes(c.user)?'checked':''} style="width:16px;height:16px;vertical-align:middle;margin-right:8px;">${_etiquetaDestinatarioClub(c.user)}
+    </label>`).join('') || '<div style="font-size:12px;color:var(--gris-suave);">No hay clubes creados todavía.</div>';
+  abrirModal('modalGrupoClubEdit');
+}
+
+async function guardarGrupoClub() {
+  const nombre = document.getElementById('gcNombre').value.trim();
+  if (!nombre) { toast('El nombre del grupo es obligatorio'); return; }
+  const editId = document.getElementById('gcEditId').value;
+  const miembros = Array.from(document.querySelectorAll('#gcMiembrosBox input[data-club]:checked')).map(c=>c.dataset.club);
+  if (!DB.gruposclubes) DB.gruposclubes = [];
+  if (editId) {
+    const idx = DB.gruposclubes.findIndex(g=>g.id===editId);
+    if (idx>=0) DB.gruposclubes[idx] = { ...DB.gruposclubes[idx], nombre, miembros };
+  } else {
+    DB.gruposclubes.push({ id: uid(), nombre, miembros });
+  }
+  await saveCol('gruposclubes'); cerrarModal('modalGrupoClubEdit'); toast('Grupo guardado'); renderListaGruposClubes();
+}
+
+async function eliminarGrupoClub(id) {
+  if (!confirm('¿Eliminar este grupo? Los clubes seguirán existiendo, solo se borra la agrupación.')) return;
+  DB.gruposclubes = (DB.gruposclubes||[]).filter(g=>g.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
+  await saveCol('gruposclubes'); toast('Grupo eliminado'); renderListaGruposClubes();
 }
 
 function abrirModalClub() {
