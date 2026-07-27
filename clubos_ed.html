@@ -4613,10 +4613,34 @@ function _insertarImagenNoticia() {
   const url = window.prompt('Pega el enlace de la imagen (por ejemplo, un enlace para compartir de Google Drive):');
   if (!url) return;
   const urlFinal = _convertirEnlaceDrive(url.trim());
-  document.getElementById('nTextoRico').focus();
-  document.execCommand('insertHTML', false,
-    `<br><img src="${urlFinal}" style="max-width:100%;border-radius:8px;margin:6px 0;display:block;" onerror="this.style.border='1px dashed #C8102E';this.style.padding='10px';this.alt='⚠️ No se pudo cargar la imagen';"><br>`
-  );
+  const editor = document.getElementById('nTextoRico');
+  editor.focus();
+
+  const img = document.createElement('img');
+  img.src = urlFinal;
+  img.style.cssText = 'max-width:100%;border-radius:8px;margin:6px 0;display:block;';
+  img.onerror = function () {
+    this.style.border = '1px dashed #C8102E';
+    this.style.padding = '10px';
+    this.alt = '⚠️ No se pudo cargar la imagen';
+  };
+
+  const sel = window.getSelection();
+  let range;
+  if (sel.rangeCount > 0 && editor.contains(sel.anchorNode)) {
+    range = sel.getRangeAt(0);
+  } else {
+    range = document.createRange();
+    range.selectNodeContents(editor);
+    range.collapse(false); // al final del contenido
+  }
+  range.deleteContents();
+  range.insertNode(img);
+  range.setStartAfter(img);
+  range.setEndAfter(img);
+  range.collapse(true);
+  sel.removeAllRanges();
+  sel.addRange(range);
 }
 function _esHTML(texto) {
   return /<[a-z][\s\S]*>/i.test(texto || '');
