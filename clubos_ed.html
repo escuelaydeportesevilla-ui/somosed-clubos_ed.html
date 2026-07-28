@@ -587,6 +587,8 @@ tbody td.center{text-align:center;}
 .card-competicion:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12);}
 .card-competicion.inactiva{opacity:.6;}
 #compContent{background:#E5E5E0;border-radius:12px;padding:14px;margin-top:8px;}
+#escuelasContent:has(.cards-escuelas){background:#E5E5E0;border-radius:12px;padding:14px;}
+#patrocinadorContent:has(.cards-escuelas){background:#E5E5E0;border-radius:12px;padding:14px;}
 .cards-escuelas .card-equipo{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 
 /* ── Jugadores: tarjetas en móvil ── */
@@ -1570,11 +1572,11 @@ tbody td.center{text-align:center;}
       </div>
     </div>
 
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-      <button class="btn btn-outline" id="btnExportarFichaJug" style="display:none;margin-right:auto;" onclick="exportarFichaCompletaJugador()">📄 Exportar ficha</button>
-      <button class="btn btn-outline" id="btnDuplicarJugador" style="display:none;" onclick="duplicarJugador()">🔁 Duplicar en otro equipo</button>
-      <button class="btn btn-outline" onclick="cerrarModal('modalJugador')">Cancelar</button>
-      <button class="btn btn-rojo" onclick="guardarJugador()">Guardar jugador</button>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">
+      <button class="btn btn-outline" id="btnExportarFichaJug" style="display:none;margin-right:auto;flex:1 1 auto;min-width:120px;" onclick="exportarFichaCompletaJugador()">📄 Exportar ficha</button>
+      <button class="btn btn-outline" id="btnDuplicarJugador" style="display:none;flex:1 1 auto;min-width:120px;" onclick="duplicarJugador()">🔁 Duplicar en otro equipo</button>
+      <button class="btn btn-outline" style="flex:1 1 auto;min-width:100px;" onclick="cerrarModal('modalJugador')">Cancelar</button>
+      <button class="btn btn-rojo" style="flex:1 1 auto;min-width:100px;" onclick="guardarJugador()">Guardar jugador</button>
     </div>
   </div>
 </div>
