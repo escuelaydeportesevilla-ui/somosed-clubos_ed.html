@@ -5930,7 +5930,7 @@ function renderPersonal() {
   el.innerHTML = `<div class="cards-escuelas">` + lista.map(p => {
     const equipo  = (DB.equipos||[]).find(e=>e.id===p.equipoId);
     const escuela = (DB.escuelas||[]).find(e=>e.id===p.escuelaId);
-    const asign   = equipo ? ('🏟️ '+equipo.nombre) : escuela ? ('🏫 '+escuela.nombre) : 'Sin asignar';
+    const asign   = equipo ? (`🏟️ ${equipo.nombre}${isAdmin?' · '+nombreClub(equipo.clubId):''}`) : escuela ? ('🏫 '+escuela.nombre) : 'Sin asignar';
     const estado  = p.activo !== false ? '<span style="color:#1A7A3C;font-weight:700;">● Activo</span>' : '<span style="color:#999;">● Inactivo</span>';
     return `
     <div class="card-equipo" style="border-top:4px solid #2E4057;">
