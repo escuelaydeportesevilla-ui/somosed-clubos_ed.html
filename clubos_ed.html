@@ -1221,6 +1221,12 @@ tbody td.center{text-align:center;}
         </select>
       </div>
       <div class="form-field"><label>Categoría</label><input id="eqCategoria" placeholder="Alevín, Benjamín..."></div>
+      <div class="form-field form-full" id="wrapEntrenadorSelect" style="display:none;">
+        <label>Entrenador</label>
+        <select id="eqEntrenadorSelect" onchange="_aplicarEntrenadorSeleccionado()">
+          <option value="">— Escribir manualmente —</option>
+        </select>
+      </div>
       <div class="form-field"><label>Entrenador</label><input id="eqDelegado" placeholder="Nombre entrenador"></div>
       <div class="form-field"><label>Email entrenador</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
       <div class="form-field"><label>Teléfono entrenador</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
@@ -2678,6 +2684,34 @@ function seleccionarEquipoBuscador(id) {
   editarEquipo(id);
 }
 
+function _pintarSelectEntrenador(entrenadorActual) {
+  const isAdmin = sesion.rol === 'admin';
+  const wrap = document.getElementById('wrapEntrenadorSelect');
+  const sel = document.getElementById('eqEntrenadorSelect');
+  if (!isAdmin && !puedeEvaluar()) { wrap.style.display = 'none'; return; }
+  const listaPersonal = isAdmin ? (DB.personal||[]) : (DB.personal||[]).filter(p=>p.clubId===sesion.user);
+  const activos = listaPersonal.filter(p=>p.activo!==false);
+  wrap.style.display = '';
+  const actual = (entrenadorActual||'').trim().toLowerCase();
+  sel.innerHTML = '<option value="">— Escribir manualmente —</option>' +
+    activos.map(p => {
+      const nombreCompleto = (p.nombre+' '+(p.apellidos||'')).trim();
+      const sel2 = nombreCompleto.toLowerCase()===actual ? ' selected' : '';
+      return `<option value="${p.id}"${sel2}>${nombreCompleto}${p.rol?' · '+p.rol:''}</option>`;
+    }).join('');
+}
+
+function _aplicarEntrenadorSeleccionado() {
+  const sel = document.getElementById('eqEntrenadorSelect');
+  if (!sel.value) return; // "Escribir manualmente": no tocar los campos
+  const isAdmin = sesion.rol === 'admin';
+  const listaPersonal = isAdmin ? (DB.personal||[]) : (DB.personal||[]).filter(p=>p.clubId===sesion.user);
+  const p = listaPersonal.find(x=>x.id===sel.value); if (!p) return;
+  document.getElementById('eqDelegado').value = (p.nombre+' '+(p.apellidos||'')).trim();
+  document.getElementById('eqEmailDelegado').value = p.email || '';
+  document.getElementById('eqTelDelegado').value = p.telefono || '';
+}
+
 function abrirModalEquipo() {
   editEquipoId = null;
   document.getElementById('modalEquipoTitle').textContent = 'Nuevo equipo';
@@ -2686,6 +2720,7 @@ function abrirModalEquipo() {
   document.getElementById('eqDelegado').value  = '';
   document.getElementById('eqEmailDelegado').value = '';
   document.getElementById('eqTelDelegado').value   = '';
+  _pintarSelectEntrenador('');
   document.getElementById('eq1CamisetaColor').value  = '#C8102E';
   document.getElementById('eq1PantaloonColor').value = '#111111';
   renderPaletaColor('paletaCamiseta','eq1CamisetaColor','#C8102E');
@@ -2709,6 +2744,7 @@ function editarEquipo(id) {
   document.getElementById('eqDelegado').value  = e.delegado  ||'';
   document.getElementById('eqEmailDelegado').value = e.emailDelegado||'';
   document.getElementById('eqTelDelegado').value   = e.telDelegado  ||'';
+  _pintarSelectEntrenador(e.delegado);
   document.getElementById('eq1CamisetaColor').value  = e.eq1Camiseta ||'#C8102E';
   document.getElementById('eq1PantaloonColor').value = e.eq1Pantalon ||'#111111';
   renderPaletaColor('paletaCamiseta','eq1CamisetaColor', e.eq1Camiseta ||'#C8102E');
