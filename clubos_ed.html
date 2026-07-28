@@ -1021,6 +1021,16 @@ tbody td.center{text-align:center;}
     <div class="form-grid">
       <div class="form-field"><label>Nombre *</label><input id="perNombre" placeholder="Nombre"></div>
       <div class="form-field"><label>Apellidos</label><input id="perApellidos" placeholder="Apellidos"></div>
+      <div class="form-field form-full"><label>Club al que pertenece</label>
+        <select id="perClub">
+          <option value="cbedadmin">ClubOS ED (Admin, sin club concreto)</option>
+        </select>
+      </div>
+      <div class="form-field form-full" id="perAsignacionActualWrap" style="display:none;">
+        <div style="font-size:12px;background:#EAF0FB;color:#1A56A0;border-radius:6px;padding:8px 10px;">
+          🔗 <span id="perAsignacionActualTexto"></span>
+        </div>
+      </div>
       <div class="form-field"><label>Rol</label>
         <select id="perRol">
           <option value="Entrenador">Entrenador</option>
@@ -2689,15 +2699,16 @@ function _pintarSelectEntrenador(entrenadorActual) {
   const wrap = document.getElementById('wrapEntrenadorSelect');
   const sel = document.getElementById('eqEntrenadorSelect');
   if (!isAdmin && !puedeEvaluar()) { wrap.style.display = 'none'; return; }
-  const listaPersonal = isAdmin ? (DB.personal||[]) : (DB.personal||[]).filter(p=>p.clubId===sesion.user);
-  const activos = listaPersonal.filter(p=>p.activo!==false);
+  const activos = (DB.personal||[]).filter(p=>p.activo!==false);
   wrap.style.display = '';
   const actual = (entrenadorActual||'').trim().toLowerCase();
   sel.innerHTML = '<option value="">— Escribir manualmente —</option>' +
     activos.map(p => {
       const nombreCompleto = (p.nombre+' '+(p.apellidos||'')).trim();
       const sel2 = nombreCompleto.toLowerCase()===actual ? ' selected' : '';
-      return `<option value="${p.id}"${sel2}>${nombreCompleto}${p.rol?' · '+p.rol:''}</option>`;
+      const eqActual = (DB.equipos||[]).find(e=>e.id===p.equipoId);
+      const etiquetaAsignado = eqActual ? ` (ya en ${eqActual.nombre})` : '';
+      return `<option value="${p.id}"${sel2}>${nombreCompleto}${p.rol?' · '+p.rol:''}${etiquetaAsignado}</option>`;
     }).join('');
 }
 
@@ -2816,6 +2827,17 @@ async function guardarEquipo() {
   if (!DB.equipos) DB.equipos = [];
   const idx = DB.equipos.findIndex(e=>e.id===editEquipoId);
   if (idx>=0) DB.equipos[idx]=rec; else DB.equipos.push(rec);
+
+  // Si se eligió un Personal concreto como entrenador, "reclamarlo" para este club/equipo
+  const selEntrenador = document.getElementById('eqEntrenadorSelect');
+  if (selEntrenador && selEntrenador.value) {
+    const pIdx = (DB.personal||[]).findIndex(p=>p.id===selEntrenador.value);
+    if (pIdx >= 0) {
+      DB.personal[pIdx] = { ...DB.personal[pIdx], clubId: clubIdFinal, equipoId: rec.id };
+      await saveCol('personal');
+    }
+  }
+
   editEquipoId = null;
   await saveCol('equipos'); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
 }
@@ -5931,6 +5953,14 @@ function renderPersonal() {
   }).join('') + `</div>`;
 }
 
+function _rellenarSelectClubPersonal(clubIdActual) {
+  const sel = document.getElementById('perClub');
+  if (!sel) return;
+  sel.innerHTML = '<option value="cbedadmin">ClubOS ED (Admin, sin club concreto)</option>' +
+    (DB.clubes||[]).map(c => `<option value="${c.user}">${_etiquetaDestinatarioClub(c.user)}</option>`).join('');
+  sel.value = clubIdActual || 'cbedadmin';
+}
+
 function _rellenarSelectsPersonal(equipoIdSel, escuelaIdSel) {
   const isAdmin = sesion.rol === 'admin';
   const misEquipos  = isAdmin ? (DB.equipos||[])  : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
@@ -5946,7 +5976,9 @@ function abrirModalPersonal() {
   document.getElementById('perRol').value = 'Entrenador';
   document.getElementById('perActivo').checked = true;
   document.getElementById('perEditId').value = '';
+  _rellenarSelectClubPersonal('cbedadmin');
   _rellenarSelectsPersonal('', '');
+  document.getElementById('perAsignacionActualWrap').style.display = 'none';
   const t = document.getElementById('modalPersonalTitle'); if(t) t.textContent = 'Nuevo miembro del personal';
   abrirModal('modalPersonal');
 }
@@ -5960,7 +5992,17 @@ function editarPersonal(id) {
   document.getElementById('perEmail').value      = p.email      ||'';
   document.getElementById('perActivo').checked   = p.activo !== false;
   document.getElementById('perEditId').value     = p.id;
+  _rellenarSelectClubPersonal(p.clubId||'cbedadmin');
   _rellenarSelectsPersonal(p.equipoId||'', p.escuelaId||'');
+  const wrapAsig = document.getElementById('perAsignacionActualWrap');
+  const eqActual = (DB.equipos||[]).find(e=>e.id===p.equipoId);
+  if (eqActual) {
+    wrapAsig.style.display = '';
+    document.getElementById('perAsignacionActualTexto').textContent =
+      `Asignado actualmente a: ${nombreClub(eqActual.clubId)} → equipo "${eqActual.nombre}"`;
+  } else {
+    wrapAsig.style.display = 'none';
+  }
   const t = document.getElementById('modalPersonalTitle'); if(t) t.textContent = 'Editar personal';
   abrirModal('modalPersonal');
 }
@@ -5978,7 +6020,7 @@ async function guardarPersonal() {
     email:      document.getElementById('perEmail').value.trim(),
     equipoId:   document.getElementById('perEquipo').value,
     escuelaId:  document.getElementById('perEscuela').value,
-    clubId:     sesion.user,
+    clubId:     document.getElementById('perClub').value || 'cbedadmin',
     activo:     document.getElementById('perActivo').checked,
   };
   if (!DB.personal) DB.personal = [];
