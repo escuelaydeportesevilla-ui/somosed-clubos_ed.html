@@ -408,6 +408,7 @@ tbody td.center{text-align:center;}
 /* ── NOTICIAS ── */
 .noticia-card{background:var(--blanco);border:1.5px solid var(--gris-linea);border-radius:12px;overflow:hidden;margin-bottom:14px;}
 .noticia-body{padding:18px;}
+.fam-item-card{background:white;border:1px solid var(--gris-linea);border-radius:10px;box-shadow:0 2px 6px rgba(0,0,0,.06);margin-bottom:12px;overflow:hidden;}
 .noticia-portada{width:100%;max-height:220px;object-fit:cover;display:block;border-radius:12px 12px 0 0;cursor:pointer;}
 .noticia-fecha{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:6px;}
 .noticia-titulo{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;text-transform:uppercase;color:var(--negro);margin-bottom:6px;}
@@ -5119,6 +5120,12 @@ function renderVistaFamiliaJugador() {
     return n.destinatario === sesion.user;
   }));
 
+  const partidosEquipo = eq ? (DB.partidos||[]).filter(p=>p.localId===eq.id||p.visitanteId===eq.id)
+    .sort((a,b)=>(a.fecha||'').localeCompare(b.fecha||'')) : [];
+  const nombreCompletoJ = (j.nombre+' '+(j.apellidos||'')).trim();
+  const golesTemporada = eq ? (DB.goleadores||[]).filter(g=>g.equipoId===eq.id && (g.jugador||'').trim().toLowerCase()===nombreCompletoJ.toLowerCase())
+    .reduce((sum,g)=>sum+(Number(g.goles)||0), 0) : 0;
+
   const btnTab = (id, label) => `<button class="btn ${tab===id?'btn-rojo':'btn-outline'} btn-sm" onclick="activarTabFamilia('${id}')">${label}</button>`;
 
   cont.innerHTML = `
@@ -5126,13 +5133,14 @@ function renderVistaFamiliaJugador() {
       <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;">Mi Jugador/a</div>
       <div style="font-size:1.4rem;font-weight:800;">${j.nombre} ${j.apellidos||''}</div>
       <div style="font-size:13px;opacity:.85;margin-top:4px;">${eq?('🏟️ '+eq.nombre):'Sin equipo asignado'}${escNombres?' · 🏫 '+escNombres:''}</div>
-      ${eq && eq.delegado ? `<div style="font-size:12px;opacity:.75;margin-top:8px;border-top:1px solid rgba(255,255,255,.15);padding-top:8px;">👤 Entrenador: ${eq.delegado}${eq.telDelegado?` · 📞 <a href="tel:${eq.telDelegado}" style="color:#fff;">${eq.telDelegado}</a>`:''}</div>` : ''}
+      ${eq && eq.delegado ? `<div style="font-size:12px;opacity:.75;margin-top:8px;border-top:1px solid rgba(255,255,255,.15);padding-top:8px;">👤 Entrenador: ${eq.delegado}${eq.telDelegado?` · 📞 <a href="tel:${eq.telDelegado}" style="color:#fff;">${eq.telDelegado}</a>`:''}${eq.emailDelegado?` · ✉️ <a href="mailto:${eq.emailDelegado}" style="color:#fff;">${eq.emailDelegado}</a>`:''}</div>` : ''}
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
       ${btnTab('evaluaciones','📝 Evaluaciones')}
       ${btnTab('noticias','📰 Noticias')}
       ${btnTab('sugerencias','💬 Sugerencias')}
+      ${btnTab('partidos','⚽ Partidos')}
       <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="actualizarVistaFamiliaJugador()">🔄 Actualizar</button>
     </div>
 
@@ -5141,7 +5149,7 @@ function renderVistaFamiliaJugador() {
       <div id="famEvaluacionesList" style="margin-bottom:8px;">
         ${!evaluaciones.length ? '<div class="empty-state"><div class="ei">📝</div><p>Todavía no hay evaluaciones registradas.</p></div>' :
           evaluaciones.map(ev => `
-          <div class="card-equipo" style="border-top:4px solid #2E4057;margin-bottom:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
+          <div class="fam-item-card" style="border-top:4px solid #2E4057;margin-bottom:12px;padding:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
             <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
             ${ev.observacionesParaFamilia ? `<div style="font-size:13px;">💬 ${ev.observacionesParaFamilia}</div>` : ''}
             <div style="font-size:11px;color:var(--rojo);margin-top:6px;font-weight:700;">Ver ficha completa →</div>
@@ -5154,7 +5162,7 @@ function renderVistaFamiliaJugador() {
       <div style="margin-bottom:8px;">
         ${!noticias.length ? '<div class="empty-state"><div class="ei">📰</div><p>No tienes noticias.</p></div>' :
           noticias.map(n => `
-          <div class="card-equipo" style="margin-bottom:12px;padding:0;overflow:hidden;">
+          <div class="fam-item-card" style="margin-bottom:12px;padding:0;overflow:hidden;">
             ${n.imagenPortada?`<img src="${n.imagenPortada}" class="noticia-portada" onclick="abrirImagenCompleta('${n.imagenPortada.replace(/'/g,"\\'")}')" onerror="this.style.display='none';">`:''}
             <div style="padding:14px;">
               <div style="font-weight:700;margin-bottom:4px;">${n.titulo||''}</div>
@@ -5170,7 +5178,7 @@ function renderVistaFamiliaJugador() {
       <div style="margin-bottom:20px;">
         ${!(DB.sugerencias||[]).length ? '<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Aún no has enviado ninguna.</div>' :
           [...DB.sugerencias].reverse().map(s => `
-          <div class="card-equipo" style="margin-bottom:10px;">
+          <div class="fam-item-card" style="margin-bottom:10px;padding:12px;">
             <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${s.paraAlias?' · Para: '+s.paraAlias:''}</div>
             <div style="font-size:13px;margin-top:4px;">${s.texto}</div>
             ${(s.respuestas||[]).map(r => `
@@ -5186,6 +5194,27 @@ function renderVistaFamiliaJugador() {
       <input id="famSugPara" placeholder="Ej: entrenador Javier, monitor de porteros…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;">
       <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
       <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
+    </div>
+
+    <div style="display:${tab==='partidos'?'block':'none'};">
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:6px;">⚽ Partidos de ${eq?eq.nombre:'su equipo'}</h2>
+      <div style="font-size:12px;color:var(--gris-suave);margin-bottom:14px;">${golesTemporada>0?`⚽ ${golesTemporada} gol(es) esta temporada · `:''}* junto a la fecha = actualmente convocado/a</div>
+      <div>
+        ${!partidosEquipo.length ? '<div class="empty-state"><div class="ei">⚽</div><p>Sin partidos programados todavía.</p></div>' :
+          partidosEquipo.map(p => {
+            const esLocal = p.localId===eq.id;
+            const rival = esLocal ? (DB.equipos||[]).find(e=>e.id===p.visitanteId) : (DB.equipos||[]).find(e=>e.id===p.localId);
+            const jugado = p.estado==='jugado';
+            const resultado = jugado ? `${p.golesLocal??'-'} - ${p.golesVisitante??'-'}` : '';
+            return `<div class="fam-item-card" style="padding:12px;display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;color:var(--gris-suave);">${p.fecha||'Sin fecha'}${j.convocado?' *':''}</div>
+                <div style="font-size:13px;font-weight:600;">${esLocal?'🏠':'✈️'} vs ${rival?rival.nombre:'Rival desconocido'}</div>
+              </div>
+              ${jugado?`<div style="font-weight:800;font-size:1.1rem;color:var(--rojo);">${resultado}</div>`:'<div style="font-size:11px;color:var(--gris-suave);">Pendiente</div>'}
+            </div>`;
+          }).join('')}
+      </div>
     </div>
   `;
 }
