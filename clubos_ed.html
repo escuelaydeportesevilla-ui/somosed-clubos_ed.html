@@ -4656,8 +4656,10 @@ function _cargarTextoEnEditor(texto) {
 // Al mostrar: renderiza el HTML del editor (o texto plano antiguo con saltos de línea) + autolink de URLs sueltas
 function _renderTextoNoticia(texto) {
   if (!texto) return '';
-  const html = _cargarTextoEnEditor(texto);
-  return html.replace(/(https?:\/\/[^\s<"]+)/g, url =>
+  if (_esHTML(texto)) return texto; // ya es HTML real (puede contener <img>, etc.) — no tocar con el autolink
+  // Texto plano antiguo: escapar, respetar saltos de línea, y autolinkar URLs sueltas
+  const esc = texto.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  return esc.replace(/(https?:\/\/[^\s<"]+)/g, url =>
     `<a href="${url}" target="_blank" rel="noopener" style="color:var(--rojo);text-decoration:underline;word-break:break-all;">${url}</a>`
   );
 }
