@@ -5191,12 +5191,18 @@ function renderVistaFamiliaJugador() {
     </div>
 
     <div style="display:${tab==='sugerencias'?'block':'none'};">
-      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Mis sugerencias</h2>
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
+      <label style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);display:block;margin-bottom:4px;">¿Para quién es?</label>
+      <div id="famSugParaBox" style="border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;max-height:160px;overflow-y:auto;"></div>
+      <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
+      <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
+
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin:24px 0 14px;">💬 Mis sugerencias</h2>
       <div style="margin-bottom:20px;">
         ${!(DB.sugerencias||[]).length ? '<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Aún no has enviado ninguna.</div>' :
           [...DB.sugerencias].reverse().map(s => `
           <div class="fam-item-card" style="margin-bottom:10px;padding:12px;">
-            <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${s.paraAlias?' · Para: '+s.paraAlias:''}</div>
+            <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${(s.paraDestinatarios&&s.paraDestinatarios.length)?' · Para: '+s.paraDestinatarios.join(', '):(s.paraAlias?' · Para: '+s.paraAlias:'')}</div>
             <div style="font-size:13px;margin-top:4px;">${s.texto}</div>
             ${(s.respuestas||[]).map(r => `
               <div style="margin-top:8px;margin-left:12px;padding:8px 10px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
@@ -5205,12 +5211,6 @@ function renderVistaFamiliaJugador() {
               </div>`).join('') || '<div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">Aún sin respuesta.</div>'}
           </div>`).join('')}
       </div>
-
-      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
-      <label style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);display:block;margin-bottom:4px;">¿Para quién es? (opcional)</label>
-      <input id="famSugPara" placeholder="Ej: entrenador Javier, monitor de porteros…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;">
-      <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
-      <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
     </div>
 
     <div style="display:${tab==='partidos'?'block':'none'};">
@@ -5234,6 +5234,20 @@ function renderVistaFamiliaJugador() {
       </div>
     </div>
   `;
+  _pintarFamSugParaBox();
+}
+
+function _pintarFamSugParaBox() {
+  const box = document.getElementById('famSugParaBox');
+  if (!box) return;
+  const personal = (DB.personal||[]).filter(p=>p.activo!==false);
+  const estilo = 'display:block;text-align:left;padding:4px 0;cursor:pointer;font-size:13px;';
+  box.innerHTML =
+    `<label style="${estilo}"><input type="checkbox" data-para="Dirección Deportiva" style="width:16px;height:16px;vertical-align:middle;margin-right:8px;">🎯 Dirección Deportiva</label>` +
+    personal.map(p => {
+      const nombreCompleto = (p.nombre+' '+(p.apellidos||'')).trim();
+      return `<label style="${estilo}"><input type="checkbox" data-para="${nombreCompleto}" style="width:16px;height:16px;vertical-align:middle;margin-right:8px;">${nombreCompleto}${p.rol?' · '+p.rol:''}</label>`;
+    }).join('');
 }
 
 function activarTabFamilia(tab) {
@@ -5272,7 +5286,8 @@ function abrirFichaEvaluacionFamilia(evId) {
 async function enviarSugerenciaFamilia() {
   const texto = document.getElementById('famSugTexto').value.trim();
   if (!texto) { toast('Escribe algo antes de enviar'); return; }
-  const paraAlias = document.getElementById('famSugPara').value.trim();
+  const paraDestinatarios = Array.from(document.querySelectorAll('#famSugParaBox input[data-para]:checked')).map(c=>c.dataset.para);
+  if (!paraDestinatarios.length) { toast('Elige a quién va dirigida'); return; }
   const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
   const nombreRemitente = j ? ('Familia de ' + j.nombre + ' ' + (j.apellidos||'')) : 'Familia';
   if (!DB.sugerencias) DB.sugerencias = [];
@@ -5280,7 +5295,7 @@ async function enviarSugerenciaFamilia() {
     id: uid(),
     nombre: nombreRemitente,
     texto,
-    paraAlias,
+    paraDestinatarios,
     fecha: new Date().toLocaleDateString('es-ES'),
     origenUser: sesion.user,
     leida: false
@@ -5315,6 +5330,11 @@ async function marcarSugerenciasLeidas() {
   actualizarBadgeSugerencias();
 }
 
+function cambiarAgrupacionSugerencias(modo) {
+  window._sugAgrupacion = modo;
+  renderSugerencias();
+}
+
 function renderSugerencias() {
   if (sesion.rol === 'admin') setTimeout(marcarSugerenciasLeidas, 1500);
   const el = document.getElementById('sugerenciasContent');
@@ -5337,14 +5357,24 @@ function renderSugerencias() {
   if (!DB.sugerencias.length) {
     if (!puedeEnviarForm) html += '<div class="empty-state"><div class="ei">💬</div><p>No hay sugerencias recibidas aún.</p></div>';
   } else if (esAdmin) {
+    const modoAgrupacion = window._sugAgrupacion || 'destinatario';
+    html += `<div style="display:flex;gap:6px;margin-bottom:16px;">
+      <button class="btn ${modoAgrupacion==='destinatario'?'btn-rojo':'btn-outline'} btn-sm" onclick="cambiarAgrupacionSugerencias('destinatario')">Agrupar por destinatario</button>
+      <button class="btn ${modoAgrupacion==='remitente'?'btn-rojo':'btn-outline'} btn-sm" onclick="cambiarAgrupacionSugerencias('remitente')">Agrupar por remitente</button>
+    </div>`;
     const grupos = {};
+    const agregar = (key, s) => { const k = key.trim(); if (!grupos[k]) grupos[k] = []; grupos[k].push(s); };
     DB.sugerencias.forEach(s => {
-      const key = s.paraAlias ? s.paraAlias.trim() : 'Sin destinatario específico';
-      if (!grupos[key]) grupos[key] = [];
-      grupos[key].push(s);
+      if (modoAgrupacion === 'remitente') {
+        agregar(s.nombre || 'Anónimo', s);
+      } else if (s.paraDestinatarios && s.paraDestinatarios.length) {
+        s.paraDestinatarios.forEach(dest => agregar(dest, s));
+      } else {
+        agregar(s.paraAlias ? s.paraAlias : 'Sin destinatario específico', s);
+      }
     });
     html += Object.keys(grupos).sort((a,b)=>a.localeCompare(b)).map(key => {
-      const items = [...grupos[key]].reverse();
+      const items = [...new Set(grupos[key])].reverse();
       const noLeidas = items.filter(s=>!s.leida).length;
       const bodyId = 'sugGrupo_' + key.replace(/[^a-z0-9]/gi,'_');
       return `<div class="comp-banner" style="margin-bottom:2px;cursor:pointer;" onclick="toggleCompeticionBody('${bodyId}', event)">
@@ -5356,7 +5386,7 @@ function renderSugerencias() {
       <div id="${bodyId}" style="display:none;margin-bottom:16px;">
         ${items.map(s => `
         <div class="sug-card">
-          <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}</div>
+          <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}${(s.paraDestinatarios&&s.paraDestinatarios.length)?' · Para: '+s.paraDestinatarios.join(', '):''}</div>
           <div class="sug-texto">${s.texto}</div>
           ${(s.respuestas||[]).map(r => `
             <div style="margin-top:10px;margin-left:16px;padding:8px 12px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
