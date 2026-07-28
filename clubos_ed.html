@@ -365,6 +365,11 @@ tbody td.center{text-align:center;}
 .btn-editor{background:white;border:1px solid var(--gris-linea);border-radius:4px;padding:5px 9px;font-size:13px;cursor:pointer;color:var(--gris-texto);}
 .btn-editor:hover{background:var(--rojo-suave);border-color:var(--rojo);}
 #nTextoRico:empty:before{content:attr(placeholder);color:#999;}
+.noticia-img-thumb{width:220px;height:150px;object-fit:cover;border-radius:8px;margin:6px 8px 6px 0;display:inline-block;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);vertical-align:top;transition:transform .15s;}
+.noticia-img-thumb:hover{transform:scale(1.03);}
+#modalImagenCompleta{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out;}
+#modalImagenCompleta.open{display:flex;}
+#modalImagenCompleta img{max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);}
 #nTextoRico ul, #nTextoRico ol{margin-left:20px;}
 #nTextoRico h2{font-size:1.3em;font-weight:800;margin:6px 0;}
 #nTextoRico h3{font-size:1.1em;font-weight:700;margin:6px 0;}
@@ -403,6 +408,7 @@ tbody td.center{text-align:center;}
 /* ── NOTICIAS ── */
 .noticia-card{background:var(--blanco);border:1.5px solid var(--gris-linea);border-radius:12px;overflow:hidden;margin-bottom:14px;}
 .noticia-body{padding:18px;}
+.noticia-portada{width:100%;max-height:220px;object-fit:cover;display:block;border-radius:12px 12px 0 0;cursor:pointer;}
 .noticia-fecha{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:6px;}
 .noticia-titulo{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:800;text-transform:uppercase;color:var(--negro);margin-bottom:6px;}
 .noticia-texto{font-size:13px;color:var(--gris-suave);line-height:1.5;}
@@ -443,19 +449,20 @@ tbody td.center{text-align:center;}
 
 /* ── COMP INFO BANNER ── */
 .comp-banner{
-  background:linear-gradient(135deg,var(--negro) 0%,#2a2a2a 100%);
-  color:white;border-radius:14px;padding:24px 28px;
+  background:var(--blanco);border-left:4px solid var(--rojo);
+  color:var(--negro);border-radius:8px;padding:12px 16px;
   display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:24px;flex-wrap:wrap;gap:16px;
+  margin-bottom:2px;flex-wrap:wrap;gap:10px;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
 }
 .comp-banner-title{
   font-family:'Barlow Condensed',sans-serif;
-  font-size:clamp(1.4rem,4vw,2rem);font-weight:900;
-  text-transform:uppercase;letter-spacing:1px;color:white;margin-bottom:4px;
+  font-size:1.05rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.5px;color:var(--negro);
 }
-.comp-banner-title span{color:var(--dorado);}
-.comp-banner-meta{font-size:12px;opacity:.5;letter-spacing:.5px;}
-.comp-banner-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.comp-banner-title span{color:var(--rojo);}
+.comp-banner-meta{font-size:11px;opacity:.6;letter-spacing:.5px;color:var(--gris-texto);}
+.comp-banner-badges{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 
 /* ── EMPTY STATE ── */
 .empty-state{text-align:center;padding:48px 24px;color:var(--gris-suave);}
@@ -1093,6 +1100,10 @@ tbody td.center{text-align:center;}
   </div>
 </div>
 
+<div id="modalImagenCompleta" onclick="cerrarImagenCompleta()">
+  <img id="imgCompletaSrc" src="" onclick="event.stopPropagation()">
+</div>
+
 <div class="modal" id="modalFichaEvalFamilia">
   <div class="modal-box" style="max-width:520px;">
     <div class="modal-header">
@@ -1313,6 +1324,16 @@ tbody td.center{text-align:center;}
     <div class="form-grid">
       <div class="form-field form-full"><label>Título</label><input id="nTitulo" placeholder="Título de la noticia"></div>
       <div class="form-field form-full">
+        <label>Imagen de portada (opcional)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input id="nImagenPortada" placeholder="Enlace de la imagen (ej. compartir de Google Drive)" style="flex:1;" oninput="_previewImagenPortada()">
+          <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('nImagenPortada').value='';_previewImagenPortada();">Quitar</button>
+        </div>
+        <div id="nImagenPortadaPreview" style="display:none;margin-top:8px;">
+          <img id="nImagenPortadaPreviewImg" style="width:100%;max-height:160px;object-fit:cover;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.15);">
+        </div>
+      </div>
+      <div class="form-field form-full">
         <label>Contenido</label>
         <div style="display:flex;gap:4px;flex-wrap:wrap;background:var(--crema);border:1px solid var(--gris-linea);border-bottom:none;border-radius:6px 6px 0 0;padding:6px;">
           <button type="button" class="btn-editor" onclick="_formatoNoticia('bold')" title="Negrita" style="font-weight:900;">B</button>
@@ -1328,8 +1349,6 @@ tbody td.center{text-align:center;}
           <span style="width:1px;background:var(--gris-linea);margin:2px 4px;"></span>
           <button type="button" class="btn-editor" onclick="_formatoNoticia('insertUnorderedList')" title="Lista con viñetas">• Lista</button>
           <button type="button" class="btn-editor" onclick="_formatoNoticia('insertOrderedList')" title="Lista numerada">1. Lista</button>
-          <span style="width:1px;background:var(--gris-linea);margin:2px 4px;"></span>
-          <button type="button" class="btn-editor" onclick="_insertarImagenNoticia()" title="Insertar imagen">🖼️ Imagen</button>
         </div>
         <div id="nTextoRico" contenteditable="true" placeholder="Escribe la noticia aquí…"
              style="min-height:140px;max-height:340px;overflow-y:auto;border:1px solid var(--gris-linea);border-radius:0 0 6px 6px;padding:10px 12px;font-size:14px;font-family:inherit;line-height:1.5;background:white;"></div>
@@ -1935,11 +1954,11 @@ function renderCompeticion() {
         ${c.fechaInicio?`<div class="comp-banner-meta" style="margin-top:4px">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
       </div>
       <div class="comp-banner-badges" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:rgba(150,150,150,.3);color:#999;':''}">${activa?'✅ Activa':'⏸ Inactiva'}</span>
+        <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:#eee;color:#999;':''}">${activa?'✅ Activa':'⏸ Inactiva'}</span>
         ${isAdmin ? `
           ${nEq>=2?`<button class="btn btn-sm" style="background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>`:''}
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarCompeticion('${c.id}')" style="border-color:rgba(255,255,255,.3);color:white;">✏️</button>
-          <button class="btn btn-sm" style="background:rgba(200,16,46,.7);color:white;border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️</button>
+          <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑</button>
         ` : ''}
       </div>
     </div>
@@ -4555,6 +4574,7 @@ function renderNoticias() {
   el.innerHTML = listaOrdenada.map((n, idx) => `
     <div class="noticia-card" data-categoria="${n.categoria||'general'}" data-destinatario="${n.destinatario||'todos'}" data-destinatarios="${(n.destinatarios||[]).join(',')}" data-texto="${((n.titulo||'')+' '+(n.texto||'')).toLowerCase().replace(/"/g,'&quot;')}" style="${n.destacada?'border:2px solid #D4A017;':''}">
       ${n.destacada?'<div style="font-size:10px;font-weight:700;color:#8A6D00;background:#FBF5E0;padding:3px 10px;border-radius:6px 6px 0 0;margin:-1px -1px 8px -1px;">⭐ DESTACADA</div>':''}
+      ${n.imagenPortada?`<img src="${n.imagenPortada}" class="noticia-portada" onclick="abrirImagenCompleta('${n.imagenPortada.replace(/'/g,"\\'")}')" onerror="this.style.display='none';">`:''}
       <div class="noticia-body">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:10px;background:${catBadge[n.categoria]||'#eee'};color:${catColor[n.categoria]||'#333'}">${n.categoria||'general'}</span>
@@ -4609,6 +4629,14 @@ function _convertirEnlaceDrive(url) {
   return url;
 }
 
+function _previewImagenPortada() {
+  const url = document.getElementById('nImagenPortada').value.trim();
+  const wrap = document.getElementById('nImagenPortadaPreview');
+  if (!url) { wrap.style.display = 'none'; return; }
+  document.getElementById('nImagenPortadaPreviewImg').src = _convertirEnlaceDrive(url);
+  wrap.style.display = '';
+}
+
 function _insertarImagenNoticia() {
   const url = window.prompt('Pega el enlace de la imagen (por ejemplo, un enlace para compartir de Google Drive):');
   if (!url) return;
@@ -4618,7 +4646,8 @@ function _insertarImagenNoticia() {
 
   const img = document.createElement('img');
   img.src = urlFinal;
-  img.style.cssText = 'max-width:100%;border-radius:8px;margin:6px 0;display:block;';
+  img.className = 'noticia-img-thumb';
+  img.setAttribute('onclick', `abrirImagenCompleta('${urlFinal}')`);
   img.onerror = function () {
     this.style.border = '1px dashed #C8102E';
     this.style.padding = '10px';
@@ -4649,14 +4678,14 @@ function _esHTML(texto) {
 // Al editar: si es texto plano antiguo, lo convierte a HTML básico para el editor
 function _cargarTextoEnEditor(texto) {
   if (!texto) return '';
-  if (_esHTML(texto)) return texto;
+  if (_esHTML(texto)) return _estandarizarImagenesNoticia(texto);
   return texto.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
 
 // Al mostrar: renderiza el HTML del editor (o texto plano antiguo con saltos de línea) + autolink de URLs sueltas
 function _renderTextoNoticia(texto) {
   if (!texto) return '';
-  if (_esHTML(texto)) return texto; // ya es HTML real (puede contener <img>, etc.) — no tocar con el autolink
+  if (_esHTML(texto)) return _estandarizarImagenesNoticia(texto); // ya es HTML real (puede contener <img>, etc.) — no tocar con el autolink
   // Texto plano antiguo: escapar, respetar saltos de línea, y autolinkar URLs sueltas
   const esc = texto.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
   return esc.replace(/(https?:\/\/[^\s<"]+)/g, url =>
@@ -4664,11 +4693,31 @@ function _renderTextoNoticia(texto) {
   );
 }
 
+// Normaliza cualquier <img> (nueva o ya guardada con estilo antiguo) al tamaño estándar de miniatura
+function _estandarizarImagenesNoticia(html) {
+  return html.replace(/<img\s+([^>]*?)\/?>/gi, (match, attrs) => {
+    const srcMatch = attrs.match(/src="([^"]*)"/i);
+    const src = srcMatch ? srcMatch[1] : '';
+    if (!src) return match;
+    return `<img src="${src}" class="noticia-img-thumb" onclick="abrirImagenCompleta('${src.replace(/'/g,"\\'")}')" onerror="this.style.border='1px dashed #C8102E';this.style.padding='10px';this.alt='⚠️ No se pudo cargar la imagen';">`;
+  });
+}
+
+function abrirImagenCompleta(url) {
+  document.getElementById('imgCompletaSrc').src = url;
+  document.getElementById('modalImagenCompleta').classList.add('open');
+}
+function cerrarImagenCompleta() {
+  document.getElementById('modalImagenCompleta').classList.remove('open');
+}
+
 function abrirModalNoticia() {
   editNoticiaId = null;
   document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Nueva nota privada' : 'Nueva noticia';
   ['nTitulo'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('nTextoRico').innerHTML = '';
+  document.getElementById('nImagenPortada').value = '';
+  _previewImagenPortada();
   document.getElementById('nFecha').value = _hoyLocal();
   document.getElementById('nCategoria').value = 'general';
   const wrapDest = document.getElementById('nDestinatarioWrap');
@@ -4754,6 +4803,8 @@ function duplicarNoticia(id) {
   document.getElementById('modalNoticiaTitle').textContent = 'Nueva noticia (copia)';
   document.getElementById('nTitulo').value = 'Copia de ' + (n.titulo||'');
   document.getElementById('nTextoRico').innerHTML = _cargarTextoEnEditor(n.texto||'');
+  document.getElementById('nImagenPortada').value = n.imagenPortada || '';
+  _previewImagenPortada();
   document.getElementById('nFecha').value = _hoyLocal();
   document.getElementById('nCategoria').value = n.categoria||'general';
   const wrapDest = document.getElementById('nDestinatarioWrap');
@@ -4773,6 +4824,8 @@ function editarNoticia(id) {
   document.getElementById('modalNoticiaTitle').textContent = sesion.rol==='club' ? 'Editar nota privada' : 'Editar noticia';
   document.getElementById('nTitulo').value    = n.titulo||'';
   document.getElementById('nTextoRico').innerHTML = _cargarTextoEnEditor(n.texto||'');
+  document.getElementById('nImagenPortada').value = n.imagenPortada || '';
+  _previewImagenPortada();
   document.getElementById('nFecha').value     = n.fecha||'';
   document.getElementById('nCategoria').value = n.categoria||'general';
   const wrapDest = document.getElementById('nDestinatarioWrap');
@@ -4791,6 +4844,7 @@ async function guardarNoticia() {
   const datos = {
     titulo:       document.getElementById('nTitulo').value.trim(),
     texto:        document.getElementById('nTextoRico').innerHTML.trim(),
+    imagenPortada: _convertirEnlaceDrive(document.getElementById('nImagenPortada').value.trim()),
     fecha:        document.getElementById('nFecha').value,
     categoria:    document.getElementById('nCategoria').value,
     destinatario: seleccionDest.destinatario,
@@ -5053,6 +5107,7 @@ function renderVistaFamiliaJugador() {
   }
   const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
   const escNombres = ((j.escuelaIds||[]).map(eid=>(DB.escuelas||[]).find(e=>e.id===eid)?.nombre).filter(Boolean)).join(', ');
+  const tab = window._famTabActiva || 'evaluaciones';
 
   const evaluaciones = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===j.id)
     .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
@@ -5064,56 +5119,87 @@ function renderVistaFamiliaJugador() {
     return n.destinatario === sesion.user;
   }));
 
+  const btnTab = (id, label) => `<button class="btn ${tab===id?'btn-rojo':'btn-outline'} btn-sm" onclick="activarTabFamilia('${id}')">${label}</button>`;
+
   cont.innerHTML = `
     <div style="background:var(--marino,#0B1F3A);color:#fff;border-radius:14px;padding:20px;margin-bottom:20px;">
       <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;">Mi Jugador/a</div>
       <div style="font-size:1.4rem;font-weight:800;">${j.nombre} ${j.apellidos||''}</div>
       <div style="font-size:13px;opacity:.85;margin-top:4px;">${eq?('🏟️ '+eq.nombre):'Sin equipo asignado'}${escNombres?' · 🏫 '+escNombres:''}</div>
+      ${eq && eq.delegado ? `<div style="font-size:12px;opacity:.75;margin-top:8px;border-top:1px solid rgba(255,255,255,.15);padding-top:8px;">👤 Entrenador: ${eq.delegado}${eq.telDelegado?` · 📞 <a href="tel:${eq.telDelegado}" style="color:#fff;">${eq.telDelegado}</a>`:''}</div>` : ''}
     </div>
 
-    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📝 Evaluaciones</h2>
-    <div id="famEvaluacionesList" style="margin-bottom:28px;">
-      ${!evaluaciones.length ? '<div class="empty-state"><div class="ei">📝</div><p>Todavía no hay evaluaciones registradas.</p></div>' :
-        evaluaciones.map(ev => `
-        <div class="card-equipo" style="border-top:4px solid #2E4057;margin-bottom:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
-          <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
-          ${ev.observacionesParaFamilia ? `<div style="font-size:13px;">💬 ${ev.observacionesParaFamilia}</div>` : ''}
-          <div style="font-size:11px;color:var(--rojo);margin-top:6px;font-weight:700;">Ver ficha completa →</div>
-        </div>`).join('')}
+    <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
+      ${btnTab('evaluaciones','📝 Evaluaciones')}
+      ${btnTab('noticias','📰 Noticias')}
+      ${btnTab('sugerencias','💬 Sugerencias')}
+      <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="actualizarVistaFamiliaJugador()">🔄 Actualizar</button>
     </div>
 
-    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📰 Noticias para ti</h2>
-    <div style="margin-bottom:28px;">
-      ${!noticias.length ? '<div class="empty-state"><div class="ei">📰</div><p>No tienes noticias.</p></div>' :
-        noticias.map(n => `
-        <div class="card-equipo" style="margin-bottom:12px;">
-          <div style="font-weight:700;margin-bottom:4px;">${n.titulo||''}</div>
-          <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${n.fecha||''}</div>
-          <div style="font-size:13px;">${_renderTextoNoticia(n.texto)}</div>
-        </div>`).join('')}
+    <div style="display:${tab==='evaluaciones'?'block':'none'};">
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📝 Evaluaciones</h2>
+      <div id="famEvaluacionesList" style="margin-bottom:8px;">
+        ${!evaluaciones.length ? '<div class="empty-state"><div class="ei">📝</div><p>Todavía no hay evaluaciones registradas.</p></div>' :
+          evaluaciones.map(ev => `
+          <div class="card-equipo" style="border-top:4px solid #2E4057;margin-bottom:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
+            <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
+            ${ev.observacionesParaFamilia ? `<div style="font-size:13px;">💬 ${ev.observacionesParaFamilia}</div>` : ''}
+            <div style="font-size:11px;color:var(--rojo);margin-top:6px;font-weight:700;">Ver ficha completa →</div>
+          </div>`).join('')}
+      </div>
     </div>
 
-    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Mis sugerencias</h2>
-    <div style="margin-bottom:20px;">
-      ${!(DB.sugerencias||[]).length ? '<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Aún no has enviado ninguna.</div>' :
-        [...DB.sugerencias].reverse().map(s => `
-        <div class="card-equipo" style="margin-bottom:10px;">
-          <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${s.paraAlias?' · Para: '+s.paraAlias:''}</div>
-          <div style="font-size:13px;margin-top:4px;">${s.texto}</div>
-          ${(s.respuestas||[]).map(r => `
-            <div style="margin-top:8px;margin-left:12px;padding:8px 10px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
-              <div style="font-size:10px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
-              <div style="font-size:12px;margin-top:2px;">${r.texto}</div>
-            </div>`).join('') || '<div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">Aún sin respuesta.</div>'}
-        </div>`).join('')}
+    <div style="display:${tab==='noticias'?'block':'none'};">
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📰 Noticias para ti</h2>
+      <div style="margin-bottom:8px;">
+        ${!noticias.length ? '<div class="empty-state"><div class="ei">📰</div><p>No tienes noticias.</p></div>' :
+          noticias.map(n => `
+          <div class="card-equipo" style="margin-bottom:12px;padding:0;overflow:hidden;">
+            ${n.imagenPortada?`<img src="${n.imagenPortada}" class="noticia-portada" onclick="abrirImagenCompleta('${n.imagenPortada.replace(/'/g,"\\'")}')" onerror="this.style.display='none';">`:''}
+            <div style="padding:14px;">
+              <div style="font-weight:700;margin-bottom:4px;">${n.titulo||''}</div>
+              <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${n.fecha||''}</div>
+              <div style="font-size:13px;">${_renderTextoNoticia(n.texto)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
     </div>
 
-    <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
-    <label style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);display:block;margin-bottom:4px;">¿Para quién es? (opcional)</label>
-    <input id="famSugPara" placeholder="Ej: entrenador Javier, monitor de porteros…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;">
-    <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
-    <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
+    <div style="display:${tab==='sugerencias'?'block':'none'};">
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Mis sugerencias</h2>
+      <div style="margin-bottom:20px;">
+        ${!(DB.sugerencias||[]).length ? '<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Aún no has enviado ninguna.</div>' :
+          [...DB.sugerencias].reverse().map(s => `
+          <div class="card-equipo" style="margin-bottom:10px;">
+            <div style="font-size:11px;color:var(--gris-suave);">${s.fecha||''}${s.paraAlias?' · Para: '+s.paraAlias:''}</div>
+            <div style="font-size:13px;margin-top:4px;">${s.texto}</div>
+            ${(s.respuestas||[]).map(r => `
+              <div style="margin-top:8px;margin-left:12px;padding:8px 10px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
+                <div style="font-size:10px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
+                <div style="font-size:12px;margin-top:2px;">${r.texto}</div>
+              </div>`).join('') || '<div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">Aún sin respuesta.</div>'}
+          </div>`).join('')}
+      </div>
+
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">💬 Enviar sugerencia</h2>
+      <label style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);display:block;margin-bottom:4px;">¿Para quién es? (opcional)</label>
+      <input id="famSugPara" placeholder="Ej: entrenador Javier, monitor de porteros…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px 10px;margin-bottom:10px;">
+      <textarea id="famSugTexto" rows="3" placeholder="Escribe tu sugerencia…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:10px;font-family:inherit;margin-bottom:10px;"></textarea>
+      <button class="btn btn-rojo" onclick="enviarSugerenciaFamilia()">Enviar</button>
+    </div>
   `;
+}
+
+function activarTabFamilia(tab) {
+  window._famTabActiva = tab;
+  renderVistaFamiliaJugador();
+}
+
+async function actualizarVistaFamiliaJugador() {
+  toast('Actualizando…');
+  try { await manualSync(); } catch(e) {}
+  renderVistaFamiliaJugador();
+  toast('Actualizado');
 }
 
 function abrirFichaEvaluacionFamilia(evId) {
@@ -5205,23 +5291,55 @@ function renderSugerencias() {
   if (!DB.sugerencias.length) {
     if (!puedeEnviarForm) html += '<div class="empty-state"><div class="ei">💬</div><p>No hay sugerencias recibidas aún.</p></div>';
   } else if (esAdmin) {
+    const grupos = {};
+    DB.sugerencias.forEach(s => {
+      const key = s.paraAlias ? s.paraAlias.trim() : 'Sin destinatario específico';
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(s);
+    });
+    html += Object.keys(grupos).sort((a,b)=>a.localeCompare(b)).map(key => {
+      const items = [...grupos[key]].reverse();
+      const noLeidas = items.filter(s=>!s.leida).length;
+      const bodyId = 'sugGrupo_' + key.replace(/[^a-z0-9]/gi,'_');
+      return `<div class="comp-banner" style="margin-bottom:2px;cursor:pointer;" onclick="toggleCompeticionBody('${bodyId}', event)">
+        <div>
+          <div class="comp-banner-title"><span id="${bodyId}_icon">▶</span> 💬 ${key}</div>
+          <div class="comp-banner-meta">${items.length} sugerencia(s)${noLeidas?` · <span style="color:var(--rojo);font-weight:700;">${noLeidas} sin leer</span>`:''}</div>
+        </div>
+      </div>
+      <div id="${bodyId}" style="display:none;margin-bottom:16px;">
+        ${items.map(s => `
+        <div class="sug-card">
+          <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}</div>
+          <div class="sug-texto">${s.texto}</div>
+          ${(s.respuestas||[]).map(r => `
+            <div style="margin-top:10px;margin-left:16px;padding:8px 12px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
+              <div style="font-size:11px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
+              <div style="font-size:13px;margin-top:2px;">${r.texto}</div>
+            </div>`).join('')}
+          <div id="sugResponderBox_${s.id}" style="display:none;margin-top:10px;">
+            <textarea id="sugRespuestaTexto_${s.id}" rows="2" placeholder="Escribe tu respuesta…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea>
+            <button class="btn btn-rojo btn-sm" style="margin-top:6px;" onclick="responderSugerencia('${s.id}')">Enviar respuesta</button>
+          </div>
+          <div class="sug-actions">
+            <button class="btn btn-outline btn-xs" onclick="document.getElementById('sugResponderBox_${s.id}').style.display='';">💬 Responder</button>
+            <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarSug('${s.id}')">🗑️ Eliminar</button>
+          </div>
+        </div>`).join('')}
+      </div>`;
+    }).join('');
+  } else if (sesion.rol==='club' || sesion.rol==='arbitro') {
+    // Hilo propio: cada club (o árbitro, como colectivo) solo ve las suyas, con las respuestas de admin
+    html += `<div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin:16px 0 8px;">💬 Mis sugerencias</div>`;
     html += [...DB.sugerencias].reverse().map(s => `
       <div class="sug-card">
-        <div class="sug-meta">${s.nombre||'Anónimo'} · ${s.fecha||''}${s.paraAlias?` · <span style="color:var(--rojo);font-weight:700;">Para: ${s.paraAlias}</span>`:''}</div>
+        <div class="sug-meta">${s.fecha||''}${s.paraAlias?` · Para: ${s.paraAlias}`:''}</div>
         <div class="sug-texto">${s.texto}</div>
-        ${(s.respuestas||[]).map(r => `
+        ${(s.respuestas||[]).length ? (s.respuestas||[]).map(r => `
           <div style="margin-top:10px;margin-left:16px;padding:8px 12px;background:#EAF0FB;border-radius:8px;border-left:3px solid #1A56A0;">
             <div style="font-size:11px;color:#1A56A0;font-weight:700;">${r.autor||'Coordinador'} · ${r.fecha||''}</div>
             <div style="font-size:13px;margin-top:2px;">${r.texto}</div>
-          </div>`).join('')}
-        <div id="sugResponderBox_${s.id}" style="display:none;margin-top:10px;">
-          <textarea id="sugRespuestaTexto_${s.id}" rows="2" placeholder="Escribe tu respuesta…" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea>
-          <button class="btn btn-rojo btn-sm" style="margin-top:6px;" onclick="responderSugerencia('${s.id}')">Enviar respuesta</button>
-        </div>
-        <div class="sug-actions">
-          <button class="btn btn-outline btn-xs" onclick="document.getElementById('sugResponderBox_${s.id}').style.display='';">💬 Responder</button>
-          <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarSug('${s.id}')">🗑️ Eliminar</button>
-        </div>
+          </div>`).join('') : '<div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">Aún sin respuesta.</div>'}
       </div>`).join('');
   } else if (puedeEnviarForm && window._sugEnviada) {
     html += '<div class="success-box">Tu sugerencia ha sido recibida. ¡Gracias!</div>';
@@ -5237,7 +5355,7 @@ async function guardarSug() {
     nombre: document.getElementById('sugNombre').value.trim() || 'Anónimo',
     texto,
     fecha: new Date().toLocaleDateString('es-ES'),
-    origenUser: (sesion.rol==='club') ? sesion.user : '',
+    origenUser: sesion.rol==='club' ? sesion.user : (sesion.rol==='arbitro' ? 'arbitro' : ''),
     leida: false
   });
   window._sugEnviada = true;
@@ -5264,9 +5382,13 @@ async function responderSugerencia(id) {
 
 async function eliminarSug(id) {
   DB.sugerencias = DB.sugerencias.filter(s=>s.id!==id);
-  if (!DB._deleted) DB._deleted = {};
-  DB._deleted[id] = Date.now();
-  await saveCol('sugerencias'); toast('Eliminada'); renderSugerencias();
+  localStorage.setItem('clubos_ed', JSON.stringify(DB));
+  try {
+    const pwd = sesion.rol==='admin' ? 'cbed2627' : sesion.rol==='club' ? sesion.user : sesion.rol==='arbitro' ? 'arb2627' : '';
+    const url = SCRIPT_URL + '?action=deleteIds&pwd=' + encodeURIComponent(pwd) + '&col=sugerencias&ids=' + encodeURIComponent(JSON.stringify([id]));
+    await fetch(url, { mode: 'no-cors' });
+  } catch(e) { /* si falla, quedará en el Sheet y se puede reintentar */ }
+  toast('Eliminada'); renderSugerencias();
 }
 
 // ══════════════════════════════════════════════════════
