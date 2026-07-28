@@ -2703,13 +2703,7 @@ function _pintarSelectEntrenador(entrenadorActual) {
 
 function _aplicarEntrenadorSeleccionado() {
   const sel = document.getElementById('eqEntrenadorSelect');
-  if (!sel.value) {
-    // "Escribir manualmente": limpiar de verdad, no dejar datos antiguos sin querer
-    document.getElementById('eqDelegado').value = '';
-    document.getElementById('eqEmailDelegado').value = '';
-    document.getElementById('eqTelDelegado').value = '';
-    return;
-  }
+  if (!sel.value) return; // "Escribir manualmente": no tocar los campos
   const isAdmin = sesion.rol === 'admin';
   const listaPersonal = isAdmin ? (DB.personal||[]) : (DB.personal||[]).filter(p=>p.clubId===sesion.user);
   const p = listaPersonal.find(x=>x.id===sel.value); if (!p) return;
