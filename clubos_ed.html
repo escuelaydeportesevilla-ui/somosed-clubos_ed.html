@@ -580,6 +580,10 @@ tbody td.center{text-align:center;}
 
 /* ── Escuelas: grid de tarjetas ── */
 .cards-escuelas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
+.cards-competiciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:8px;}
+.card-competicion{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-top:4px solid var(--rojo);cursor:pointer;transition:transform .12s,box-shadow .12s;}
+.card-competicion:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12);}
+.card-competicion.inactiva{opacity:.6;}
 .cards-escuelas .card-equipo{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);}
 
 /* ── Jugadores: tarjetas en móvil ── */
@@ -1103,6 +1107,19 @@ tbody td.center{text-align:center;}
 
 <div id="modalImagenCompleta" onclick="cerrarImagenCompleta()">
   <img id="imgCompletaSrc" src="" onclick="event.stopPropagation()">
+</div>
+
+<div class="modal" id="modalDetalleCompeticion">
+  <div class="modal-box" style="max-width:520px;">
+    <div class="modal-header">
+      <h3 id="modalDetalleCompeticionTitle">Competición</h3>
+      <button class="modal-close" onclick="cerrarModal('modalDetalleCompeticion')">✕</button>
+    </div>
+    <div id="detalleCompeticionContent"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalDetalleCompeticion')">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal" id="modalFichaEvalFamilia">
@@ -1938,52 +1955,52 @@ function renderCompeticion() {
     return;
   }
 
-  el.innerHTML = lista.map(c => {
-    const nEq  = (DB.equipos||[]).filter(e=>e.competicionId===c.id).length;
-    const nP   = (DB.partidos||[]).filter(p=>p.competicionId===c.id).length;
-    const nJug = (DB.partidos||[]).filter(p=>p.competicionId===c.id && p.estado==='jugado').length;
+  el.innerHTML = `<div class="cards-competiciones">` + lista.map(c => {
     const activa = c.activa !== false;
-    const puedeVerEquipos = true; // todos los perfiles ven el listado de equipos de la competición
-    const equiposComp = puedeVerEquipos
-      ? (DB.equipos||[]).filter(e=>e.competicionId===c.id).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''))
-      : [];
-    const bodyId = 'compBody_' + c.id;
-    return `<div class="comp-banner" style="margin-bottom:2px;cursor:pointer;${!activa?'opacity:.6;':''}" onclick="toggleCompeticionBody('${bodyId}', event)">
-      <div>
-        <div class="comp-banner-title"><span id="${bodyId}_icon">▶</span> ${c.nombre}</div>
-        <div class="comp-banner-meta">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}</div>
-        ${c.fechaInicio?`<div class="comp-banner-meta" style="margin-top:4px">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
+    return `<div class="card-competicion${activa?'':' inactiva'}" onclick="abrirDetalleCompeticion('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div style="font-weight:800;font-size:1rem;line-height:1.2;">${c.nombre}</div>
+        <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:#eee;color:#999;':''}flex-shrink:0;">${activa?'✅ Activa':'⏸ Inactiva'}</span>
       </div>
-      <div class="comp-banner-badges" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:#eee;color:#999;':''}">${activa?'✅ Activa':'⏸ Inactiva'}</span>
-        ${isAdmin ? `
-          ${nEq>=2?`<button class="btn btn-sm" style="background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>`:''}
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️</button>
-          <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑</button>
-        ` : ''}
-      </div>
-    </div>
-    <div id="${bodyId}" style="display:none;margin-bottom:16px;">
-      <div class="stats-row" style="margin-bottom:12px;">
-        <div class="stat-card"><div class="sv">${nEq}</div><div class="sl">Equipos</div></div>
-        <div class="stat-card"><div class="sv">${nP}</div><div class="sl">Partidos</div></div>
-        <div class="stat-card"><div class="sv">${nJug}</div><div class="sl">Jugados</div></div>
-        <div class="stat-card"><div class="sv">${nP-nJug}</div><div class="sl">Pendientes</div></div>
-      </div>
-      <div style="margin-bottom:8px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🏟️ Equipos inscritos (${equiposComp.length})</div>
-        ${equiposComp.length ? `<div style="display:flex;flex-direction:column;gap:6px;">
-          ${equiposComp.map(e => {
-            const nJugEq = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
-            return `<div style="display:flex;justify-content:space-between;align-items:center;background:white;border-radius:8px;padding:10px 14px;box-shadow:0 1px 4px rgba(0,0,0,.06);">
-              <span style="font-weight:600;font-size:13px;">${e.nombre}</span>
-              <span style="font-size:11px;color:var(--gris-suave);">${e.categoria||'—'} · ${nJugEq} jugadores</span>
-            </div>`;
-          }).join('')}
-        </div>` : `<div style="font-size:12px;color:var(--gris-suave);">Aún no hay equipos inscritos en esta competición.</div>`}
-      </div>
+      <div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}</div>
+      ${c.fechaInicio?`<div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
+      <div style="font-size:11px;color:var(--rojo);margin-top:10px;font-weight:700;">Ver detalles →</div>
+      ${isAdmin ? `<div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--gris-linea);padding-top:10px;">
+        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️ Editar</button>
+        <button class="btn btn-sm" style="background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>
+        <button class="btn btn-sm" style="background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑️ Eliminar</button>
+      </div>` : ''}
     </div>`;
-  }).join('');
+  }).join('') + `</div>`;
+}
+
+function abrirDetalleCompeticion(id) {
+  const c = (DB.competiciones||[]).find(x=>x.id===id); if (!c) return;
+  const nEq  = (DB.equipos||[]).filter(e=>e.competicionId===c.id).length;
+  const nP   = (DB.partidos||[]).filter(p=>p.competicionId===c.id).length;
+  const nJug = (DB.partidos||[]).filter(p=>p.competicionId===c.id && p.estado==='jugado').length;
+  const equiposComp = (DB.equipos||[]).filter(e=>e.competicionId===c.id).sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  document.getElementById('modalDetalleCompeticionTitle').textContent = c.nombre;
+  document.getElementById('detalleCompeticionContent').innerHTML = `
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:14px;">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}${c.fechaInicio?` · 📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}`:''}</div>
+    <div class="stats-row" style="margin-bottom:16px;">
+      <div class="stat-card"><div class="sv">${nEq}</div><div class="sl">Equipos</div></div>
+      <div class="stat-card"><div class="sv">${nP}</div><div class="sl">Partidos</div></div>
+      <div class="stat-card"><div class="sv">${nJug}</div><div class="sl">Jugados</div></div>
+      <div class="stat-card"><div class="sv">${nP-nJug}</div><div class="sl">Pendientes</div></div>
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">🏟️ Equipos inscritos (${equiposComp.length})</div>
+    ${equiposComp.length ? `<div style="display:flex;flex-direction:column;gap:6px;">
+      ${equiposComp.map(e => {
+        const nJugEq = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
+        return `<div style="display:flex;justify-content:space-between;align-items:center;background:var(--crema);border-radius:8px;padding:10px 14px;">
+          <span style="font-weight:600;font-size:13px;">${e.nombre}</span>
+          <span style="font-size:11px;color:var(--gris-suave);">${e.categoria||'—'} · ${nJugEq} jugadores</span>
+        </div>`;
+      }).join('')}
+    </div>` : `<div style="font-size:12px;color:var(--gris-suave);">Aún no hay equipos inscritos en esta competición.</div>`}
+  `;
+  abrirModal('modalDetalleCompeticion');
 }
 
 function toggleCompeticionBody(bodyId, ev) {
