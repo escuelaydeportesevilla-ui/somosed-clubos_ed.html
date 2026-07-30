@@ -1303,7 +1303,7 @@ tbody td.center{text-align:center;}
 
     <div style="background:#f9f9f7;border-radius:10px;padding:14px;margin-bottom:16px;">
       <div class="form-grid">
-        <div class="form-field"><label>Nombre de la sede</label><input id="sedeNombre" placeholder="Ciudad Deportiva SFC"></div>
+        <div class="form-field"><label>Nombre de la sede</label><input id="sedeNombre" placeholder="Ciudad Deportiva"></div>
         <div class="form-field"><label>Campos (separados por coma)</label><input id="sedeCampos" placeholder="Campo 1, Campo 2, Pista cubierta"></div>
       </div>
       <input type="hidden" id="sedeEditId">
@@ -1647,19 +1647,10 @@ let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
 
 const REMAX_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/remax.jpg';
 const DENTAL_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/dental.jpg';
-const SFC_LOGO_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/sfc-logo.jpg';
-const HERO_IMG_DATA = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/hero.jpg';
-
-const CLUBOS_LOGO_IMG = 'clubos-logo.png';
 
 function _initStaticImages(){
   var el;
   if((el=document.getElementById('img-pat-remax'))) el.src=REMAX_IMG;
-  if((el=document.getElementById('img-pat-dental'))) el.src=DENTAL_IMG;
-  if((el=document.getElementById('img-tb-logo'))) el.src=CLUBOS_LOGO_IMG;
-  if((el=document.getElementById('img-portada-logo'))) el.src=CLUBOS_LOGO_IMG;
-  if((el=document.getElementById('img-portada-sfc'))) el.src=SFC_LOGO_IMG;
-  if((el=document.getElementById('img-hero'))) el.src=HERO_IMG_DATA;
 }
 document.addEventListener('DOMContentLoaded',_initStaticImages);
 
