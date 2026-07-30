@@ -1183,6 +1183,16 @@ tbody td.center{text-align:center;}
       <div class="form-field form-full"><label>Alergias</label><textarea id="sfAlergias" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
       <div class="form-field form-full"><label>Medicación</label><textarea id="sfMedicacion" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
       <div class="form-field form-full"><label>Observaciones médicas</label><textarea id="sfObsMedicas" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
+      <div class="form-field form-full" style="border-top:1px solid var(--gris-linea);padding-top:12px;margin-top:4px;">
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;cursor:pointer;">
+          <input type="checkbox" id="sfAceptaProteccion" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;">
+          <span style="font-size:13px;">He leído y acepto la <strong>política de protección de datos</strong> del club, y autorizo el tratamiento de los datos aquí facilitados para la gestión de la inscripción. <span style="color:var(--rojo);">*</span></span>
+        </label>
+        <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;cursor:pointer;margin-top:10px;">
+          <input type="checkbox" id="sfAutorizaImagen" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;">
+          <span style="font-size:13px;">Autorizo el <strong>uso de imágenes</strong> del jugador/a (fotos/vídeos de entrenamientos, partidos y eventos) en redes sociales y comunicaciones del club.</span>
+        </label>
+      </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalSolicitudFamilia')">Cancelar</button>
@@ -3347,6 +3357,8 @@ function abrirModalSolicitudFamilia() {
    'sfTutorNombre','sfTutorParentesco','sfTutorTelefono','sfTutorEmail',
    'sfAlergias','sfMedicacion','sfObsMedicas'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   document.getElementById('sfCategoria').value = '';
+  document.getElementById('sfAceptaProteccion').checked = false;
+  document.getElementById('sfAutorizaImagen').checked = false;
   abrirModal('modalSolicitudFamilia');
 }
 
@@ -3370,6 +3382,7 @@ function autoSeleccionarCategoriaFamilia() {
 async function enviarSolicitudFamilia() {
   const nombre = document.getElementById('sfNombre').value.trim();
   if (!nombre) { toast('El nombre es obligatorio'); return; }
+  if (!document.getElementById('sfAceptaProteccion').checked) { toast('Debes aceptar la política de protección de datos para continuar'); return; }
   const datos = {
     nombre,
     apellidos:            document.getElementById('sfApellidos').value.trim(),
@@ -3385,6 +3398,8 @@ async function enviarSolicitudFamilia() {
     alergias:              document.getElementById('sfAlergias').value.trim(),
     medicacion:            document.getElementById('sfMedicacion').value.trim(),
     observacionesMedicas:  document.getElementById('sfObsMedicas').value.trim(),
+    aceptaProteccionDatos: document.getElementById('sfAceptaProteccion').checked,
+    autorizacionImagen:    document.getElementById('sfAutorizaImagen').checked,
     origen: 'app_familias',
   };
   try {
