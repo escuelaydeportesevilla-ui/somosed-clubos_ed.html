@@ -147,7 +147,7 @@ async function enviarInscripcion() {
     medicacion:            document.getElementById('fMedicacion').value.trim(),
     observacionesMedicas:  document.getElementById('fObsMedicas').value.trim(),
     aceptaProteccionDatos: document.getElementById('fAceptaProteccion').checked,
-    autorizacionImagen:    document.getElementById('fAutorizaImagen').checked,
+    autorizacionImagen:    document.getElementById('fAutorizaImagen').checked ? 'si' : 'no',
     origen: 'web',
   };
 
