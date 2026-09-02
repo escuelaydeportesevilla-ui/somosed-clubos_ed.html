@@ -2488,19 +2488,22 @@ function renderEquipos() {
   let html = '';
 
   if (isAdmin) {
-    // ── VISTA ADMIN: ACORDEÓN POR COMPETICIÓN ──
+    // ── VISTA ADMIN: FICHAS DESPLEGABLES POR COMPETICIÓN ──
     Object.entries(comps).forEach(([compId, equipos], idx) => {
       const comp = (DB.competiciones||[]).find(c=>c.id===compId);
       const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
+      const compMeta = comp ? [comp.categoria, comp.temporada, comp.formato].filter(Boolean).join(' · ') : '';
       const contId = 'eqComp_' + compId;
-      html += `<div style="margin-bottom:14px;">
-        <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
-             font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
-             padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
-          <span><span id="${contId}_icon">▶</span> ${compNombre} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${equipos.length} equipos)</span></span>
-          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarEquiposPDF('${compId}')">📄 Exportar</button>
+      html += `<div class="card-competicion" style="margin-bottom:12px;cursor:pointer;" onclick="toggleAcordeon('${contId}')">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+          <div>
+            <div style="font-weight:800;font-size:1rem;line-height:1.3;"><span id="${contId}_icon">▶</span> ${compNombre}</div>
+            ${compMeta?`<div style="font-size:12px;color:var(--gris-suave);margin-top:4px;">${compMeta}</div>`:''}
+            <div style="font-size:11px;color:var(--rojo);font-weight:700;margin-top:6px;">${equipos.length} equipo${equipos.length===1?'':'s'} inscrito${equipos.length===1?'':'s'}</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();exportarEquiposPDF('${compId}')">📄 Exportar</button>
         </div>
-        <div id="${contId}" style="display:none;padding-top:12px;">
+        <div id="${contId}" style="display:none;padding-top:14px;margin-top:12px;border-top:1px solid var(--gris-linea);" onclick="event.stopPropagation()">
           ${renderGrupoEquipos(equipos)}
         </div>
       </div>`;
