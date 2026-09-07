@@ -160,13 +160,13 @@ body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--g
 }
 
 .patrocinadores-portada{
-  border-top:1px solid var(--gris-linea);
-  padding:20px 40px;
-  background:var(--blanco);
-  display:flex;align-items:center;justify-content:center;gap:40px;flex-wrap:wrap;
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  padding:10px 0;margin-bottom:28px;
+  border-top:1px solid rgba(255,255,255,.15);
+  border-bottom:1px solid rgba(255,255,255,.15);
 }
-.pat-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--gris-suave);}
-.pat-logo{height:40px;object-fit:contain;filter:grayscale(20%);opacity:.85;transition:opacity .2s;}
+.pat-label{font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.55);}
+.pat-logo{height:28px;object-fit:contain;filter:grayscale(20%) brightness(1.1);opacity:.9;transition:opacity .2s;background:white;padding:3px 8px;border-radius:6px;}
 .pat-logo:hover{opacity:1;}
 
 /* ═══════════════════════════════
@@ -656,7 +656,12 @@ tbody td.center{text-align:center;}
   <div class="portada-hero">
     <div class="hero-badge">⚽ Temporada 2026/2027</div>
     <div class="hero-title" style="margin-bottom:8px;">Club<span>OS</span></div>
-    <div class="hero-sub">Plataforma de gestión de competición interna · ClubOS ED</div>
+    <div class="hero-sub" style="margin-bottom:12px;">Plataforma de gestión de competición interna · ClubOS ED</div>
+
+    <div class="patrocinadores-portada">
+      <span class="pat-label">Patrocinador oficial</span>
+      <img class="pat-logo" id="img-pat-remax" src="" alt="RE/MAX Cristina Castro del Olmo">
+    </div>
 
     <div class="login-cards">
       <div class="login-card" style="--color-rol:var(--rojo)" onclick="abrirLogin('admin')">
@@ -685,11 +690,6 @@ tbody td.center{text-align:center;}
         <div class="lc-desc">Acceso con clave a la evaluación de tu hijo/a</div>
       </div>
     </div>
-  </div>
-
-  <div class="patrocinadores-portada">
-    <span class="pat-label">Patrocinadores oficiales</span>
-    <img class="pat-logo" id="img-pat-remax" src="" alt="RE/MAX Cristina Castro del Olmo">
   </div>
 </div>
 
