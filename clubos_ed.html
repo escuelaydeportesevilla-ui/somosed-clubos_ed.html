@@ -3292,7 +3292,7 @@ function renderListadoJugadores() {
   html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <table class="tabla-base" style="min-width:820px;">
       <thead><tr>
-        <th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th><th></th>
+        <th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th><th style="position:sticky;right:0;background:var(--negro);"></th>
       </tr></thead>
       <tbody>
         ${!filas.length ? `<tr><td colspan="8" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
@@ -3314,7 +3314,7 @@ function renderListadoJugadores() {
                 <option value="si" ${j.autorizacionImagen==='si'?'selected':''}>✅ Sí</option>
                 <option value="no" ${j.autorizacionImagen==='no'?'selected':''}>❌ No</option>
               </select></td>
-              <td style="text-align:center;"><button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button></td>
+              <td style="text-align:center;position:sticky;right:0;background:white;box-shadow:-2px 0 4px rgba(0,0,0,.06);"><button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button></td>
             </tr>`;
           }).join('')}
       </tbody>
