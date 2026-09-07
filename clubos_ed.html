@@ -3314,7 +3314,7 @@ function renderListadoJugadores() {
                 <option value="si" ${j.autorizacionImagen==='si'?'selected':''}>✅ Sí</option>
                 <option value="no" ${j.autorizacionImagen==='no'?'selected':''}>❌ No</option>
               </select></td>
-              <td><button class="btn btn-outline btn-xs" onclick="editarJugador('${j.id}')">✏️ Ficha completa</button></td>
+              <td style="text-align:center;"><button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button></td>
             </tr>`;
           }).join('')}
       </tbody>
