@@ -876,9 +876,11 @@ tbody td.center{text-align:center;}
                  style="padding:8px 12px;border:1px solid var(--gris-linea);border-radius:8px;font-size:13px;width:200px;display:none;">
           <div id="sugerenciasJugador" style="display:none;position:absolute;top:100%;left:0;width:280px;max-height:220px;overflow-y:auto;background:white;border:1px solid var(--gris-linea);border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:9999;margin-top:2px;"></div>
         </div>
+        <button class="btn btn-outline" id="btnToggleListado" onclick="toggleVistaJugadores()" style="display:none;">📋 Ver listado</button>
         <button class="btn btn-rojo" id="btnAddJugador" onclick="abrirModalJugador()">+ Añadir jugador</button>
       </div>
       <div id="jugadoresContent"></div>
+      <div id="listadoJugadoresContent" style="display:none;"></div>
     </div>
 
     <!-- ══ PANEL: CLUBES (Admin) ══ -->
@@ -1534,6 +1536,13 @@ tbody td.center{text-align:center;}
             <option value="">— Sin indicar —</option>
             <option value="si">✅ Sí autoriza</option>
             <option value="no">❌ No autoriza</option>
+          </select>
+        </div>
+        <div class="form-field"><label>Socio</label>
+          <select id="jEsSocio">
+            <option value="">— Sin indicar —</option>
+            <option value="si">✅ Socio</option>
+            <option value="no">❌ No socio</option>
           </select>
         </div>
       </div>
@@ -3059,6 +3068,8 @@ function renderJugadores() {
 
   const btnAdd = document.getElementById('btnAddJugador');
   if (btnAdd) btnAdd.style.display=(isAdmin||isClub)?'':'none';
+  const btnListado = document.getElementById('btnToggleListado');
+  if (btnListado) btnListado.style.display = isAdmin ? '' : 'none';
   const buscador = document.getElementById('buscadorJugadoresGlobal');
   if (buscador) buscador.style.display = (isAdmin||isClub||isArbitro) ? '' : 'none';
 
@@ -3220,6 +3231,174 @@ function renderJugadores() {
 
   el.innerHTML=out;
   aplicarEstadoAcordeones();
+}
+
+// ══════════════════════════════════════════════════════
+//  LISTADO UNIFICADO DE JUGADORES (filtro + edición rápida + exportar)
+// ══════════════════════════════════════════════════════
+window._listadoFiltroEquipos = null; // null = todos; Set de equipoIds si se ha filtrado
+window._listadoFiltroChip = 'todos'; // todos | socios | nosocios | autorizaSi | autorizaNo
+
+function toggleVistaJugadores() {
+  const tarjetas = document.getElementById('jugadoresContent');
+  const listado  = document.getElementById('listadoJugadoresContent');
+  const btn = document.getElementById('btnToggleListado');
+  const enListado = listado.style.display !== 'none';
+  if (enListado) {
+    listado.style.display = 'none';
+    tarjetas.style.display = '';
+    btn.textContent = '📋 Ver listado';
+  } else {
+    tarjetas.style.display = 'none';
+    listado.style.display = '';
+    btn.textContent = '🗂️ Ver tarjetas';
+    renderListadoJugadores();
+  }
+}
+
+function _chipFiltroLabel(chip) {
+  return { todos:'Todos', socios:'Socios', nosocios:'No socios', autorizaSi:'Autoriza imagen', autorizaNo:'No autoriza imagen' }[chip] || 'Todos';
+}
+
+function renderListadoJugadores() {
+  const el = document.getElementById('listadoJugadoresContent');
+  if (!el) return;
+  const equipos = (DB.equipos||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+
+  // ── Barra de filtros ──
+  let html = `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+      <details style="flex:1;min-width:220px;">
+        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--rojo);">🏟️ Filtrar por equipo ${window._listadoFiltroEquipos?`(${window._listadoFiltroEquipos.size} seleccionados)`:'(todos)'}</summary>
+        <div style="max-height:180px;overflow-y:auto;margin-top:8px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;">
+          <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;font-weight:700;">
+            <input type="checkbox" id="listChkTodosEquipos" ${!window._listadoFiltroEquipos?'checked':''} onchange="_listadoToggleTodosEquipos(this)" style="margin-right:8px;">Todos los equipos
+          </label>
+          ${equipos.map(e=>`<label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;">
+            <input type="checkbox" data-eq="${e.id}" ${window._listadoFiltroEquipos&&window._listadoFiltroEquipos.has(e.id)?'checked':''} onchange="_listadoToggleEquipo(this)" style="margin-right:8px;">${e.nombre}
+          </label>`).join('')}
+        </div>
+      </details>
+      <button class="btn btn-outline btn-sm" onclick="exportarListadoJugadores()">📄 Exportar listado</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      ${['todos','socios','nosocios','autorizaSi','autorizaNo'].map(c=>
+        `<button class="btn ${window._listadoFiltroChip===c?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetChip('${c}')">${_chipFiltroLabel(c)}</button>`
+      ).join('')}
+    </div>
+  </div>`;
+
+  const filas = _listadoJugadoresFiltrados();
+  html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <table class="tabla-base" style="min-width:820px;">
+      <thead><tr>
+        <th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th><th></th>
+      </tr></thead>
+      <tbody>
+        ${!filas.length ? `<tr><td colspan="8" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
+          filas.map(j => {
+            const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+            return `<tr>
+              <td style="font-weight:600;">${j.nombre} ${j.apellidos||''}</td>
+              <td style="font-size:11px;color:var(--gris-suave);">${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</td>
+              <td style="font-size:12px;">${j.tutorNombre||'—'}</td>
+              <td style="font-size:12px;">${j.tutorTelefono?`<a href="tel:${j.tutorTelefono}" style="color:var(--rojo);">${j.tutorTelefono}</a>`:'—'}</td>
+              <td style="font-size:12px;">${j.tutorEmail?`<a href="mailto:${j.tutorEmail}" style="color:var(--rojo);">${j.tutorEmail}</a>`:'—'}</td>
+              <td><select onchange="_listadoEditarCampo('${j.id}','esSocio',this.value)" style="font-size:12px;padding:3px 4px;border-radius:4px;border:1px solid var(--gris-linea);">
+                <option value="" ${!j.esSocio?'selected':''}>—</option>
+                <option value="si" ${j.esSocio==='si'?'selected':''}>✅ Socio</option>
+                <option value="no" ${j.esSocio==='no'?'selected':''}>❌ No socio</option>
+              </select></td>
+              <td><select onchange="_listadoEditarCampo('${j.id}','autorizacionImagen',this.value)" style="font-size:12px;padding:3px 4px;border-radius:4px;border:1px solid var(--gris-linea);">
+                <option value="" ${!j.autorizacionImagen?'selected':''}>—</option>
+                <option value="si" ${j.autorizacionImagen==='si'?'selected':''}>✅ Sí</option>
+                <option value="no" ${j.autorizacionImagen==='no'?'selected':''}>❌ No</option>
+              </select></td>
+              <td><button class="btn btn-outline btn-xs" onclick="editarJugador('${j.id}')">✏️ Ficha completa</button></td>
+            </tr>`;
+          }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function _listadoToggleTodosEquipos(chk) {
+  window._listadoFiltroEquipos = chk.checked ? null : new Set();
+  renderListadoJugadores();
+}
+
+function _listadoToggleEquipo(chk) {
+  if (!window._listadoFiltroEquipos) window._listadoFiltroEquipos = new Set();
+  if (chk.checked) window._listadoFiltroEquipos.add(chk.dataset.eq);
+  else window._listadoFiltroEquipos.delete(chk.dataset.eq);
+  if (!window._listadoFiltroEquipos.size) window._listadoFiltroEquipos = null;
+  renderListadoJugadores();
+}
+
+function _listadoSetChip(chip) {
+  window._listadoFiltroChip = chip;
+  renderListadoJugadores();
+}
+
+function _listadoJugadoresFiltrados() {
+  let lista = DB.jugadores || [];
+  if (window._listadoFiltroEquipos) lista = lista.filter(j => window._listadoFiltroEquipos.has(j.equipoId));
+  const chip = window._listadoFiltroChip;
+  if (chip === 'socios') lista = lista.filter(j => j.esSocio === 'si');
+  else if (chip === 'nosocios') lista = lista.filter(j => j.esSocio === 'no');
+  else if (chip === 'autorizaSi') lista = lista.filter(j => j.autorizacionImagen === 'si');
+  else if (chip === 'autorizaNo') lista = lista.filter(j => j.autorizacionImagen === 'no');
+  return [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+}
+
+async function _listadoEditarCampo(jugadorId, campo, valor) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  j[campo] = valor;
+  await saveCol('jugadores');
+  toast('Actualizado');
+}
+
+function exportarListadoJugadores() {
+  const filas = _listadoJugadoresFiltrados();
+  if (!filas.length) { toast('No hay jugadores que exportar con este filtro'); return; }
+  const filtroTexto = window._listadoFiltroEquipos
+    ? [...window._listadoFiltroEquipos].map(id => (DB.equipos||[]).find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
+    : 'Todos los equipos';
+  const filas_html = filas.map(j => {
+    const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+    return `<tr>
+      <td>${j.nombre} ${j.apellidos||''}</td>
+      <td>${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</td>
+      <td>${j.tutorNombre||'—'}</td>
+      <td>${j.tutorTelefono||'—'}</td>
+      <td>${j.tutorEmail||'—'}</td>
+      <td>${j.esSocio==='si'?'Socio':j.esSocio==='no'?'No socio':'—'}</td>
+      <td>${j.autorizacionImagen==='si'?'Sí':j.autorizacionImagen==='no'?'No':'—'}</td>
+    </tr>`;
+  }).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Listado de jugadores</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:24px;color:#111;}
+      h1{font-size:18px;margin-bottom:2px;}
+      .meta{font-size:12px;color:#666;margin-bottom:18px;}
+      table{width:100%;border-collapse:collapse;font-size:12px;}
+      th,td{padding:7px 10px;border-bottom:1px solid #ddd;text-align:left;}
+      th{background:#111;color:white;text-transform:uppercase;font-size:10px;letter-spacing:1px;}
+      @media print{ body{padding:8px;} }
+    </style></head><body>
+    <h1>Listado de jugadores</h1>
+    <div class="meta">Filtro: ${filtroTexto} · ${_chipFiltroLabel(window._listadoFiltroChip)} · ${filas.length} jugador(es) · ${new Date().toLocaleDateString('es-ES')}</div>
+    <table>
+      <thead><tr><th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th></tr></thead>
+      <tbody>${filas_html}</tbody>
+    </table>
+    <script>window.print();<\/script>
+    </body></html>`);
+  w.document.close();
 }
 
 function exportarJugadoresPDF(tipo, id) {
@@ -3495,6 +3674,7 @@ function abrirModalJugador() {
     const el = document.getElementById(id); if(el) el.value='';
   });
   document.getElementById('jAutorizacionImagen').value = '';
+  document.getElementById('jEsSocio').value = '';
   document.getElementById('jTutorParentesco').value = '';
   document.getElementById('jEditId').value = '';
   document.getElementById('jActivo').checked    = true;
@@ -3561,6 +3741,7 @@ function editarJugador(id) {
     document.getElementById('jTelefono').value             = j.telefono             ||'';
     document.getElementById('jFechaInscripcion').value     = j.fechaInscripcion     ||'';
     document.getElementById('jAutorizacionImagen').value   = _normalizarAutorizacionImagen(j.autorizacionImagen);
+    document.getElementById('jEsSocio').value               = _normalizarAutorizacionImagen(j.esSocio);
     document.getElementById('jTutorNombre').value          = j.tutorNombre          ||'';
     document.getElementById('jTutorTelefono').value        = j.tutorTelefono        ||'';
     document.getElementById('jTutorEmail').value           = j.tutorEmail           ||'';
@@ -3701,6 +3882,7 @@ async function guardarJugador() {
     j.telefono             = document.getElementById('jTelefono').value.trim();
     j.fechaInscripcion     = document.getElementById('jFechaInscripcion').value;
     j.autorizacionImagen   = document.getElementById('jAutorizacionImagen').value;
+    j.esSocio               = document.getElementById('jEsSocio').value;
     j.tutorNombre          = document.getElementById('jTutorNombre').value.trim();
     j.tutorTelefono        = document.getElementById('jTutorTelefono').value.trim();
     j.tutorEmail           = document.getElementById('jTutorEmail').value.trim();
