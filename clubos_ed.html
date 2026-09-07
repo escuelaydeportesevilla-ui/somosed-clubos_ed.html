@@ -3290,12 +3290,12 @@ function renderListadoJugadores() {
 
   const filas = _listadoJugadoresFiltrados();
   html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-    <table class="tabla-base" style="min-width:820px;">
+    <table class="tabla-base" style="min-width:680px;">
       <thead><tr>
-        <th style="width:40px;"></th><th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th>
+        <th style="width:40px;"></th><th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Contacto</th><th>Socio</th><th>Autoriza imagen</th>
       </tr></thead>
       <tbody>
-        ${!filas.length ? `<tr><td colspan="8" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
+        ${!filas.length ? `<tr><td colspan="7" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
           filas.map(j => {
             const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
             return `<tr>
@@ -3303,8 +3303,12 @@ function renderListadoJugadores() {
               <td style="font-weight:600;">${j.nombre} ${j.apellidos||''}</td>
               <td style="font-size:11px;color:var(--gris-suave);">${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</td>
               <td style="font-size:12px;">${j.tutorNombre||'—'}</td>
-              <td style="font-size:12px;">${j.tutorTelefono?`<a href="tel:${j.tutorTelefono}" style="color:var(--rojo);">${j.tutorTelefono}</a>`:'—'}</td>
-              <td style="font-size:12px;">${j.tutorEmail?`<a href="mailto:${j.tutorEmail}" style="color:var(--rojo);">${j.tutorEmail}</a>`:'—'}</td>
+              <td style="font-size:11px;line-height:1.5;white-space:nowrap;">
+                ${j.tutorTelefono?`<a href="tel:${j.tutorTelefono}" style="color:var(--rojo);">📞 ${j.tutorTelefono}</a>`:''}
+                ${j.tutorTelefono&&j.tutorEmail?'<br>':''}
+                ${j.tutorEmail?`<a href="mailto:${j.tutorEmail}" style="color:var(--rojo);">✉️ ${j.tutorEmail}</a>`:''}
+                ${!j.tutorTelefono&&!j.tutorEmail?'—':''}
+              </td>
               <td><select onchange="_listadoEditarCampo('${j.id}','esSocio',this.value)" style="font-size:12px;padding:3px 4px;border-radius:4px;border:1px solid var(--gris-linea);">
                 <option value="" ${!j.esSocio?'selected':''}>—</option>
                 <option value="si" ${j.esSocio==='si'?'selected':''}>✅ Socio</option>
