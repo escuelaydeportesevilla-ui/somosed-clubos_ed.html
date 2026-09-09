@@ -2393,6 +2393,19 @@ function _etiquetaDestinatarioClub(clubId) {
   return nombreClub(clubId);
 }
 
+function _equiposToggleTodasComps(chk) {
+  window._equiposFiltroComp = chk.checked ? null : new Set();
+  renderEquipos();
+}
+
+function _equiposToggleComp(chk) {
+  if (!window._equiposFiltroComp) window._equiposFiltroComp = new Set();
+  if (chk.checked) window._equiposFiltroComp.add(chk.dataset.comp);
+  else window._equiposFiltroComp.delete(chk.dataset.comp);
+  if (!window._equiposFiltroComp.size) window._equiposFiltroComp = null;
+  renderEquipos();
+}
+
 function renderEquipos() {
   const el        = document.getElementById('equiposContent');
   const isAdmin   = sesion.rol === 'admin';
@@ -2443,6 +2456,7 @@ function renderEquipos() {
             ${e.emailDelegado?'✉️ <a href="mailto:'+e.emailDelegado+'" style="color:var(--gris-suave);">'+e.emailDelegado+'</a><br>':''}
             ${e.telDelegado?'📞 <a href="tel:'+e.telDelegado+'" style="color:var(--gris-suave);">'+e.telDelegado+'</a>':''}
            </div>` : (e.delegado&&(isAdmin||isClub||isArbitro) ? `<div style="font-size:11px;color:var(--gris-suave);">👤 ${e.delegado}</div>` : '');
+      const comp = (DB.competiciones||[]).find(c=>c.id===e.competicionId);
       h += `<div class="card-equipo" data-nombre="${(e.nombre||'').toLowerCase()}">
         <div class="ceq-kit">
           <div class="ceq-camiseta" style="background:${e.eq1Camiseta||'#ccc'};"></div>
@@ -2451,6 +2465,7 @@ function renderEquipos() {
         <div class="ceq-info">
           <div class="ceq-nombre" style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</div>
           <div class="ceq-meta">${e.categoria||'—'}${isAdmin&&e.clubId?' · '+nombreClub(e.clubId):''} · ${nJug} jugadores</div>
+          ${comp?`<div style="font-size:10px;color:var(--rojo);margin-top:1px;">🏆 ${comp.nombre}</div>`:''}
           ${contacto}
         </div>
         <div class="ceq-actions">
@@ -2464,12 +2479,14 @@ function renderEquipos() {
     h += `<div class="tabla-equipos-desktop"><table class="tabla-base"><thead><tr>
         <th>Equipo</th><th>Equipación</th><th>Categoría</th>
         ${isAdmin?'<th>Club</th>':''}
+        <th>Competición</th>
         <th>Jugadores</th>
         ${(isAdmin||isClub||isArbitro)?'<th>Entrenador</th>':''}
         <th>Acciones</th>
       </tr></thead><tbody>`;
     equipos.forEach(e => {
       const nJug = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
+      const comp = (DB.competiciones||[]).find(c=>c.id===e.competicionId);
       const delCell = `<td style="font-size:12px;">
         ${e.delegado?`<div>${e.delegado}</div>`:''}
         ${e.emailDelegado?`<div><a href="mailto:${e.emailDelegado}" style="color:var(--gris-suave);">✉️ ${e.emailDelegado}</a></div>`:''}
@@ -2480,6 +2497,7 @@ function renderEquipos() {
         <td>${kitTabla(e.eq1Camiseta||'#ccc',e.eq1Pantalon||'#333')}</td>
         <td>${e.categoria||'—'}</td>
         ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${nombreClub(e.clubId)||'—'}</td>`:''}
+        <td style="font-size:11px;color:var(--gris-suave);">${comp?comp.nombre:'—'}</td>
         <td>${nJug}</td>
         ${(isAdmin||isClub||isArbitro)?delCell:''}
         <td>
@@ -2496,26 +2514,33 @@ function renderEquipos() {
   let html = '';
 
   if (isAdmin) {
-    // ── VISTA ADMIN: FICHAS DESPLEGABLES POR COMPETICIÓN ──
-    Object.entries(comps).forEach(([compId, equipos], idx) => {
-      const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-      const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
-      const compMeta = comp ? [comp.categoria, comp.temporada, comp.formato].filter(Boolean).join(' · ') : '';
-      const contId = 'eqComp_' + compId;
-      html += `<div class="card-competicion" style="margin-bottom:12px;cursor:pointer;" onclick="toggleAcordeon('${contId}')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
-          <div>
-            <div style="font-weight:800;font-size:1rem;line-height:1.3;"><span id="${contId}_icon">▶</span> ${compNombre}</div>
-            ${compMeta?`<div style="font-size:12px;color:var(--gris-suave);margin-top:4px;">${compMeta}</div>`:''}
-            <div style="font-size:11px;color:var(--rojo);font-weight:700;margin-top:6px;">${equipos.length} equipo${equipos.length===1?'':'s'} inscrito${equipos.length===1?'':'s'}</div>
+    // ── VISTA ADMIN: LISTADO PLANO DE EQUIPOS, FILTRABLE POR COMPETICIÓN ──
+    const todasComps = (DB.competiciones||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+    const filtro = window._equiposFiltroComp;
+    const equiposFiltrados = filtro
+      ? lista.filter(e => filtro.has(e.competicionId || '__none__'))
+      : lista;
+
+    html += `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <details style="flex:1;min-width:220px;">
+          <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--rojo);">🏆 Filtrar por competición ${filtro?`(${filtro.size} seleccionadas)`:'(todas)'}</summary>
+          <div style="max-height:200px;overflow-y:auto;margin-top:8px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;">
+            <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;font-weight:700;">
+              <input type="checkbox" ${!filtro?'checked':''} onchange="_equiposToggleTodasComps(this)" style="margin-right:8px;">Todas las competiciones
+            </label>
+            ${todasComps.map(c=>`<label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;">
+              <input type="checkbox" data-comp="${c.id}" ${filtro&&filtro.has(c.id)?'checked':''} onchange="_equiposToggleComp(this)" style="margin-right:8px;">${c.nombre}${c.categoria?' ('+c.categoria+')':''}
+            </label>`).join('')}
+            <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;border-top:1px solid var(--gris-linea);margin-top:4px;padding-top:6px;">
+              <input type="checkbox" data-comp="__none__" ${filtro&&filtro.has('__none__')?'checked':''} onchange="_equiposToggleComp(this)" style="margin-right:8px;">Sin competición asignada
+            </label>
           </div>
-          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();exportarEquiposPDF('${compId}')">📄 Exportar</button>
-        </div>
-        <div id="${contId}" style="display:none;padding-top:14px;margin-top:12px;border-top:1px solid var(--gris-linea);" onclick="event.stopPropagation()">
-          ${renderGrupoEquipos(equipos)}
-        </div>
-      </div>`;
-    });
+        </details>
+        <button class="btn btn-outline btn-sm" onclick="exportarEquiposPDF()">📄 Exportar</button>
+      </div>
+    </div>`;
+    html += renderGrupoEquipos(equiposFiltrados);
   } else {
     // ── VISTA CLUB: SIN ACORDEÓN (sin cambios) ──
     Object.entries(comps).forEach(([compId, equipos]) => {
@@ -3207,7 +3232,7 @@ function renderJugadores() {
       const esPropio=eq?.clubId===sesion.user;
       const puedeEditar=isClub&&esPropio;
       out+=`<div style="margin-bottom:20px;">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">${eNom}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} jugador${jugs.length===1?'':'es'})</span></div>
         ${renderGrupoJugadores(jugs, puedeEditar)}
       </div>`;
     });
@@ -3424,7 +3449,7 @@ function exportarJugadoresPDF(tipo, id) {
   if (!lista.length) { toast('No hay jugadores para exportar'); return; }
 
   const esEscuela = tipo === 'escuela';
-  const body = `<h2>${titulo}</h2>
+  const body = `<h2>${titulo} <span style="font-size:13px;font-weight:400;color:#666;">(${lista.length} jugador${lista.length===1?'':'es'})</span></h2>
     <table>
       <thead><tr>${esEscuela ? '<th>Jugador</th><th>Fecha nacimiento</th><th>Estado</th>' : '<th>#</th><th>Jugador</th><th>Posición</th><th>Estado</th><th>Convocado</th>'}</tr></thead>
       <tbody>
@@ -3666,7 +3691,10 @@ function abrirModalJugador() {
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
 
   const sel = document.getElementById('jEquipo');
-  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}">${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
+  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>{
+    const n = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
+    return `<option value="${e.id}">${e.nombre} (${n})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}</option>`;
+  }).join('');
 
   _pintarCheckboxEscuelas(misEscuelas, []);
 
@@ -3709,7 +3737,10 @@ function editarJugador(id) {
   // Equipos
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const sel = document.getElementById('jEquipo');
-  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre}${isAdmin?' ('+( e.clubId||'cbedadmin')+')':''}</option>`).join('');
+  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>{
+    const n = (DB.jugadores||[]).filter(x=>x.equipoId===e.id).length;
+    return `<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre} (${n})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}</option>`;
+  }).join('');
 
   // Escuelas (checkboxes, "Sin escuela" excluyente con el resto)
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
