@@ -3118,7 +3118,7 @@ function renderJugadores() {
 
   const renderGrupoJugadores = (jugs, puedeEditar) => {
     let h = `<div class="cards-jugadores">`;
-    jugs.sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99)).forEach(j=>{
+    jugs.sort((a,b)=>((a.nombre||'')+' '+(a.apellidos||'')).localeCompare((b.nombre||'')+' '+(b.apellidos||''))).forEach(j=>{
       const activo    = j.activo!==false&&j.activo!=='false';
       const convocado = j.convocado===true||j.convocado==='true';
       h+=`<div class="card-jugador" data-nombre="${(j.nombre+' '+(j.apellidos||'')).toLowerCase()}" style="${!activo?'opacity:.5;':''}">
