@@ -583,6 +583,7 @@ tbody td.center{text-align:center;}
 .cards-escuelas{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:8px;}
 .cards-competiciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:8px;}
 .card-competicion{background:white;border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-top:4px solid var(--rojo);cursor:pointer;transition:transform .12s,box-shadow .12s;}
+.card-personal,.card-evaluacion{display:block;background:white;border-radius:10px;padding:14px;box-shadow:0 1px 6px rgba(0,0,0,.08);margin-bottom:12px;}
 .card-competicion:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12);}
 .card-competicion.inactiva{opacity:.6;}
 #compContent{background:#E5E5E0;border-radius:12px;padding:14px;margin-top:8px;}
@@ -6215,7 +6216,7 @@ function renderPersonal() {
     const asign   = equipo ? (`🏟️ ${equipo.nombre}${isAdmin?' · '+nombreClub(equipo.clubId):''}`) : escuela ? ('🏫 '+escuela.nombre) : 'Sin asignar';
     const estado  = p.activo !== false ? '<span style="color:#1A7A3C;font-weight:700;">● Activo</span>' : '<span style="color:#999;">● Inactivo</span>';
     return `
-    <div class="card-equipo" style="border-top:4px solid #2E4057;">
+    <div class="card-personal" style="border-top:4px solid #2E4057;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
         <div>
           <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">🧑‍🏫 ${p.nombre||''} ${p.apellidos||''}</div>
@@ -6365,7 +6366,7 @@ function renderEvaluaciones() {
     const j = (DB.jugadores||[]).find(x=>x.id===jugadorId);
     const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
     const tarjetas = evs.map(ev => `
-      <div class="card-equipo" style="border-top:4px solid #2E4057;">
+      <div class="card-evaluacion" style="border-top:4px solid #2E4057;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="font-size:12px;color:var(--gris-suave);">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
         </div>
