@@ -3176,7 +3176,11 @@ function renderJugadores() {
 
   if (isAdmin || isArbitro) {
     // ── VISTA ADMIN/ÁRBITRO: ACORDEÓN POR EQUIPO ──
-    Object.entries(byEq).forEach(([eid,jugs], idx)=>{
+    Object.entries(byEq).sort((a,b)=>{
+      const na=(DB.equipos||[]).find(e=>e.id===a[0])?.nombre||'';
+      const nb=(DB.equipos||[]).find(e=>e.id===b[0])?.nombre||'';
+      return na.localeCompare(nb);
+    }).forEach(([eid,jugs], idx)=>{
       const eq=(DB.equipos||[]).find(e=>e.id===eid);
       const eNom=eq?.nombre||'Sin equipo';
       const contId = 'jugEq_' + eid;
@@ -3193,7 +3197,11 @@ function renderJugadores() {
       </div>`;
     });
     // ── POR ESCUELA ──
-    Object.entries(byEsc).forEach(([escId,jugs])=>{
+    Object.entries(byEsc).sort((a,b)=>{
+      const na=(DB.escuelas||[]).find(e=>e.id===a[0])?.nombre||'';
+      const nb=(DB.escuelas||[]).find(e=>e.id===b[0])?.nombre||'';
+      return na.localeCompare(nb);
+    }).forEach(([escId,jugs])=>{
       const esc=(DB.escuelas||[]).find(e=>e.id===escId);
       const eNom=esc?.nombre||'Escuela sin nombre';
       const contId = 'jugEsc_' + escId;
@@ -3226,7 +3234,11 @@ function renderJugadores() {
     }
   } else {
     // ── VISTA CLUB: SIN ACORDEÓN ──
-    Object.entries(byEq).forEach(([eid,jugs])=>{
+    Object.entries(byEq).sort((a,b)=>{
+      const na=(DB.equipos||[]).find(e=>e.id===a[0])?.nombre||'';
+      const nb=(DB.equipos||[]).find(e=>e.id===b[0])?.nombre||'';
+      return na.localeCompare(nb);
+    }).forEach(([eid,jugs])=>{
       const eq=(DB.equipos||[]).find(e=>e.id===eid);
       const eNom=eq?.nombre||'Sin equipo';
       const esPropio=eq?.clubId===sesion.user;
@@ -3237,7 +3249,11 @@ function renderJugadores() {
       </div>`;
     });
     // ── POR ESCUELA ──
-    Object.entries(byEsc).forEach(([escId,jugs])=>{
+    Object.entries(byEsc).sort((a,b)=>{
+      const na=(DB.escuelas||[]).find(e=>e.id===a[0])?.nombre||'';
+      const nb=(DB.escuelas||[]).find(e=>e.id===b[0])?.nombre||'';
+      return na.localeCompare(nb);
+    }).forEach(([escId,jugs])=>{
       const esc=(DB.escuelas||[]).find(e=>e.id===escId);
       const eNom=esc?.nombre||'Escuela sin nombre';
       out+=`<div style="margin-bottom:20px;">
