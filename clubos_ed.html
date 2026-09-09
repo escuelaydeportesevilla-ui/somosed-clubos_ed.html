@@ -2517,9 +2517,9 @@ function renderEquipos() {
     // ── VISTA ADMIN: LISTADO PLANO DE EQUIPOS, FILTRABLE POR COMPETICIÓN ──
     const todasComps = (DB.competiciones||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
     const filtro = window._equiposFiltroComp;
-    const equiposFiltrados = filtro
+    const equiposFiltrados = (filtro
       ? lista.filter(e => filtro.has(e.competicionId || '__none__'))
-      : lista;
+      : lista).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 
     html += `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
