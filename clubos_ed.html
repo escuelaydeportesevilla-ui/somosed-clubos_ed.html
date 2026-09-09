@@ -2406,6 +2406,19 @@ function _equiposToggleComp(chk) {
   renderEquipos();
 }
 
+function _equiposToggleTodosClubes(chk) {
+  window._equiposFiltroClub = chk.checked ? null : new Set();
+  renderEquipos();
+}
+
+function _equiposToggleClub(chk) {
+  if (!window._equiposFiltroClub) window._equiposFiltroClub = new Set();
+  if (chk.checked) window._equiposFiltroClub.add(chk.dataset.club);
+  else window._equiposFiltroClub.delete(chk.dataset.club);
+  if (!window._equiposFiltroClub.size) window._equiposFiltroClub = null;
+  renderEquipos();
+}
+
 function renderEquipos() {
   const el        = document.getElementById('equiposContent');
   const isAdmin   = sesion.rol === 'admin';
@@ -2514,12 +2527,15 @@ function renderEquipos() {
   let html = '';
 
   if (isAdmin) {
-    // ── VISTA ADMIN: LISTADO PLANO DE EQUIPOS, FILTRABLE POR COMPETICIÓN ──
+    // ── VISTA ADMIN: LISTADO PLANO DE EQUIPOS, FILTRABLE POR COMPETICIÓN Y CLUB ──
     const todasComps = (DB.competiciones||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+    const todosClubesIds = [...new Set(lista.map(e=>e.clubId||'cbedadmin'))];
     const filtro = window._equiposFiltroComp;
-    const equiposFiltrados = (filtro
-      ? lista.filter(e => filtro.has(e.competicionId || '__none__'))
-      : lista).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+    const filtroClub = window._equiposFiltroClub;
+    const equiposFiltrados = lista
+      .filter(e => !filtro || filtro.has(e.competicionId || '__none__'))
+      .filter(e => !filtroClub || filtroClub.has(e.clubId || 'cbedadmin'))
+      .slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 
     html += `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -2535,6 +2551,17 @@ function renderEquipos() {
             <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;border-top:1px solid var(--gris-linea);margin-top:4px;padding-top:6px;">
               <input type="checkbox" data-comp="__none__" ${filtro&&filtro.has('__none__')?'checked':''} onchange="_equiposToggleComp(this)" style="margin-right:8px;">Sin competición asignada
             </label>
+          </div>
+        </details>
+        <details style="flex:1;min-width:220px;">
+          <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--rojo);">🏛️ Filtrar por club ${filtroClub?`(${filtroClub.size} seleccionados)`:'(todos)'}</summary>
+          <div style="max-height:200px;overflow-y:auto;margin-top:8px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;">
+            <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;font-weight:700;">
+              <input type="checkbox" ${!filtroClub?'checked':''} onchange="_equiposToggleTodosClubes(this)" style="margin-right:8px;">Todos los clubes
+            </label>
+            ${todosClubesIds.sort((a,b)=>nombreClub(a).localeCompare(nombreClub(b))).map(cid=>`<label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;">
+              <input type="checkbox" data-club="${cid}" ${filtroClub&&filtroClub.has(cid)?'checked':''} onchange="_equiposToggleClub(this)" style="margin-right:8px;">${nombreClub(cid)}
+            </label>`).join('')}
           </div>
         </details>
         <button class="btn btn-outline btn-sm" onclick="exportarEquiposPDF()">📄 Exportar</button>
