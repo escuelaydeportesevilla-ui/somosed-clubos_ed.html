@@ -2471,7 +2471,7 @@ function renderEquipos() {
         <div class="ceq-actions">
           <button class="btn-xs btn-outline" onclick="abrirFichaEquipo('${e.id}')">📋</button>
           ${(isAdmin||isClub)?`<button class="btn-xs btn-outline" onclick="editarEquipo('${e.id}')">✏️</button>`:''}
-          ${isAdmin?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;border-radius:6px;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
+          ${(isAdmin||puedeEvaluar())?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;border-radius:6px;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
         </div>
       </div>`;
     });
@@ -2503,7 +2503,7 @@ function renderEquipos() {
         <td>
           <button class="btn btn-outline btn-sm" onclick="abrirFichaEquipo('${e.id}')">📋</button>
           ${(isAdmin||isClub)?`<button class="btn btn-outline btn-sm" onclick="editarEquipo('${e.id}')">✏️</button>`:''}
-          ${isAdmin?`<button class="btn btn-sm" style="background:var(--rojo);color:white;border:none;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
+          ${(isAdmin||puedeEvaluar())?`<button class="btn btn-sm" style="background:var(--rojo);color:white;border:none;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
         </td>
       </tr>`;
     });
@@ -3138,7 +3138,7 @@ function renderJugadores() {
         </div>
         <div class="cj-actions">
           ${puedeEditar?`<button class="btn-xs btn-outline" onclick="editarJugador('${j.id}')">✏️</button>`:''}
-          ${isAdmin?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;border-radius:6px;" onclick="eliminarJugador('${j.id}')">🗑</button>`:''}
+          ${(isAdmin||puedeEvaluar())?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;border-radius:6px;" onclick="eliminarJugador('${j.id}')">🗑</button>`:''}
         </div>
       </div>`;
     });
@@ -3164,7 +3164,7 @@ function renderJugadores() {
         }</td>
         <td style="white-space:nowrap;">
           ${puedeEditar?`<button class="btn-xs btn-outline" onclick="editarJugador('${j.id}')">✏️</button>`:''}
-          ${isAdmin?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;" onclick="eliminarJugador('${j.id}')">🗑</button>`:''}
+          ${(isAdmin||puedeEvaluar())?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;" onclick="eliminarJugador('${j.id}')">🗑</button>`:''}
         </td>
       </tr>`;
     });
