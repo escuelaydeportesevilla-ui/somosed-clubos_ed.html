@@ -3001,7 +3001,7 @@ function abrirFichaEquipo(equipoId) {
 function renderFichaEquipoContent() {
   const eq = (DB.equipos||[]).find(x=>x.id===fichaEquipoId); if(!eq) return;
   const jugadores = (DB.jugadores||[]).filter(j=>j.equipoId===fichaEquipoId)
-    .sort((a,b)=>(a.dorsal||99)-(b.dorsal||99));
+    .sort((a,b)=>((a.nombre||'')+' '+(a.apellidos||'')).localeCompare((b.nombre||'')+' '+(b.apellidos||'')));
   const el = document.getElementById('fichaEquipoContent');
   if (!jugadores.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">👤</div><p>Este equipo aún no tiene jugadores.</p></div>';
@@ -3044,7 +3044,7 @@ async function guardarFichaEquipo() {
 function imprimirFichaEquipo() {
   const eq = (DB.equipos||[]).find(x=>x.id===fichaEquipoId); if(!eq) return;
   const jugadores = (DB.jugadores||[]).filter(j=>j.equipoId===fichaEquipoId)
-    .sort((a,b)=>(a.dorsal||99)-(b.dorsal||99));
+    .sort((a,b)=>((a.nombre||'')+' '+(a.apellidos||'')).localeCompare((b.nombre||'')+' '+(b.apellidos||'')));
   const w = window.open('', '_blank');
   w.document.write(`
     <html><head><title>${eq.nombre} · Ficha</title>
@@ -3057,7 +3057,7 @@ function imprimirFichaEquipo() {
       th{background:#111;color:#fff;}
     </style></head><body>
     <h1>${eq.nombre}</h1>
-    <p>${eq.categoria||''}</p>
+    <p>${eq.categoria||''} · ${jugadores.length} jugador${jugadores.length===1?'':'es'}</p>
     <table>
       <thead><tr><th>#</th><th>Jugador</th><th>Activo</th><th>Convocado</th></tr></thead>
       <tbody>
