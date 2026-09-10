@@ -5989,7 +5989,7 @@ console.log('Familias: acceso directo (sin contraseña)');
     setSyncStatus('loading');
     try {
       const pwd = encodeURIComponent(sesion.rol==='admin'?'cbed2627':sesion.rol==='club'?sesion.user:sesion.rol==='arbitro'?'arb2627':'');
-      const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd);
+      const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
       if (j.ok && j.data) {
         const d   = j.data;
         const del = DB._deleted || {};
@@ -6033,7 +6033,7 @@ console.log('Familias: acceso directo (sin contraseña)');
     setSyncStatus('loading');
     try {
       const pwd = encodeURIComponent(sesion.rol==='admin'?'cbed2627':sesion.rol==='club'?sesion.user:sesion.rol==='arbitro'?'arb2627':'');
-      const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd);
+      const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
       if (j.ok && j.data) {
         const d = j.data;
         DB.competiciones  = d.competiciones  || [];
