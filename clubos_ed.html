@@ -3180,7 +3180,7 @@ function renderJugadores() {
       const convocado = j.convocado===true||j.convocado==='true';
       h+=`<tr data-nombre="${(j.nombre+' '+(j.apellidos||'')).toLowerCase()}" style="${!activo?'opacity:.45;':''}">
         <td style="font-size:12px;">${j.dorsal||'—'}</td>
-        <td><strong>${j.nombre}</strong>${j.apellidos?' '+j.apellidos:''}</td>
+        <td><strong>${j.nombre}</strong>${j.apellidos?' '+j.apellidos:''}${j.origen ? `<div><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:#FEF3CD;color:#8A6D00;">📥 Solicitud${j.categoriaOrientativa?' · '+j.categoriaOrientativa:''}</span></div>` : ''}</td>
         <td style="font-size:12px;">${j.posicion||'—'}</td>
         <td>${puedeEditar
           ?`<button class="btn-xs" style="background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};border:none;" onclick="toggleActivo('${j.id}')">${activo?'Activo':'Inactivo'}</button>`
