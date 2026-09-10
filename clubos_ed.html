@@ -28,7 +28,7 @@
   --azul-marino:#0B1F3A; --azul-marino-claro:#15315C;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--gris-texto);min-height:100vh;}
+body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--gris-texto);min-height:100vh;overflow-x:hidden;}
 
 /* ═══════════════════════════════
    PORTADA / LOGIN
@@ -556,7 +556,7 @@ tbody td.center{text-align:center;}
 }
 @media (min-width:769px){
   .cards-equipos{display:none;}
-  .tabla-equipos-desktop{display:block;}
+  .tabla-equipos-desktop{display:block;overflow-x:auto;}
 }
 
 /* ── Menú de navegación: versión compacta anclada, solo escritorio ── */
