@@ -2637,17 +2637,25 @@ function exportarEquiposPDF(soloCompId) {
     const compNombre = comp?.nombre || 'Sin competición asignada';
     return `<h2>${compNombre}</h2>
     <table>
-      <thead><tr><th>Equipo</th><th>Equipación</th><th>Categoría</th><th>Club</th><th>Jugadores</th></tr></thead>
+      <thead><tr><th>Equipo</th><th>Equipación</th><th>Categoría</th><th>Club</th><th>Jugadores</th><th>Entrenador</th><th>Contacto</th></tr></thead>
       <tbody>
         ${equipos.map(e => {
           const nJug = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
+          const contactoPrincipal = [e.emailDelegado, e.telDelegado].filter(Boolean).join(' · ') || '—';
+          const filaApoyo = (e.delegado2||e.emailDelegado2||e.telDelegado2) ? `<tr>
+            <td colspan="5" style="text-align:right;font-size:11px;color:#888;border-right:none;">↳ Apoyo</td>
+            <td style="font-size:11px;">${e.delegado2||'—'}</td>
+            <td style="font-size:11px;">${[e.emailDelegado2, e.telDelegado2].filter(Boolean).join(' · ') || '—'}</td>
+          </tr>` : '';
           return `<tr>
             <td>${e.nombre}</td>
             <td>${kitMini(e.eq1Camiseta,e.eq1Pantalon)}</td>
             <td>${e.categoria||'—'}</td>
             <td>${nombreClub(e.clubId)||'—'}</td>
             <td>${nJug}</td>
-          </tr>`;
+            <td>${e.delegado||'—'}</td>
+            <td>${contactoPrincipal}</td>
+          </tr>${filaApoyo}`;
         }).join('')}
       </tbody>
     </table>`;
@@ -3492,6 +3500,7 @@ function renderListadoJugadores() {
         </div>
       </details>
       <button class="btn btn-outline btn-sm" onclick="exportarListadoJugadores()">📄 Exportar listado</button>
+      <button class="btn btn-outline btn-sm" onclick="exportarListadoPadres()">👨‍👩‍👧 Exportar padres</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       ${['todos','socios','nosocios','autorizaSi','autorizaNo'].map(c=>
@@ -3573,6 +3582,47 @@ async function _listadoEditarCampo(jugadorId, campo, valor) {
   j[campo] = valor;
   await saveCol('jugadores');
   toast('Actualizado');
+}
+
+function exportarListadoPadres() {
+  const filas = _listadoJugadoresFiltrados().filter(j => j.tutorNombre || j.tutorTelefono || j.tutorEmail);
+  if (!filas.length) { toast('No hay datos de tutores que exportar con este filtro'); return; }
+  filas.sort((a,b) => (a.tutorNombre||'').localeCompare(b.tutorNombre||''));
+  const filtroTexto = window._listadoFiltroEquipos
+    ? [...window._listadoFiltroEquipos].map(id => (DB.equipos||[]).find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
+    : 'Todos los equipos';
+  const filas_html = filas.map(j => {
+    const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+    return `<tr>
+      <td>
+        <div style="font-weight:600;">${j.tutorNombre||'—'}</div>
+        <div style="font-size:10px;color:#888;margin-top:2px;">${j.nombre} ${j.apellidos||''}${eq?' · '+eq.nombre:''}</div>
+      </td>
+      <td>${j.tutorEmail||'—'}</td>
+      <td>${j.tutorTelefono||'—'}</td>
+    </tr>`;
+  }).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Listado de padres/tutores</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:24px;color:#111;}
+      h1{font-size:18px;margin-bottom:2px;}
+      .meta{font-size:12px;color:#666;margin-bottom:18px;}
+      table{width:100%;border-collapse:collapse;font-size:13px;}
+      th,td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:left;vertical-align:top;}
+      th{background:#111;color:white;text-transform:uppercase;font-size:10px;letter-spacing:1px;}
+      @media print{ body{padding:8px;} }
+    </style></head><body>
+    <h1>Listado de padres/tutores</h1>
+    <div class="meta">Filtro: ${filtroTexto} · ${filas.length} tutor(es) · ${new Date().toLocaleDateString('es-ES')}</div>
+    <table>
+      <thead><tr><th>Tutor / Jugador · Equipo</th><th>Email</th><th>Teléfono</th></tr></thead>
+      <tbody>${filas_html}</tbody>
+    </table>
+    <script>window.print();<\/script>
+    </body></html>`);
+  w.document.close();
 }
 
 function exportarListadoJugadores() {
