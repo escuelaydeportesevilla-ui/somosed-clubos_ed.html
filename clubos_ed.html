@@ -1263,6 +1263,15 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Entrenador</label><input id="eqDelegado" placeholder="Nombre entrenador"></div>
       <div class="form-field"><label>Email entrenador</label><input id="eqEmailDelegado" type="email" placeholder="email@ejemplo.com"></div>
       <div class="form-field"><label>Teléfono entrenador</label><input id="eqTelDelegado" type="tel" placeholder="600 000 000"></div>
+      <div class="form-field form-full" id="wrapEntrenador2Select" style="display:none;border-top:1px solid var(--gris-linea);padding-top:12px;margin-top:4px;">
+        <label>Entrenador de apoyo</label>
+        <select id="eqEntrenador2Select" onchange="_aplicarEntrenadorSeleccionado('2')">
+          <option value="">— Escribir manualmente —</option>
+        </select>
+      </div>
+      <div class="form-field"><label>Entrenador de apoyo</label><input id="eqDelegado2" placeholder="Nombre entrenador de apoyo (opcional)"></div>
+      <div class="form-field"><label>Email entrenador de apoyo</label><input id="eqEmailDelegado2" type="email" placeholder="email@ejemplo.com"></div>
+      <div class="form-field"><label>Teléfono entrenador de apoyo</label><input id="eqTelDelegado2" type="tel" placeholder="600 000 000"></div>
       <div class="form-field">
         <label>Camiseta</label>
         <div id="paletaCamiseta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;"></div>
@@ -2481,6 +2490,13 @@ function renderEquipos() {
             ${e.emailDelegado?'✉️ <a href="mailto:'+e.emailDelegado+'" style="color:var(--gris-suave);">'+e.emailDelegado+'</a><br>':''}
             ${e.telDelegado?'📞 <a href="tel:'+e.telDelegado+'" style="color:var(--gris-suave);">'+e.telDelegado+'</a>':''}
            </div>` : (e.delegado&&(isAdmin||isClub||isArbitro) ? `<div style="font-size:11px;color:var(--gris-suave);">👤 ${e.delegado}</div>` : '');
+      const contacto2 = (isAdmin||isClub||isArbitro) && (e.delegado2||e.emailDelegado2||e.telDelegado2)
+        ? `<div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">
+            <span style="font-weight:700;">Apoyo:</span>
+            ${e.delegado2?' 👤 '+e.delegado2+'<br>':''}
+            ${e.emailDelegado2?'✉️ <a href="mailto:'+e.emailDelegado2+'" style="color:var(--gris-suave);">'+e.emailDelegado2+'</a><br>':''}
+            ${e.telDelegado2?'📞 <a href="tel:'+e.telDelegado2+'" style="color:var(--gris-suave);">'+e.telDelegado2+'</a>':''}
+           </div>` : '';
       const comp = (DB.competiciones||[]).find(c=>c.id===e.competicionId);
       h += `<div class="card-equipo" data-nombre="${(e.nombre||'').toLowerCase()}">
         <div class="ceq-kit">
@@ -2492,6 +2508,7 @@ function renderEquipos() {
           <div class="ceq-meta">${e.categoria||'—'}${isAdmin&&e.clubId?' · '+nombreClub(e.clubId):''} · ${nJug} jugadores</div>
           ${comp?`<div style="font-size:10px;color:var(--rojo);margin-top:1px;">🏆 ${comp.nombre}</div>`:''}
           ${contacto}
+          ${contacto2}
         </div>
         <div class="ceq-actions">
           <button class="btn-xs btn-outline" onclick="abrirFichaEquipo('${e.id}')">📋</button>
@@ -2516,6 +2533,11 @@ function renderEquipos() {
         ${e.delegado?`<div>${e.delegado}</div>`:''}
         ${e.emailDelegado?`<div><a href="mailto:${e.emailDelegado}" style="color:var(--gris-suave);">✉️ ${e.emailDelegado}</a></div>`:''}
         ${e.telDelegado?`<div><a href="tel:${e.telDelegado}" style="color:var(--gris-suave);">📞 ${e.telDelegado}</a></div>`:''}
+        ${e.delegado2||e.emailDelegado2||e.telDelegado2 ? `<div style="margin-top:4px;font-size:11px;color:var(--gris-suave);"><strong>Apoyo:</strong>
+          ${e.delegado2?` ${e.delegado2}`:''}
+          ${e.emailDelegado2?`<br><a href="mailto:${e.emailDelegado2}" style="color:var(--gris-suave);">✉️ ${e.emailDelegado2}</a>`:''}
+          ${e.telDelegado2?`<br><a href="tel:${e.telDelegado2}" style="color:var(--gris-suave);">📞 ${e.telDelegado2}</a>`:''}
+        </div>` : ''}
       </td>`;
       h += `<tr data-nombre="${(e.nombre||'').toLowerCase()}">
         <td><strong style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</strong></td>
@@ -2720,7 +2742,12 @@ function exportarDelegadosPDF() {
             <td style="padding:7px 10px;border:1px solid #ddd;">${e.delegado||'—'}</td>
             <td style="padding:7px 10px;border:1px solid #ddd;">${e.emailDelegado||'—'}</td>
             <td style="padding:7px 10px;border:1px solid #ddd;">${e.telDelegado||'—'}</td>
-          </tr>`).join('')}
+          </tr>${(e.delegado2||e.emailDelegado2||e.telDelegado2) ? `<tr style="background:${i%2===0?'white':'#fafaf8'};">
+            <td style="padding:4px 10px;border:1px solid #ddd;font-size:11px;color:#888;">↳ Apoyo</td>
+            <td style="padding:4px 10px;border:1px solid #ddd;font-size:12px;">${e.delegado2||'—'}</td>
+            <td style="padding:4px 10px;border:1px solid #ddd;font-size:12px;">${e.emailDelegado2||'—'}</td>
+            <td style="padding:4px 10px;border:1px solid #ddd;font-size:12px;">${e.telDelegado2||'—'}</td>
+          </tr>` : ''}`).join('')}
         </tbody>
       </table>
     </div>`).join('');
@@ -2778,10 +2805,11 @@ function seleccionarEquipoBuscador(id) {
   editarEquipo(id);
 }
 
-function _pintarSelectEntrenador(entrenadorActual) {
+function _pintarSelectEntrenador(entrenadorActual, sufijo) {
+  sufijo = sufijo || '';
   const isAdmin = sesion.rol === 'admin';
-  const wrap = document.getElementById('wrapEntrenadorSelect');
-  const sel = document.getElementById('eqEntrenadorSelect');
+  const wrap = document.getElementById('wrapEntrenador' + sufijo + 'Select');
+  const sel = document.getElementById('eqEntrenador' + sufijo + 'Select');
   if (!isAdmin && !puedeEvaluar()) { wrap.style.display = 'none'; return; }
   const activos = (DB.personal||[]).filter(p=>p.activo!==false);
   wrap.style.display = '';
@@ -2796,21 +2824,22 @@ function _pintarSelectEntrenador(entrenadorActual) {
     }).join('');
 }
 
-function _aplicarEntrenadorSeleccionado() {
-  const sel = document.getElementById('eqEntrenadorSelect');
+function _aplicarEntrenadorSeleccionado(sufijo) {
+  sufijo = sufijo || '';
+  const sel = document.getElementById('eqEntrenador' + sufijo + 'Select');
   if (!sel.value) {
     // "Escribir manualmente": limpiar de verdad, no dejar datos antiguos sin querer
-    document.getElementById('eqDelegado').value = '';
-    document.getElementById('eqEmailDelegado').value = '';
-    document.getElementById('eqTelDelegado').value = '';
+    document.getElementById('eqDelegado' + sufijo).value = '';
+    document.getElementById('eqEmailDelegado' + sufijo).value = '';
+    document.getElementById('eqTelDelegado' + sufijo).value = '';
     return;
   }
   const isAdmin = sesion.rol === 'admin';
   const listaPersonal = isAdmin ? (DB.personal||[]) : (DB.personal||[]).filter(p=>p.clubId===sesion.user);
   const p = listaPersonal.find(x=>x.id===sel.value); if (!p) return;
-  document.getElementById('eqDelegado').value = (p.nombre+' '+(p.apellidos||'')).trim();
-  document.getElementById('eqEmailDelegado').value = p.email || '';
-  document.getElementById('eqTelDelegado').value = p.telefono || '';
+  document.getElementById('eqDelegado' + sufijo).value = (p.nombre+' '+(p.apellidos||'')).trim();
+  document.getElementById('eqEmailDelegado' + sufijo).value = p.email || '';
+  document.getElementById('eqTelDelegado' + sufijo).value = p.telefono || '';
 }
 
 function abrirModalEquipo() {
@@ -2822,6 +2851,10 @@ function abrirModalEquipo() {
   document.getElementById('eqEmailDelegado').value = '';
   document.getElementById('eqTelDelegado').value   = '';
   _pintarSelectEntrenador('');
+  document.getElementById('eqDelegado2').value  = '';
+  document.getElementById('eqEmailDelegado2').value = '';
+  document.getElementById('eqTelDelegado2').value   = '';
+  _pintarSelectEntrenador('', '2');
   document.getElementById('eq1CamisetaColor').value  = '#C8102E';
   document.getElementById('eq1PantaloonColor').value = '#111111';
   renderPaletaColor('paletaCamiseta','eq1CamisetaColor','#C8102E');
@@ -2846,6 +2879,10 @@ function editarEquipo(id) {
   document.getElementById('eqEmailDelegado').value = e.emailDelegado||'';
   document.getElementById('eqTelDelegado').value   = e.telDelegado  ||'';
   _pintarSelectEntrenador(e.delegado);
+  document.getElementById('eqDelegado2').value  = e.delegado2  ||'';
+  document.getElementById('eqEmailDelegado2').value = e.emailDelegado2||'';
+  document.getElementById('eqTelDelegado2').value   = e.telDelegado2  ||'';
+  _pintarSelectEntrenador(e.delegado2, '2');
   document.getElementById('eq1CamisetaColor').value  = e.eq1Camiseta ||'#C8102E';
   document.getElementById('eq1PantaloonColor').value = e.eq1Pantalon ||'#111111';
   renderPaletaColor('paletaCamiseta','eq1CamisetaColor', e.eq1Camiseta ||'#C8102E');
@@ -2904,6 +2941,9 @@ async function guardarEquipo() {
     delegado:       document.getElementById('eqDelegado').value,
     emailDelegado:  document.getElementById('eqEmailDelegado').value.trim(),
     telDelegado:    document.getElementById('eqTelDelegado').value.trim(),
+    delegado2:       document.getElementById('eqDelegado2').value,
+    emailDelegado2:  document.getElementById('eqEmailDelegado2').value.trim(),
+    telDelegado2:    document.getElementById('eqTelDelegado2').value.trim(),
     clubId:         clubIdFinal,
     eq1Camiseta:    eq1Camiseta,
     eq1Pantalon:    eq1Pantalon,
@@ -2918,6 +2958,14 @@ async function guardarEquipo() {
     const pIdx = (DB.personal||[]).findIndex(p=>p.id===selEntrenador.value);
     if (pIdx >= 0) {
       DB.personal[pIdx] = { ...DB.personal[pIdx], clubId: clubIdFinal, equipoId: rec.id };
+      await saveCol('personal');
+    }
+  }
+  const selEntrenador2 = document.getElementById('eqEntrenador2Select');
+  if (selEntrenador2 && selEntrenador2.value) {
+    const pIdx2 = (DB.personal||[]).findIndex(p=>p.id===selEntrenador2.value);
+    if (pIdx2 >= 0) {
+      DB.personal[pIdx2] = { ...DB.personal[pIdx2], clubId: clubIdFinal, equipoId: rec.id };
       await saveCol('personal');
     }
   }
@@ -5609,6 +5657,7 @@ function renderVistaFamiliaJugador() {
       <div style="font-size:1.4rem;font-weight:800;">${j.nombre} ${j.apellidos||''}</div>
       <div style="font-size:13px;opacity:.85;margin-top:4px;">${eq?('🏟️ '+eq.nombre):'Sin equipo asignado'}${escNombres?' · 🏫 '+escNombres:''}</div>
       ${eq && eq.delegado ? `<div style="font-size:12px;opacity:.75;margin-top:8px;border-top:1px solid rgba(255,255,255,.15);padding-top:8px;">👤 Entrenador: ${eq.delegado}${eq.telDelegado?` · 📞 <a href="tel:${eq.telDelegado}" style="color:#fff;">${eq.telDelegado}</a>`:''}${eq.emailDelegado?` · ✉️ <a href="mailto:${eq.emailDelegado}" style="color:#fff;">${eq.emailDelegado}</a>`:''}</div>` : ''}
+      ${eq && eq.delegado2 ? `<div style="font-size:12px;opacity:.75;margin-top:4px;">👤 Apoyo: ${eq.delegado2}${eq.telDelegado2?` · 📞 <a href="tel:${eq.telDelegado2}" style="color:#fff;">${eq.telDelegado2}</a>`:''}${eq.emailDelegado2?` · ✉️ <a href="mailto:${eq.emailDelegado2}" style="color:#fff;">${eq.emailDelegado2}</a>`:''}</div>` : ''}
     </div>
 
     <div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;align-items:center;">
