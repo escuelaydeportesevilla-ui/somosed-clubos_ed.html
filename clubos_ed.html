@@ -1583,14 +1583,19 @@ tbody td.center{text-align:center;}
     <div id="seccionNotas" style="display:none;margin-top:18px;">
       <div style="font-weight:700;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">📝 Notas del jugador</div>
       <div id="listaNotas" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
-      <div style="background:#f9f9f7;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;gap:8px;align-items:center;">
-          <label style="font-size:12px;font-weight:600;white-space:nowrap;">Fecha</label>
-          <input type="date" id="jNotaFecha" style="font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:4px 8px;">
-          <select id="jNotaEstado" style="font-size:12px;border:1px solid var(--gris-linea);border-radius:6px;padding:4px 8px;">
-            <option value="pendiente">🟡 Pendiente</option>
-            <option value="vista">✅ Vista</option>
-          </select>
+      <div style="background:#f9f9f7;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:130px;">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-suave);display:block;margin-bottom:4px;">Fecha</label>
+            <input type="date" id="jNotaFecha" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:7px 8px;">
+          </div>
+          <div style="flex:1;min-width:130px;">
+            <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-suave);display:block;margin-bottom:4px;">Estado</label>
+            <select id="jNotaEstado" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:7px 8px;">
+              <option value="pendiente">🟡 Pendiente</option>
+              <option value="vista">✅ Vista</option>
+            </select>
+          </div>
           <input type="hidden" id="jNotaEditId">
         </div>
         <textarea id="jNotaTexto" rows="3" placeholder="Escribe una nota sobre el jugador..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;font-family:inherit;"></textarea>
