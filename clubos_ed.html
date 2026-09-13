@@ -3219,10 +3219,22 @@ function renderJugadores() {
       const activo    = j.activo!==false&&j.activo!=='false';
       const convocado = j.convocado===true||j.convocado==='true';
       h+=`<div class="card-jugador" data-nombre="${(j.nombre+' '+(j.apellidos||'')).toLowerCase()}" style="${!activo?'opacity:.5;':''}">
-        <div class="cj-dorsal">${j.dorsal||'—'}</div>
+        <div class="cj-dorsal">${puedeEditar
+          ?`<input type="number" min="1" max="99" value="${j.dorsal||''}" onchange="actualizarCampoJugadorInline('${j.id}','dorsal',this.value)" style="width:38px;font-size:13px;text-align:center;padding:3px 2px;border:1px solid var(--gris-linea);border-radius:4px;">`
+          : (j.dorsal||'—')
+        }</div>
         <div class="cj-info">
           <div class="cj-nombre">${j.nombre}${j.apellidos?' '+j.apellidos:''}</div>
-          <div class="cj-meta">${j.posicion||''}</div>
+          <div class="cj-meta">${puedeEditar
+            ?`<select onchange="actualizarCampoJugadorInline('${j.id}','posicion',this.value)" style="font-size:12px;padding:2px 4px;border:1px solid var(--gris-linea);border-radius:4px;max-width:150px;">
+                <option value="" ${!j.posicion?'selected':''}>— Sin especificar —</option>
+                <option value="Portero" ${j.posicion==='Portero'?'selected':''}>Portero</option>
+                <option value="Defensa" ${j.posicion==='Defensa'?'selected':''}>Defensa</option>
+                <option value="Centrocampista" ${j.posicion==='Centrocampista'?'selected':''}>Centrocampista</option>
+                <option value="Delantero" ${j.posicion==='Delantero'?'selected':''}>Delantero</option>
+              </select>`
+            : (j.posicion||'')
+          }</div>
           ${j.origen ? `<div style="margin-top:2px;"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:#FEF3CD;color:#8A6D00;">📥 Solicitud ${j.categoriaOrientativa?'· '+j.categoriaOrientativa:''}</span></div>` : ''}
           <div class="cj-badges">
             ${puedeEditar
@@ -3248,9 +3260,21 @@ function renderJugadores() {
       const activo    = j.activo!==false&&j.activo!=='false';
       const convocado = j.convocado===true||j.convocado==='true';
       h+=`<tr data-nombre="${(j.nombre+' '+(j.apellidos||'')).toLowerCase()}" style="${!activo?'opacity:.45;':''}">
-        <td style="font-size:12px;">${j.dorsal||'—'}</td>
+        <td style="font-size:12px;">${puedeEditar
+          ?`<input type="number" min="1" max="99" value="${j.dorsal||''}" onchange="actualizarCampoJugadorInline('${j.id}','dorsal',this.value)" style="width:44px;font-size:12px;padding:3px 4px;border:1px solid var(--gris-linea);border-radius:4px;">`
+          : (j.dorsal||'—')
+        }</td>
         <td><strong>${j.nombre}</strong>${j.apellidos?' '+j.apellidos:''}${j.origen ? `<div><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:#FEF3CD;color:#8A6D00;">📥 Solicitud${j.categoriaOrientativa?' · '+j.categoriaOrientativa:''}</span></div>` : ''}</td>
-        <td style="font-size:12px;">${j.posicion||'—'}</td>
+        <td style="font-size:12px;">${puedeEditar
+          ?`<select onchange="actualizarCampoJugadorInline('${j.id}','posicion',this.value)" style="font-size:12px;padding:3px 4px;border:1px solid var(--gris-linea);border-radius:4px;">
+              <option value="" ${!j.posicion?'selected':''}>— Sin especificar —</option>
+              <option value="Portero" ${j.posicion==='Portero'?'selected':''}>Portero</option>
+              <option value="Defensa" ${j.posicion==='Defensa'?'selected':''}>Defensa</option>
+              <option value="Centrocampista" ${j.posicion==='Centrocampista'?'selected':''}>Centrocampista</option>
+              <option value="Delantero" ${j.posicion==='Delantero'?'selected':''}>Delantero</option>
+            </select>`
+          : (j.posicion||'—')
+        }</td>
         <td>${puedeEditar
           ?`<button class="btn-xs" style="background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};border:none;" onclick="toggleActivo('${j.id}')">${activo?'Activo':'Inactivo'}</button>`
           :`<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};">${activo?'Activo':'Inactivo'}</span>`
@@ -3575,6 +3599,13 @@ function _listadoJugadoresFiltrados() {
   else if (chip === 'autorizaSi') lista = lista.filter(j => j.autorizacionImagen === 'si');
   else if (chip === 'autorizaNo') lista = lista.filter(j => j.autorizacionImagen === 'no');
   return [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+}
+
+async function actualizarCampoJugadorInline(jugadorId, campo, valor) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  j[campo] = valor;
+  await saveCol('jugadores');
+  toast('Actualizado');
 }
 
 async function _listadoEditarCampo(jugadorId, campo, valor) {
