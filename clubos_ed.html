@@ -3601,6 +3601,24 @@ function _listadoJugadoresFiltrados() {
   return [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 }
 
+async function toggleActivo(jugadorId) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  const activo = j.activo!==false && j.activo!=='false';
+  j.activo = !activo;
+  await saveCol('jugadores');
+  renderJugadores();
+  toast(j.activo ? 'Jugador activado' : 'Jugador marcado como inactivo');
+}
+
+async function toggleConvocado(jugadorId) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  const convocado = j.convocado===true || j.convocado==='true';
+  j.convocado = !convocado;
+  await saveCol('jugadores');
+  renderJugadores();
+  toast(j.convocado ? 'Convocado' : 'No convocado');
+}
+
 async function actualizarCampoJugadorInline(jugadorId, campo, valor) {
   const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
   j[campo] = valor;
