@@ -4113,7 +4113,7 @@ function renderListaNotas(notas) {
   `).join('');
 }
 
-function agregarNota() {
+async function agregarNota() {
   const editId  = document.getElementById('jEditId').value; if (!editId) return;
   const notaId  = document.getElementById('jNotaEditId').value;
   const fecha   = document.getElementById('jNotaFecha').value;
@@ -4128,7 +4128,7 @@ function agregarNota() {
   } else {
     j.notas.push({ id: uid(), fecha, texto, estado });
   }
-  localStorage.setItem('clubos_ed', JSON.stringify(DB)); _pendienteSync = true;
+  await saveCol('jugadores');
   document.getElementById('jNotaFecha').value  = new Date().toISOString().split('T')[0];
   document.getElementById('jNotaTexto').value  = '';
   document.getElementById('jNotaEstado').value = 'pendiente';
@@ -4169,12 +4169,12 @@ function cancelarEditarNota() {
   document.getElementById('btnGuardarNota').textContent = '\u2795 A\u00f1adir nota';
 }
 
-function borrarNota(notaId) {
+async function borrarNota(notaId) {
   const editId = document.getElementById('jEditId').value; if (!editId) return;
   const j = (DB.jugadores||[]).find(x=>x.id===editId); if (!j) return;
   if (!confirm('\u00bfEliminar esta nota?')) return;
   j.notas = (j.notas||[]).filter(n=>n.id!==notaId);
-  localStorage.setItem('clubos_ed', JSON.stringify(DB)); _pendienteSync = true;
+  await saveCol('jugadores');
   renderListaNotas(j.notas);
   toast('Nota eliminada');
 }
