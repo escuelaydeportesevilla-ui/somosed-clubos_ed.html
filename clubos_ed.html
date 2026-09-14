@@ -3525,6 +3525,7 @@ function renderListadoJugadores() {
       </details>
       <button class="btn btn-outline btn-sm" onclick="exportarListadoJugadores()">📄 Exportar listado</button>
       <button class="btn btn-outline btn-sm" onclick="exportarListadoPadres()">👨‍👩‍👧 Exportar padres</button>
+      <button class="btn btn-outline btn-sm" onclick="exportarListadoPorPosicion()">⚽ Exportar por posición</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
       ${['todos','socios','nosocios','autorizaSi','autorizaNo'].map(c=>
@@ -3631,6 +3632,62 @@ async function _listadoEditarCampo(jugadorId, campo, valor) {
   j[campo] = valor;
   await saveCol('jugadores');
   toast('Actualizado');
+}
+
+function exportarListadoPorPosicion() {
+  const filas = _listadoJugadoresFiltrados();
+  if (!filas.length) { toast('No hay jugadores que exportar con este filtro'); return; }
+  const filtroTexto = window._listadoFiltroEquipos
+    ? [...window._listadoFiltroEquipos].map(id => (DB.equipos||[]).find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
+    : 'Todos los equipos';
+
+  const ORDEN_POSICIONES = ['Portero','Defensa','Centrocampista','Delantero','Sin especificar'];
+  const grupos = {};
+  filas.forEach(j => {
+    const pos = j.posicion || 'Sin especificar';
+    if (!grupos[pos]) grupos[pos] = [];
+    grupos[pos].push(j);
+  });
+  Object.values(grupos).forEach(g => g.sort((a,b)=>((a.nombre||'')+' '+(a.apellidos||'')).localeCompare((b.nombre||'')+' '+(b.apellidos||''))));
+
+  const posicionesPresentes = ORDEN_POSICIONES.filter(p => grupos[p]);
+  const secciones = posicionesPresentes.map(pos => {
+    const jugs = grupos[pos];
+    return `<h2>${pos} <span style="font-size:13px;font-weight:400;color:#666;">(${jugs.length})</span></h2>
+    <table>
+      <thead><tr><th>Jugador</th><th>Equipo · Categoría</th><th>Dorsal</th></tr></thead>
+      <tbody>
+        ${jugs.map(j => {
+          const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
+          return `<tr>
+            <td>${j.nombre} ${j.apellidos||''}</td>
+            <td>${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</td>
+            <td>${j.dorsal||'—'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  }).join('');
+
+  const w = window.open('', '_blank');
+  w.document.write(`
+    <html><head><title>Jugadores por posición</title>
+    <style>
+      body{font-family:Arial,sans-serif;padding:24px;color:#111;}
+      h1{font-size:18px;margin-bottom:2px;}
+      h2{font-size:15px;color:#C8102E;margin-top:24px;margin-bottom:8px;}
+      .meta{font-size:12px;color:#666;margin-bottom:18px;}
+      table{width:100%;border-collapse:collapse;font-size:13px;}
+      th,td{padding:7px 10px;border-bottom:1px solid #ddd;text-align:left;}
+      th{background:#111;color:white;text-transform:uppercase;font-size:10px;letter-spacing:1px;}
+      @media print{ body{padding:8px;} h2{page-break-after:avoid;} table{page-break-inside:auto;} }
+    </style></head><body>
+    <h1>Jugadores por posición</h1>
+    <div class="meta">Filtro: ${filtroTexto} · ${filas.length} jugador(es) · ${new Date().toLocaleDateString('es-ES')}</div>
+    ${secciones}
+    <script>window.print();<\/script>
+    </body></html>`);
+  w.document.close();
 }
 
 function exportarListadoPadres() {
