@@ -3535,6 +3535,12 @@ function renderListadoJugadores() {
   </div>`;
 
   const filas = _listadoJugadoresFiltrados();
+  const nombresEquiposFiltro = window._listadoFiltroEquipos
+    ? [...window._listadoFiltroEquipos].map(id => equipos.find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
+    : 'Todos los equipos';
+  html += `<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;padding:0 2px;">
+    <strong style="color:var(--negro);">${nombresEquiposFiltro}</strong> · ${filas.length} jugador${filas.length===1?'':'es'}
+  </div>`;
   html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <table class="tabla-base" style="min-width:560px;">
       <thead><tr>
