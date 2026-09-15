@@ -3310,7 +3310,10 @@ function renderJugadores() {
              font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
              padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
           <span><span id="${contId}_icon">▶</span> ${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} jugadores)</span></span>
-          <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('equipo','${eid}')">📄 Exportar</button>
+          <span style="display:flex;gap:6px;">
+            <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();irAListadoFiltrado('${eid}')">📋 Listado</button>
+            <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('equipo','${eid}')">📄 Exportar</button>
+          </span>
         </div>
         <div id="${contId}" style="display:none;padding-top:12px;">
           ${renderGrupoJugadores(jugs, isAdmin)}
@@ -3400,6 +3403,19 @@ function renderJugadores() {
 // ══════════════════════════════════════════════════════
 window._listadoFiltroEquipos = null; // null = todos; Set de equipoIds si se ha filtrado
 window._listadoFiltroChip = 'todos'; // todos | socios | nosocios | autorizaSi | autorizaNo
+
+function irAListadoFiltrado(equipoId) {
+  window._listadoFiltroEquipos = new Set([equipoId]);
+  window._listadoFiltroChip = 'todos';
+  const tarjetas = document.getElementById('jugadoresContent');
+  const listado  = document.getElementById('listadoJugadoresContent');
+  const btn = document.getElementById('btnToggleListado');
+  tarjetas.style.display = 'none';
+  listado.style.display = '';
+  document.getElementById('listadoNotasContent').style.display = 'none';
+  if (btn) btn.textContent = '🗂️ Ver tarjetas';
+  renderListadoJugadores();
+}
 
 function toggleVistaJugadores() {
   const tarjetas = document.getElementById('jugadoresContent');
