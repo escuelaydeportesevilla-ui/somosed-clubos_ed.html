@@ -6149,9 +6149,11 @@ async function eliminarSug(id) {
   try {
     const pwd = sesion.rol==='admin' ? 'cbed2627' : sesion.rol==='club' ? sesion.user : sesion.rol==='arbitro' ? 'arb2627' : '';
     const url = SCRIPT_URL + '?action=deleteIds&pwd=' + encodeURIComponent(pwd) + '&col=sugerencias&ids=' + encodeURIComponent(JSON.stringify([id]));
-    await fetch(url, { mode: 'no-cors' });
-    delete DB._deleted[id];
-    localStorage.setItem('clubos_ed', JSON.stringify(DB));
+    const rDel = await jsonpFetch(url, 15000);
+    if (rDel && rDel.ok) {
+      delete DB._deleted[id];
+      localStorage.setItem('clubos_ed', JSON.stringify(DB));
+    }
   } catch(e) { /* si falla, DB._deleted[id] queda marcado: manualSync/recargaCompleta lo filtran igualmente */ }
   toast('Eliminada'); renderSugerencias();
 }
@@ -6310,11 +6312,16 @@ console.log('Familias: acceso directo (sin contraseña)');
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
         const pwdEnc = encodeURIComponent(pwd);
-        await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&col=' + encodeURIComponent(col) + '&ids=' + encodeURIComponent(JSON.stringify(ids)), { mode: 'no-cors' });
-        // Limpiar del pendiente local los ids ya enviados (evita reenviar para siempre
-        // y que la URL crezca sin límite en cada sync de otra colección)
-        ids.forEach(id => delete DB._deleted[id]);
-        localStorage.setItem('clubos_ed', JSON.stringify(DB));
+        try {
+          const rDel = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&col=' + encodeURIComponent(col) + '&ids=' + encodeURIComponent(JSON.stringify(ids)), 15000);
+          // Solo limpiar el pendiente local si el servidor CONFIRMA el borrado.
+          // Con no-cors no había forma de saber si realmente se había borrado;
+          // por eso el registro podía "resucitar": se daba por sincronizado sin estarlo.
+          if (rDel && rDel.ok) {
+            ids.forEach(id => delete DB._deleted[id]);
+            localStorage.setItem('clubos_ed', JSON.stringify(DB));
+          }
+        } catch(eDel) { /* sin confirmación: se mantiene DB._deleted y se reintenta en el próximo sync */ }
       }
 
       _pendienteSync = false;
@@ -6387,9 +6394,11 @@ console.log('Familias: acceso directo (sin contraseña)');
         // un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
         const del = DB._deleted || {};
         const delIds = Object.keys(del);
+        let delConfirmado = false;
         if (delIds.length) {
           try {
-            await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(delIds)), { mode: 'no-cors' });
+            const rDel = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(delIds)), 15000);
+            delConfirmado = !!(rDel && rDel.ok);
           } catch(e) {}
         }
         const sinBorrados = arr => (arr||[]).filter(x => !x?.id || !del[x.id]);
@@ -6408,7 +6417,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.personal       = sinBorrados(d.personal);
         DB.evaluaciones   = sinBorrados(d.evaluaciones);
         DB.gruposclubes   = sinBorrados(d.gruposclubes);
-        delIds.forEach(id => delete DB._deleted[id]);
+        if (delConfirmado) delIds.forEach(id => delete DB._deleted[id]);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -6445,9 +6454,13 @@ console.log('Familias: acceso directo (sin contraseña)');
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
         const url = SCRIPT_URL + '?action=deleteIds' + '&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(ids));
-        await fetch(url, {mode:'no-cors'});
-        ids.forEach(id => delete DB._deleted[id]);
-        localStorage.setItem('clubos_ed', JSON.stringify(DB));
+        try {
+          const rDel = await jsonpFetch(url, 15000);
+          if (rDel && rDel.ok) {
+            ids.forEach(id => delete DB._deleted[id]);
+            localStorage.setItem('clubos_ed', JSON.stringify(DB));
+          }
+        } catch(eDel) { /* sin confirmación: se mantiene DB._deleted */ }
       }
       _pendienteSync = false;
       setSyncStatus('ok');
