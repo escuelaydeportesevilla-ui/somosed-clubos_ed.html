@@ -6147,10 +6147,8 @@ async function eliminarSug(id) {
   DB._deleted[id] = Date.now();
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   try {
-    const pwd = sesion.rol==='admin' ? 'cbed2627' : sesion.rol==='club' ? sesion.user : sesion.rol==='arbitro' ? 'arb2627' : '';
-    const url = SCRIPT_URL + '?action=deleteIds&pwd=' + encodeURIComponent(pwd) + '&col=sugerencias&ids=' + encodeURIComponent(JSON.stringify([id]));
-    const rDel = await jsonpFetch(url, 15000);
-    if (rDel && rDel.ok) {
+    const confirmados = await _borrarIdsConfirmado([id], 'sugerencias');
+    if (confirmados.length) {
       delete DB._deleted[id];
       localStorage.setItem('clubos_ed', JSON.stringify(DB));
     }
@@ -6287,6 +6285,26 @@ console.log('Familias: acceso directo (sin contraseña)');
     });
   }
 
+  // Envía ids a borrar en LOTES pequeños (evita URLs demasiado largas, que Apps
+  // Script/el navegador rechazan con un 404 y un error de tipo MIME) y devuelve
+  // solo los ids que el servidor CONFIRMÓ haber borrado.
+  async function _borrarIdsConfirmado(ids, colParam) {
+    if (!ids || !ids.length) return [];
+    const pwd = sesion.rol==='admin' ? 'cbed2627' : sesion.rol==='club' ? sesion.user : sesion.rol==='arbitro' ? 'arb2627' : '';
+    const pwdEnc = encodeURIComponent(pwd);
+    const colPart = colParam ? '&col=' + encodeURIComponent(colParam) : '';
+    const CHUNK = 25;
+    const confirmados = [];
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const lote = ids.slice(i, i + CHUNK);
+      try {
+        const r = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + colPart + '&ids=' + encodeURIComponent(JSON.stringify(lote)), 15000);
+        if (r && r.ok) confirmados.push(...lote);
+      } catch(e) { /* este lote no se confirma; se reintenta en el próximo sync */ }
+    }
+    return confirmados;
+  }
+
   // ── SYNC DE UNA SOLA COLECCIÓN (rápido) ─────────────────
   async function syncColeccion(col) {
     if (!SCRIPT_URL || !sesion) return;
@@ -6308,20 +6326,14 @@ console.log('Familias: acceso directo (sin contraseña)');
         });
       }
 
-      // Enviar borrados si los hay
+      // Enviar borrados si los hay (en lotes, con confirmación real del servidor)
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
-        const pwdEnc = encodeURIComponent(pwd);
-        try {
-          const rDel = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&col=' + encodeURIComponent(col) + '&ids=' + encodeURIComponent(JSON.stringify(ids)), 15000);
-          // Solo limpiar el pendiente local si el servidor CONFIRMA el borrado.
-          // Con no-cors no había forma de saber si realmente se había borrado;
-          // por eso el registro podía "resucitar": se daba por sincronizado sin estarlo.
-          if (rDel && rDel.ok) {
-            ids.forEach(id => delete DB._deleted[id]);
-            localStorage.setItem('clubos_ed', JSON.stringify(DB));
-          }
-        } catch(eDel) { /* sin confirmación: se mantiene DB._deleted y se reintenta en el próximo sync */ }
+        const confirmados = await _borrarIdsConfirmado(ids, col);
+        if (confirmados.length) {
+          confirmados.forEach(id => delete DB._deleted[id]);
+          localStorage.setItem('clubos_ed', JSON.stringify(DB));
+        }
       }
 
       _pendienteSync = false;
@@ -6394,13 +6406,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         // un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
         const del = DB._deleted || {};
         const delIds = Object.keys(del);
-        let delConfirmado = false;
-        if (delIds.length) {
-          try {
-            const rDel = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(delIds)), 15000);
-            delConfirmado = !!(rDel && rDel.ok);
-          } catch(e) {}
-        }
+        const confirmados = delIds.length ? await _borrarIdsConfirmado(delIds, null) : [];
         const sinBorrados = arr => (arr||[]).filter(x => !x?.id || !del[x.id]);
         DB.competiciones  = sinBorrados(d.competiciones);
         DB.equipos        = sinBorrados(d.equipos);
@@ -6417,7 +6423,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.personal       = sinBorrados(d.personal);
         DB.evaluaciones   = sinBorrados(d.evaluaciones);
         DB.gruposclubes   = sinBorrados(d.gruposclubes);
-        if (delConfirmado) delIds.forEach(id => delete DB._deleted[id]);
+        confirmados.forEach(id => delete DB._deleted[id]);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -6453,14 +6459,11 @@ console.log('Familias: acceso directo (sin contraseña)');
       }));
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
-        const url = SCRIPT_URL + '?action=deleteIds' + '&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(ids));
-        try {
-          const rDel = await jsonpFetch(url, 15000);
-          if (rDel && rDel.ok) {
-            ids.forEach(id => delete DB._deleted[id]);
-            localStorage.setItem('clubos_ed', JSON.stringify(DB));
-          }
-        } catch(eDel) { /* sin confirmación: se mantiene DB._deleted */ }
+        const confirmados = await _borrarIdsConfirmado(ids, null);
+        if (confirmados.length) {
+          confirmados.forEach(id => delete DB._deleted[id]);
+          localStorage.setItem('clubos_ed', JSON.stringify(DB));
+        }
       }
       _pendienteSync = false;
       setSyncStatus('ok');
