@@ -6143,12 +6143,16 @@ async function responderSugerencia(id) {
 
 async function eliminarSug(id) {
   DB.sugerencias = DB.sugerencias.filter(s=>s.id!==id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   try {
     const pwd = sesion.rol==='admin' ? 'cbed2627' : sesion.rol==='club' ? sesion.user : sesion.rol==='arbitro' ? 'arb2627' : '';
     const url = SCRIPT_URL + '?action=deleteIds&pwd=' + encodeURIComponent(pwd) + '&col=sugerencias&ids=' + encodeURIComponent(JSON.stringify([id]));
     await fetch(url, { mode: 'no-cors' });
-  } catch(e) { /* si falla, quedará en el Sheet y se puede reintentar */ }
+    delete DB._deleted[id];
+    localStorage.setItem('clubos_ed', JSON.stringify(DB));
+  } catch(e) { /* si falla, DB._deleted[id] queda marcado: manualSync/recargaCompleta lo filtran igualmente */ }
   toast('Eliminada'); renderSugerencias();
 }
 
@@ -6307,6 +6311,10 @@ console.log('Familias: acceso directo (sin contraseña)');
         const ids = Object.keys(DB._deleted);
         const pwdEnc = encodeURIComponent(pwd);
         await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + '&col=' + encodeURIComponent(col) + '&ids=' + encodeURIComponent(JSON.stringify(ids)), { mode: 'no-cors' });
+        // Limpiar del pendiente local los ids ya enviados (evita reenviar para siempre
+        // y que la URL crezca sin límite en cada sync de otra colección)
+        ids.forEach(id => delete DB._deleted[id]);
+        localStorage.setItem('clubos_ed', JSON.stringify(DB));
       }
 
       _pendienteSync = false;
@@ -6374,21 +6382,33 @@ console.log('Familias: acceso directo (sin contraseña)');
       const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
       if (j.ok && j.data) {
         const d = j.data;
-        DB.competiciones  = d.competiciones  || [];
-        DB.equipos        = d.equipos        || [];
-        DB.jugadores      = d.jugadores      || [];
-        DB.partidos       = d.partidos       || [];
-        DB.actas          = d.actas          || [];
-        DB.noticias       = d.noticias       || [];
-        DB.goleadores     = d.goleadores     || [];
-        DB.sugerencias    = (d.sugerencias && d.sugerencias.length) ? d.sugerencias : (DB.sugerencias || []);
-        DB.patrocinadores = (d.patrocinadores && d.patrocinadores.length) ? d.patrocinadores : (DB.patrocinadores || []);
-        DB.sedes          = d.sedes          || [];
-        DB.clubes         = (d.clubes && d.clubes.length) ? d.clubes : (DB.clubes || []);
-        DB.escuelas       = d.escuelas       || [];
-        DB.personal       = d.personal       || [];
-        DB.evaluaciones   = d.evaluaciones   || [];
-        DB.gruposclubes   = d.gruposclubes   || [];
+        // Si hay borrados locales aún no confirmados en el servidor, reenviarlos
+        // ahora y excluir esos ids de los datos que llegan del servidor, para que
+        // un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
+        const del = DB._deleted || {};
+        const delIds = Object.keys(del);
+        if (delIds.length) {
+          try {
+            await fetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwd + '&ids=' + encodeURIComponent(JSON.stringify(delIds)), { mode: 'no-cors' });
+          } catch(e) {}
+        }
+        const sinBorrados = arr => (arr||[]).filter(x => !x?.id || !del[x.id]);
+        DB.competiciones  = sinBorrados(d.competiciones);
+        DB.equipos        = sinBorrados(d.equipos);
+        DB.jugadores      = sinBorrados(d.jugadores);
+        DB.partidos       = sinBorrados(d.partidos);
+        DB.actas          = sinBorrados(d.actas);
+        DB.noticias       = sinBorrados(d.noticias);
+        DB.goleadores     = sinBorrados(d.goleadores);
+        DB.sugerencias    = (d.sugerencias && d.sugerencias.length) ? sinBorrados(d.sugerencias) : (DB.sugerencias || []);
+        DB.patrocinadores = (d.patrocinadores && d.patrocinadores.length) ? sinBorrados(d.patrocinadores) : (DB.patrocinadores || []);
+        DB.sedes          = sinBorrados(d.sedes);
+        DB.clubes         = (d.clubes && d.clubes.length) ? sinBorrados(d.clubes) : (DB.clubes || []);
+        DB.escuelas       = sinBorrados(d.escuelas);
+        DB.personal       = sinBorrados(d.personal);
+        DB.evaluaciones   = sinBorrados(d.evaluaciones);
+        DB.gruposclubes   = sinBorrados(d.gruposclubes);
+        delIds.forEach(id => delete DB._deleted[id]);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
