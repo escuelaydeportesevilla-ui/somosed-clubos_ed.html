@@ -660,6 +660,21 @@ tbody td.center{text-align:center;}
 .sync-overlay-dots span:nth-child(3) { animation-delay:.3s; }
 @keyframes rebotarDot { 0%,80%,100%{ transform:translateY(0); opacity:.5; } 40%{ transform:translateY(-8px); opacity:1; } }
 
+/* Aviso flotante de sincronización: siempre visible aunque hagas scroll */
+#syncFloatBadge {
+  position:fixed; bottom:18px; right:18px; z-index:9985;
+  display:none; align-items:center; gap:8px;
+  background:var(--negro); color:white; padding:9px 16px; border-radius:30px;
+  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px;
+  letter-spacing:.3px; box-shadow:0 6px 20px rgba(0,0,0,.35);
+}
+#syncFloatBadge.show { display:flex; }
+#syncFloatBadge.ok    { background:#1e7e34; }
+#syncFloatBadge.error { background:var(--rojo); }
+#syncFloatBadge .sfb-icon { font-size:1.1rem; }
+#syncFloatBadge .sfb-icon.girando { animation:girarBalon 1s linear infinite; display:inline-block; }
+@media (max-width:640px){ #syncFloatBadge{ bottom:70px; right:12px; padding:8px 14px; font-size:12px; } }
+
 </style>
 </head>
 <body>
@@ -719,6 +734,11 @@ tbody td.center{text-align:center;}
     <div class="sync-overlay-dots" id="overlayDots" style="display:none;margin-top:6px;"><span></span><span></span><span></span></div>
     <div class="sync-overlay-status" id="overlayStatus"></div>
   </div>
+</div>
+
+<!-- AVISO FLOTANTE DE SINCRONIZACIÓN (visible siempre, aunque se haga scroll) -->
+<div id="syncFloatBadge">
+  <span class="sfb-icon" id="sfbIcon">⚽</span><span id="sfbTexto">Sincronizando...</span>
 </div>
 
 <!-- MODAL LOGIN -->
@@ -6317,9 +6337,40 @@ console.log('Familias: acceso directo (sin contraseña)');
   }
 
   // ── SYNC STATUS ────────────────────────────────────────────
+  let _syncFloatOkTimer = null;
+  function _actualizarSyncFloat(state) {
+    const badge = document.getElementById('syncFloatBadge');
+    const icon  = document.getElementById('sfbIcon');
+    const texto = document.getElementById('sfbTexto');
+    if (!badge) return;
+    if (_syncFloatOkTimer) { clearTimeout(_syncFloatOkTimer); _syncFloatOkTimer = null; }
+    badge.classList.remove('ok', 'error');
+    icon.classList.remove('girando');
+
+    if (state === 'syncing' || state === 'loading') {
+      icon.textContent = '⚽';
+      icon.classList.add('girando');
+      texto.textContent = state === 'syncing' ? 'Aún sincronizando...' : 'Cargando datos...';
+      badge.classList.add('show');
+    } else if (state === 'ok') {
+      icon.textContent = '✅';
+      texto.textContent = 'Sincronizado';
+      badge.classList.add('show', 'ok');
+      _syncFloatOkTimer = setTimeout(() => badge.classList.remove('show'), 2000);
+    } else if (state === 'error') {
+      icon.textContent = '⚠️';
+      texto.textContent = 'Error al sincronizar';
+      badge.classList.add('show', 'error');
+      _syncFloatOkTimer = setTimeout(() => badge.classList.remove('show'), 4000);
+    } else {
+      badge.classList.remove('show');
+    }
+  }
+
   function setSyncStatus(state) {
     const label = document.getElementById('syncLabel');
     const btn   = document.getElementById('btnSync');
+    _actualizarSyncFloat(state);
     if (!label) return;
     const txt = { ok:'Sync ✓', syncing:'Enviando...', loading:'Cargando...', error:'Error ⚠️', local:'Sync' };
     label.textContent = txt[state] || 'Sync';
