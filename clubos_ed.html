@@ -663,9 +663,7 @@ tbody td.center{text-align:center;}
 /* Reloj analógico de sincronización, junto al botón Sync de la barra superior */
 #syncClock { display:flex; align-items:center; gap:6px; margin-right:6px; }
 #syncClockLabel { font-size:10px; font-weight:700; color:var(--gris-suave); white-space:nowrap; line-height:1.2; max-width:70px; }
-#syncClockHand { transform-origin:12px 12px; transition:transform .3s ease; }
-#syncClockHand.girando { animation:girarReloj 1s linear infinite; transition:none; }
-@keyframes girarReloj { to { transform:rotate(360deg); } }
+#syncClockHand { transform-origin:12px 12px; }
 @media (max-width:640px){ #syncClockLabel{ display:none; } }
 
 </style>
@@ -1731,6 +1729,7 @@ function save() {
 async function saveCol(col) {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   _pendienteSync = true;
+  _iniciarCuentaSync();
   await syncColeccion(col);
 }
 
@@ -1738,6 +1737,7 @@ async function saveCol(col) {
 async function saveCols(cols) {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   _pendienteSync = true;
+  _iniciarCuentaSync();
   await Promise.all(cols.map(c => syncColeccion(c)));
   setSyncStatus('ok');
 }
@@ -6335,35 +6335,61 @@ console.log('Familias: acceso directo (sin contraseña)');
     }
   }
 
-  // ── SYNC STATUS ────────────────────────────────────────────
-  // Reloj analógico junto al botón Sync: la aguja gira mientras hay envío/
-  // descarga en curso ("sumando tiempo"); al terminar, la aguja vuelve a
-  // las 12 ("llega a cero") y aparece "Todo sincronizado".
-  function _actualizarRelojSync(state) {
+  // ── RELOJ DE CUENTA ATRÁS ──────────────────────────────────
+  // Cada vez que se guarda algo (cualquier alta/edición/borrado pasa por
+  // saveCol/saveCols), la cuenta atrás se REINICIA a SYNC_COUNTDOWN_MS.
+  // Mientras sigas introduciendo datos rápido, la aguja no para de sumar
+  // vueltas; solo cuando pasan unos segundos SIN ningún cambio nuevo llega
+  // a "cero" y se muestra "TODO SINCRONIZADO".
+  const SYNC_COUNTDOWN_MS = 4000;
+  let _syncCountdownEnd   = 0;
+  let _syncCountdownTimer = null;
+  let _syncError          = false;
+
+  function _iniciarCuentaSync() {
+    if (!sesion) return;
+    const hand  = document.getElementById('syncClockHand');
+    const label = document.getElementById('syncClockLabel');
+    if (!hand || !label) return;
+    _syncError = false;
+    _syncCountdownEnd = Date.now() + SYNC_COUNTDOWN_MS;
+    hand.style.transition = 'none';
+    label.textContent = 'Sincronizando...';
+    label.style.color = 'var(--gris-suave)';
+    if (_syncCountdownTimer) return; // ya hay una cuenta corriendo; solo se amplía el plazo
+    _syncCountdownTimer = setInterval(() => {
+      if (_syncError) { clearInterval(_syncCountdownTimer); _syncCountdownTimer = null; return; }
+      const restante = _syncCountdownEnd - Date.now();
+      if (restante <= 0) {
+        clearInterval(_syncCountdownTimer);
+        _syncCountdownTimer = null;
+        hand.style.transition = 'transform .3s ease';
+        hand.style.transform = 'rotate(0deg)';
+        label.textContent = '✅ TODO SINCRONIZADO';
+        label.style.color = '#1e7e34';
+        return;
+      }
+      const progreso = 1 - (restante / SYNC_COUNTDOWN_MS); // 0 → 1
+      hand.style.transform = `rotate(${(360 * progreso).toFixed(0)}deg)`;
+    }, 80);
+  }
+
+  function _marcarErrorSync() {
+    _syncError = true;
     const hand  = document.getElementById('syncClockHand');
     const label = document.getElementById('syncClockLabel');
     if (!hand || !label || !sesion) return;
-
-    if (state === 'syncing' || state === 'loading') {
-      hand.classList.add('girando');
-      label.textContent = state === 'syncing' ? 'Sincronizando...' : 'Cargando...';
-      label.style.color = 'var(--gris-suave)';
-    } else if (state === 'ok' || state === 'local') {
-      hand.classList.remove('girando');
-      hand.style.transform = 'rotate(0deg)';
-      label.textContent = '✅ Todo sincronizado';
-      label.style.color = '#1e7e34';
-    } else if (state === 'error') {
-      hand.classList.remove('girando');
-      label.textContent = '⚠️ Error al sincronizar';
-      label.style.color = '#C8102E';
-    }
+    hand.style.transition = 'transform .3s ease';
+    hand.style.transform = 'rotate(0deg)';
+    label.textContent = '⚠️ Error al sincronizar';
+    label.style.color = '#C8102E';
   }
 
+  // ── SYNC STATUS ────────────────────────────────────────────
   function setSyncStatus(state) {
     const label = document.getElementById('syncLabel');
     const btn   = document.getElementById('btnSync');
-    _actualizarRelojSync(state);
+    if (state === 'error') _marcarErrorSync();
     if (!label) return;
     const txt = { ok:'Sync ✓', syncing:'Enviando...', loading:'Cargando...', error:'Error ⚠️', local:'Sync' };
     label.textContent = txt[state] || 'Sync';
