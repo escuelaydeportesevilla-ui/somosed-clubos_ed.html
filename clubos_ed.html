@@ -3783,6 +3783,7 @@ function exportarListadoJugadores() {
       <td>${j.tutorEmail||'—'}</td>
       <td>${j.esSocio==='si'?'Socio':j.esSocio==='no'?'No socio':'—'}</td>
       <td>${j.autorizacionImagen==='si'?'Sí':j.autorizacionImagen==='no'?'No':'—'}</td>
+      <td>${j.jornada==='completa'?'Completa':j.jornada==='media'?'Media':'—'}</td>
     </tr>`;
   }).join('');
   const w = window.open('', '_blank');
@@ -3800,7 +3801,7 @@ function exportarListadoJugadores() {
     <h1>Listado de jugadores</h1>
     <div class="meta">Filtro: ${filtroTexto} · ${_chipFiltroLabel(window._listadoFiltroChip)} · ${filas.length} jugador(es) · ${new Date().toLocaleDateString('es-ES')}</div>
     <table>
-      <thead><tr><th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th></tr></thead>
+      <thead><tr><th>Jugador</th><th>Equipo · Categoría</th><th>Tutor</th><th>Teléfono</th><th>Email</th><th>Socio</th><th>Autoriza imagen</th><th>Jornada</th></tr></thead>
       <tbody>${filas_html}</tbody>
     </table>
     <script>window.print();<\/script>
