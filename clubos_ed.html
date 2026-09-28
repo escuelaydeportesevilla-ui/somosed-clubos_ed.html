@@ -1557,6 +1557,13 @@ tbody td.center{text-align:center;}
             <option value="no">❌ No socio</option>
           </select>
         </div>
+        <div class="form-field"><label>Jornada</label>
+          <select id="jJornada">
+            <option value="">— Sin indicar —</option>
+            <option value="completa">🕐 Jornada completa</option>
+            <option value="media">🕐 Media jornada</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -3517,7 +3524,7 @@ async function toggleEstadoNotaListado(jugadorId, notaId) {
 }
 
 function _chipFiltroLabel(chip) {
-  return { todos:'Todos', socios:'Socios', nosocios:'No socios', autorizaSi:'Autoriza imagen', autorizaNo:'No autoriza imagen' }[chip] || 'Todos';
+  return { todos:'Todos', socios:'Socios', nosocios:'No socios', autorizaSi:'Autoriza imagen', autorizaNo:'No autoriza imagen', jornadaCompleta:'Jornada completa', jornadaMedia:'Media jornada' }[chip] || 'Todos';
 }
 
 function renderListadoJugadores() {
@@ -3544,7 +3551,7 @@ function renderListadoJugadores() {
       <button class="btn btn-outline btn-sm" onclick="exportarListadoPorPosicion()">⚽ Exportar por posición</button>
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      ${['todos','socios','nosocios','autorizaSi','autorizaNo'].map(c=>
+      ${['todos','socios','nosocios','autorizaSi','autorizaNo','jornadaCompleta','jornadaMedia'].map(c=>
         `<button class="btn ${window._listadoFiltroChip===c?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetChip('${c}')">${_chipFiltroLabel(c)}</button>`
       ).join('')}
     </div>
@@ -3560,10 +3567,10 @@ function renderListadoJugadores() {
   html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <table class="tabla-base" style="min-width:560px;">
       <thead><tr>
-        <th style="width:40px;"></th><th>Jugador</th><th>Tutor</th><th>Contacto</th><th>Socio</th><th>Autoriza imagen</th>
+        <th style="width:40px;"></th><th>Jugador</th><th>Tutor</th><th>Contacto</th><th>Socio</th><th>Autoriza imagen</th><th>Jornada</th>
       </tr></thead>
       <tbody>
-        ${!filas.length ? `<tr><td colspan="6" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
+        ${!filas.length ? `<tr><td colspan="7" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
           filas.map(j => {
             const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
             return `<tr>
@@ -3585,6 +3592,11 @@ function renderListadoJugadores() {
                 <option value="" ${!j.autorizacionImagen?'selected':''}>—</option>
                 <option value="si" ${j.autorizacionImagen==='si'?'selected':''}>✅ Sí</option>
                 <option value="no" ${j.autorizacionImagen==='no'?'selected':''}>❌ No</option>
+              </select></td>
+              <td><select onchange="_listadoEditarCampo('${j.id}','jornada',this.value)" style="font-size:12px;padding:3px 4px;border-radius:4px;border:1px solid var(--gris-linea);">
+                <option value="" ${!j.jornada?'selected':''}>—</option>
+                <option value="completa" ${j.jornada==='completa'?'selected':''}>Completa</option>
+                <option value="media" ${j.jornada==='media'?'selected':''}>Media</option>
               </select></td>
             </tr>`;
           }).join('')}
@@ -3621,6 +3633,8 @@ function _listadoJugadoresFiltrados() {
   else if (chip === 'nosocios') lista = lista.filter(j => j.esSocio === 'no');
   else if (chip === 'autorizaSi') lista = lista.filter(j => j.autorizacionImagen === 'si');
   else if (chip === 'autorizaNo') lista = lista.filter(j => j.autorizacionImagen === 'no');
+  else if (chip === 'jornadaCompleta') lista = lista.filter(j => j.jornada === 'completa');
+  else if (chip === 'jornadaMedia') lista = lista.filter(j => j.jornada === 'media');
   return [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 }
 
@@ -4071,6 +4085,7 @@ function abrirModalJugador() {
   });
   document.getElementById('jAutorizacionImagen').value = '';
   document.getElementById('jEsSocio').value = '';
+  document.getElementById('jJornada').value = '';
   document.getElementById('jTutorParentesco').value = '';
   document.getElementById('jEditId').value = '';
   document.getElementById('jActivo').checked    = true;
@@ -4141,6 +4156,7 @@ function editarJugador(id) {
     document.getElementById('jFechaInscripcion').value     = j.fechaInscripcion     ||'';
     document.getElementById('jAutorizacionImagen').value   = _normalizarAutorizacionImagen(j.autorizacionImagen);
     document.getElementById('jEsSocio').value               = _normalizarAutorizacionImagen(j.esSocio);
+    document.getElementById('jJornada').value               = j.jornada || '';
     document.getElementById('jTutorNombre').value          = j.tutorNombre          ||'';
     document.getElementById('jTutorTelefono').value        = j.tutorTelefono        ||'';
     document.getElementById('jTutorEmail').value           = j.tutorEmail           ||'';
@@ -4298,6 +4314,7 @@ async function guardarJugador() {
     j.fechaInscripcion     = document.getElementById('jFechaInscripcion').value;
     j.autorizacionImagen   = document.getElementById('jAutorizacionImagen').value;
     j.esSocio               = document.getElementById('jEsSocio').value;
+    j.jornada               = document.getElementById('jJornada').value;
     j.tutorNombre          = document.getElementById('jTutorNombre').value.trim();
     j.tutorTelefono        = document.getElementById('jTutorTelefono').value.trim();
     j.tutorEmail           = document.getElementById('jTutorEmail').value.trim();
