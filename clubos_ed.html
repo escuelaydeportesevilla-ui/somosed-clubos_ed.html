@@ -660,20 +660,13 @@ tbody td.center{text-align:center;}
 .sync-overlay-dots span:nth-child(3) { animation-delay:.3s; }
 @keyframes rebotarDot { 0%,80%,100%{ transform:translateY(0); opacity:.5; } 40%{ transform:translateY(-8px); opacity:1; } }
 
-/* Aviso flotante de sincronización: siempre visible aunque hagas scroll */
-#syncFloatBadge {
-  position:fixed; bottom:18px; right:18px; z-index:9985;
-  display:none; align-items:center; gap:8px;
-  background:var(--negro); color:white; padding:9px 16px; border-radius:30px;
-  font-family:'Barlow Condensed',sans-serif; font-weight:700; font-size:13px;
-  letter-spacing:.3px; box-shadow:0 6px 20px rgba(0,0,0,.35);
-}
-#syncFloatBadge.show { display:flex; }
-#syncFloatBadge.ok    { background:#1e7e34; }
-#syncFloatBadge.error { background:var(--rojo); }
-#syncFloatBadge .sfb-icon { font-size:1.1rem; }
-#syncFloatBadge .sfb-icon.girando { animation:girarBalon 1s linear infinite; display:inline-block; }
-@media (max-width:640px){ #syncFloatBadge{ bottom:70px; right:12px; padding:8px 14px; font-size:12px; } }
+/* Reloj analógico de sincronización, junto al botón Sync de la barra superior */
+#syncClock { display:flex; align-items:center; gap:6px; margin-right:6px; }
+#syncClockLabel { font-size:10px; font-weight:700; color:var(--gris-suave); white-space:nowrap; line-height:1.2; max-width:70px; }
+#syncClockHand { transform-origin:12px 12px; transition:transform .3s ease; }
+#syncClockHand.girando { animation:girarReloj 1s linear infinite; transition:none; }
+@keyframes girarReloj { to { transform:rotate(360deg); } }
+@media (max-width:640px){ #syncClockLabel{ display:none; } }
 
 </style>
 </head>
@@ -736,11 +729,6 @@ tbody td.center{text-align:center;}
   </div>
 </div>
 
-<!-- AVISO FLOTANTE DE SINCRONIZACIÓN (visible siempre, aunque se haga scroll) -->
-<div id="syncFloatBadge">
-  <span class="sfb-icon" id="sfbIcon">⚽</span><span id="sfbTexto">Sincronizando...</span>
-</div>
-
 <!-- MODAL LOGIN -->
 <div class="login-modal" id="loginModal">
   <div class="login-box">
@@ -774,6 +762,14 @@ tbody td.center{text-align:center;}
     <div class="topbar-right">
       <span class="rol-badge" id="rolBadge">Admin</span>
       <span id="tbUserName" style="font-size:12px;color:var(--gris-suave);"></span>
+      <div id="syncClock" title="Estado de sincronización">
+        <svg width="22" height="22" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" fill="white" stroke="#C8102E" stroke-width="1.6"/>
+          <line id="syncClockHand" x1="12" y1="12" x2="12" y2="5.5" stroke="#C8102E" stroke-width="1.8" stroke-linecap="round"/>
+          <circle cx="12" cy="12" r="1.3" fill="#C8102E"/>
+        </svg>
+        <span id="syncClockLabel">Todo sincronizado</span>
+      </div>
       <button id="btnSync" onclick="manualSyncEnviar()"
   style="background:#C8102E;color:white;border:none;border-radius:8px;
   padding:7px 14px;font-size:13px;font-weight:700;cursor:pointer;
@@ -1876,8 +1872,9 @@ function iniciarSesion(cred) {
   if (btnRecarga) btnRecarga.style.display = (cred.rol === 'admin') ? 'flex' : 'none';
   const btnSyncTop = document.getElementById('btnSync');
   if (btnSyncTop) btnSyncTop.style.display = cred.esFamilia ? 'none' : '';
-  if (cred.esFamilia) { const bf = document.getElementById('syncFloatBadge'); if (bf) bf.classList.remove('show'); }
-  else setSyncStatus('ok'); // muestra el indicador desde el primer segundo
+  const syncClockTop = document.getElementById('syncClock');
+  if (syncClockTop) syncClockTop.style.display = cred.esFamilia ? 'none' : '';
+  if (!cred.esFamilia) setSyncStatus('ok'); // reloj en reposo desde el primer segundo
 
   const subtexts = { admin: 'ClubOS ED · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
   document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'ClubOS ED';
@@ -1914,7 +1911,6 @@ function logout() {
   document.getElementById('portada').style.display = 'flex';
   document.getElementById('portada').style.flexDirection = 'column';
   ocultarOverlay();
-  const bf = document.getElementById('syncFloatBadge'); if (bf) bf.classList.remove('show');
 }
 
 function pedirSyncAntesDeLogout() {
@@ -6340,37 +6336,34 @@ console.log('Familias: acceso directo (sin contraseña)');
   }
 
   // ── SYNC STATUS ────────────────────────────────────────────
-  // Indicador PERMANENTE de estado de sincronización: no desaparece solo,
-  // siempre refleja la situación actual (sincronizando / al día / error).
-  function _actualizarSyncFloat(state) {
-    const badge = document.getElementById('syncFloatBadge');
-    const icon  = document.getElementById('sfbIcon');
-    const texto = document.getElementById('sfbTexto');
-    if (!badge) return;
-    if (!sesion) { badge.classList.remove('show'); return; } // sin sesión, no aplica
-    badge.classList.remove('ok', 'error');
-    icon.classList.remove('girando');
-    badge.classList.add('show');
+  // Reloj analógico junto al botón Sync: la aguja gira mientras hay envío/
+  // descarga en curso ("sumando tiempo"); al terminar, la aguja vuelve a
+  // las 12 ("llega a cero") y aparece "Todo sincronizado".
+  function _actualizarRelojSync(state) {
+    const hand  = document.getElementById('syncClockHand');
+    const label = document.getElementById('syncClockLabel');
+    if (!hand || !label || !sesion) return;
 
     if (state === 'syncing' || state === 'loading') {
-      icon.textContent = '⚽';
-      icon.classList.add('girando');
-      texto.textContent = state === 'syncing' ? 'Aún sincronizando...' : 'Cargando datos...';
+      hand.classList.add('girando');
+      label.textContent = state === 'syncing' ? 'Sincronizando...' : 'Cargando...';
+      label.style.color = 'var(--gris-suave)';
     } else if (state === 'ok' || state === 'local') {
-      icon.textContent = '✅';
-      texto.textContent = 'Todo sincronizado';
-      badge.classList.add('ok');
+      hand.classList.remove('girando');
+      hand.style.transform = 'rotate(0deg)';
+      label.textContent = '✅ Todo sincronizado';
+      label.style.color = '#1e7e34';
     } else if (state === 'error') {
-      icon.textContent = '⚠️';
-      texto.textContent = 'Error: sin sincronizar';
-      badge.classList.add('error');
+      hand.classList.remove('girando');
+      label.textContent = '⚠️ Error al sincronizar';
+      label.style.color = '#C8102E';
     }
   }
 
   function setSyncStatus(state) {
     const label = document.getElementById('syncLabel');
     const btn   = document.getElementById('btnSync');
-    _actualizarSyncFloat(state);
+    _actualizarRelojSync(state);
     if (!label) return;
     const txt = { ok:'Sync ✓', syncing:'Enviando...', loading:'Cargando...', error:'Error ⚠️', local:'Sync' };
     label.textContent = txt[state] || 'Sync';
