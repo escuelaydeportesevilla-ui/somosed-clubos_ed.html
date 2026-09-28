@@ -645,6 +645,21 @@ tbody td.center{text-align:center;}
 .sync-overlay-btn.secundario:hover { color:var(--rojo);border-color:var(--rojo); }
 .sync-overlay-status { font-size:12px;color:var(--gris-suave);min-height:18px;margin-top:4px; }
 
+/* Icono deportivo girando durante la recarga automática obligatoria */
+@keyframes girarBalon {
+  0%   { transform:rotate(0deg) scale(1); }
+  50%  { transform:rotate(180deg) scale(1.08); }
+  100% { transform:rotate(360deg) scale(1); }
+}
+.sync-overlay-icon.girando { display:inline-block; animation:girarBalon 1s linear infinite; }
+.sync-overlay-dots span {
+  display:inline-block; width:8px; height:8px; margin:0 3px; border-radius:50%;
+  background:var(--rojo); animation:rebotarDot 1.2s ease-in-out infinite;
+}
+.sync-overlay-dots span:nth-child(2) { animation-delay:.15s; }
+.sync-overlay-dots span:nth-child(3) { animation-delay:.3s; }
+@keyframes rebotarDot { 0%,80%,100%{ transform:translateY(0); opacity:.5; } 40%{ transform:translateY(-8px); opacity:1; } }
+
 </style>
 </head>
 <body>
@@ -701,6 +716,7 @@ tbody td.center{text-align:center;}
     <div class="sync-overlay-desc" id="overlayDesc">Para comenzar, descarga los datos actuales del servidor.</div>
     <button class="sync-overlay-btn primario" id="overlayBtnPrimary" onclick="overlayAccionPrimaria()">⬇️ Recargar ahora</button>
     <button class="sync-overlay-btn secundario" id="overlayBtnSecondary" onclick="overlaySaltar()" style="display:none;">Continuar sin recargar</button>
+    <div class="sync-overlay-dots" id="overlayDots" style="display:none;margin-top:6px;"><span></span><span></span><span></span></div>
     <div class="sync-overlay-status" id="overlayStatus"></div>
   </div>
 </div>
@@ -1860,9 +1876,9 @@ function iniciarSesion(cred) {
   renderAll();
   actualizarBadgeSugerencias();
 
-  // Admin: forzar recarga desde servidor al iniciar sesión
+  // Admin: recarga automática y obligatoria desde servidor al iniciar sesión
   if (cred.rol === 'admin') {
-    mostrarOverlay('recarga');
+    iniciarCargaAutomatica();
   } else {
     // Resto de roles: carga silenciosa en segundo plano sin bloquear
     manualSync().then(() => renderAll()).catch(() => {});
@@ -6213,8 +6229,13 @@ console.log('Familias: acceso directo (sin contraseña)');
     const desc    = document.getElementById('overlayDesc');
     const btnP    = document.getElementById('overlayBtnPrimary');
     const btnS    = document.getElementById('overlayBtnSecondary');
+    const dots    = document.getElementById('overlayDots');
     const status  = document.getElementById('overlayStatus');
     status.textContent = '';
+    icon.classList.remove('girando');
+    btnP.style.display = 'block';
+    btnS.style.display = 'none';
+    dots.style.display = 'none';
 
     if (modo === 'recarga') {
       icon.textContent  = '⬇️';
@@ -6232,6 +6253,33 @@ console.log('Familias: acceso directo (sin contraseña)');
       btnS.textContent   = 'Salir sin guardar';
     }
     document.getElementById('syncOverlay').classList.add('open');
+  }
+
+  // ── RECARGA AUTOMÁTICA AL ENTRAR COMO ADMIN ───────────────
+  // Sin botones ni opción de "continuar sin recargar": siempre se actualiza
+  // desde el servidor para garantizar que los datos están al día.
+  async function iniciarCargaAutomatica() {
+    _overlayModo = 'autorecarga';
+    const icon   = document.getElementById('overlayIcon');
+    const title  = document.getElementById('overlayTitle');
+    const desc   = document.getElementById('overlayDesc');
+    const btnP   = document.getElementById('overlayBtnPrimary');
+    const btnS   = document.getElementById('overlayBtnSecondary');
+    const dots   = document.getElementById('overlayDots');
+    const status = document.getElementById('overlayStatus');
+    icon.textContent = '⚽';
+    icon.classList.add('girando');
+    title.textContent = 'Actualizando ClubOS';
+    desc.textContent  = 'Sincronizando con el servidor para tener siempre los datos al día...';
+    btnP.style.display = 'none';
+    btnS.style.display = 'none';
+    dots.style.display = 'block';
+    status.textContent = '';
+    document.getElementById('syncOverlay').classList.add('open');
+    try { await recargaCompleta(true); } finally {
+      icon.classList.remove('girando');
+      ocultarOverlay();
+    }
   }
 
   function ocultarOverlay() {
