@@ -1876,6 +1876,8 @@ function iniciarSesion(cred) {
   if (btnRecarga) btnRecarga.style.display = (cred.rol === 'admin') ? 'flex' : 'none';
   const btnSyncTop = document.getElementById('btnSync');
   if (btnSyncTop) btnSyncTop.style.display = cred.esFamilia ? 'none' : '';
+  if (cred.esFamilia) { const bf = document.getElementById('syncFloatBadge'); if (bf) bf.classList.remove('show'); }
+  else setSyncStatus('ok'); // muestra el indicador desde el primer segundo
 
   const subtexts = { admin: 'ClubOS ED · Admin', club: cred.nombre, familias: 'Consulta pública', arbitro: 'Panel Árbitro' };
   document.getElementById('tbSub').textContent = subtexts[cred.rol] || 'ClubOS ED';
@@ -1912,6 +1914,7 @@ function logout() {
   document.getElementById('portada').style.display = 'flex';
   document.getElementById('portada').style.flexDirection = 'column';
   ocultarOverlay();
+  const bf = document.getElementById('syncFloatBadge'); if (bf) bf.classList.remove('show');
 }
 
 function pedirSyncAntesDeLogout() {
@@ -6337,33 +6340,30 @@ console.log('Familias: acceso directo (sin contraseña)');
   }
 
   // ── SYNC STATUS ────────────────────────────────────────────
-  let _syncFloatOkTimer = null;
+  // Indicador PERMANENTE de estado de sincronización: no desaparece solo,
+  // siempre refleja la situación actual (sincronizando / al día / error).
   function _actualizarSyncFloat(state) {
     const badge = document.getElementById('syncFloatBadge');
     const icon  = document.getElementById('sfbIcon');
     const texto = document.getElementById('sfbTexto');
     if (!badge) return;
-    if (_syncFloatOkTimer) { clearTimeout(_syncFloatOkTimer); _syncFloatOkTimer = null; }
+    if (!sesion) { badge.classList.remove('show'); return; } // sin sesión, no aplica
     badge.classList.remove('ok', 'error');
     icon.classList.remove('girando');
+    badge.classList.add('show');
 
     if (state === 'syncing' || state === 'loading') {
       icon.textContent = '⚽';
       icon.classList.add('girando');
       texto.textContent = state === 'syncing' ? 'Aún sincronizando...' : 'Cargando datos...';
-      badge.classList.add('show');
-    } else if (state === 'ok') {
+    } else if (state === 'ok' || state === 'local') {
       icon.textContent = '✅';
-      texto.textContent = 'Sincronizado';
-      badge.classList.add('show', 'ok');
-      _syncFloatOkTimer = setTimeout(() => badge.classList.remove('show'), 2000);
+      texto.textContent = 'Todo sincronizado';
+      badge.classList.add('ok');
     } else if (state === 'error') {
       icon.textContent = '⚠️';
-      texto.textContent = 'Error al sincronizar';
-      badge.classList.add('show', 'error');
-      _syncFloatOkTimer = setTimeout(() => badge.classList.remove('show'), 4000);
-    } else {
-      badge.classList.remove('show');
+      texto.textContent = 'Error: sin sincronizar';
+      badge.classList.add('error');
     }
   }
 
