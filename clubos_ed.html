@@ -752,6 +752,11 @@ tbody td.center{text-align:center;}
       </div>
     </div>
     <div class="topbar-right">
+      <div id="escalaControl" title="Ajustar tamaño de la app" style="display:flex;align-items:center;gap:2px;background:rgba(255,255,255,.12);border-radius:8px;padding:2px;margin-right:6px;">
+        <button onclick="cambiarEscala(-1)" style="background:none;border:none;color:white;font-size:12px;font-weight:800;padding:5px 8px;cursor:pointer;border-radius:6px;" title="Reducir tamaño">A-</button>
+        <span id="escalaLabel" style="color:white;font-size:11px;font-weight:700;min-width:32px;text-align:center;">100%</span>
+        <button onclick="cambiarEscala(1)" style="background:none;border:none;color:white;font-size:14px;font-weight:800;padding:5px 8px;cursor:pointer;border-radius:6px;" title="Aumentar tamaño">A+</button>
+      </div>
       <span class="rol-badge" id="rolBadge">Admin</span>
       <span id="tbUserName" style="font-size:12px;color:var(--gris-suave);"></span>
       <button id="btnSync" onclick="manualSyncEnviar()"
@@ -1677,6 +1682,24 @@ const CRED = {
   club4:  { user: 'CDED',      pass: 'ed2627',   rol: 'club',    nombre: 'Club Deportivo E&D' },
   arb1:   { user: 'arbitro1',  pass: 'arb2627',  rol: 'arbitro', nombre: 'Árbitro Principal' },
 };
+
+// ── AJUSTE DE TAMAÑO DE LA APP (accesibilidad visual) ─────────
+const _escalasDisponibles = [90, 100, 110, 125, 140, 160];
+let _escalaActual = parseInt(localStorage.getItem('clubos_ed_escala') || '100', 10);
+if (!_escalasDisponibles.includes(_escalaActual)) _escalaActual = 100;
+function aplicarEscala(pct) {
+  document.documentElement.style.zoom = pct + '%';
+  localStorage.setItem('clubos_ed_escala', pct);
+  const lbl = document.getElementById('escalaLabel');
+  if (lbl) lbl.textContent = pct + '%';
+}
+function cambiarEscala(delta) {
+  const idx = _escalasDisponibles.indexOf(_escalaActual);
+  const nuevoIdx = Math.min(Math.max(idx + delta, 0), _escalasDisponibles.length - 1);
+  _escalaActual = _escalasDisponibles[nuevoIdx];
+  aplicarEscala(_escalaActual);
+}
+document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
 let sesion = JSON.parse(localStorage.getItem('clubos_ed_sesion') || 'null');
 let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
