@@ -3623,6 +3623,12 @@ function renderListadoJugadores() {
           `<button class="btn ${window._listadoFiltroJornada===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetFiltro('jornada','${v}')">${l}</button>`
         ).join('')}
       </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Ordenar:</span>
+        ${[['nombre','Nombre'],['apellidos','Apellido']].map(([v,l])=>
+          `<button class="btn ${window._listadoOrden===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetOrden('${v}')">${l}</button>`
+        ).join('')}
+      </div>
     </div>
   </div>`;
 
@@ -3700,6 +3706,13 @@ function _listadoSetFiltro(categoria, valor) {
   renderListadoJugadores();
 }
 
+window._listadoOrden = 'nombre'; // nombre | apellidos
+
+function _listadoSetOrden(orden) {
+  window._listadoOrden = orden;
+  renderListadoJugadores();
+}
+
 function _listadoJugadoresFiltrados() {
   let lista = DB.jugadores || [];
   if (window._listadoFiltroEquipos) lista = lista.filter(j => window._listadoFiltroEquipos.has(j.equipoId));
@@ -3709,7 +3722,9 @@ function _listadoJugadoresFiltrados() {
   else if (window._listadoFiltroAutoriza === 'no') lista = lista.filter(j => j.autorizacionImagen === 'no');
   if (window._listadoFiltroJornada === 'completa') lista = lista.filter(j => j.jornada === 'completa');
   else if (window._listadoFiltroJornada === 'media') lista = lista.filter(j => j.jornada === 'media');
-  return [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  return window._listadoOrden === 'apellidos'
+    ? [...lista].sort((a,b)=>(a.apellidos||'').localeCompare(b.apellidos||'') || (a.nombre||'').localeCompare(b.nombre||''))
+    : [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 }
 
 async function toggleActivo(jugadorId) {
