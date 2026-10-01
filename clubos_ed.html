@@ -3654,7 +3654,7 @@ function renderListadoJugadores() {
                 <button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button>
                 <input type="checkbox" title="Activo" ${activo?'checked':''} onchange="toggleActivo('${j.id}')" style="width:16px;height:16px;vertical-align:middle;cursor:pointer;margin-left:4px;">
               </td>
-              <td style="font-weight:600;">${j.nombre} ${j.apellidos||''}<br><span style="font-weight:400;font-size:11px;color:var(--gris-suave);">${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</span></td>
+              <td style="font-weight:600;">${window._listadoOrden==='apellidos' ? `${j.apellidos||''}, ${j.nombre}` : `${j.nombre} ${j.apellidos||''}`}<br><span style="font-weight:400;font-size:11px;color:var(--gris-suave);">${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</span></td>
               <td style="font-size:12px;">${j.tutorNombre||'—'}</td>
               <td style="font-size:11px;line-height:1.5;white-space:nowrap;">
                 ${j.tutorTelefono?`<a href="tel:${j.tutorTelefono}" style="color:var(--rojo);">📞 ${j.tutorTelefono}</a>`:''}
