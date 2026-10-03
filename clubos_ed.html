@@ -7107,16 +7107,16 @@ function renderAlineaciones() {
   html += `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <h3 style="font-size:14px;margin:0 0 10px;">💾 Guardar alineación de un partido</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px;">
-      <div style="min-width:220px;flex:1;">
+      <div style="min-width:140px;flex:1 1 100%;">
         <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Partido</label>
         <select id="alinPartidoSel" onchange="_alinPartidoChange(this.value)" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--gris-linea);">
           <option value="">— Partido libre —</option>
           ${_alinPartidosEquipo(equipo).map(p=>`<option value="${p.id}">${_escHtml(p.rival)} · ${p.fecha||'sin fecha'}</option>`).join('')}
         </select>
       </div>
-      <div id="alinLibreWrap" style="display:flex;gap:8px;">
-        <div><label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Rival</label><input id="alinRivalLibre" placeholder="Nombre del rival" style="padding:8px;border-radius:8px;border:1px solid var(--gris-linea);"></div>
-        <div><label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Fecha</label><input type="date" id="alinFechaLibre" style="padding:8px;border-radius:8px;border:1px solid var(--gris-linea);"></div>
+      <div id="alinLibreWrap" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:140px;"><label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Rival</label><input id="alinRivalLibre" placeholder="Nombre del rival" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid var(--gris-linea);"></div>
+        <div style="flex:1;min-width:140px;"><label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Fecha</label><input type="date" id="alinFechaLibre" style="width:100%;box-sizing:border-box;padding:8px;border-radius:8px;border:1px solid var(--gris-linea);"></div>
       </div>
     </div>
     <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Pega aquí la respuesta de Claude</label>
