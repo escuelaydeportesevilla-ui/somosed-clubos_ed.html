@@ -936,6 +936,14 @@ tbody td.center{text-align:center;}
       <div id="evaluacionesContent"></div>
     </div>
 
+    <!-- ══ PANEL: ALINEACIONES ══ -->
+    <div class="tab-panel" id="panel-alineaciones">
+      <div class="section-header">
+        <h2>🧩 Alineaciones</h2><div class="section-line"></div>
+      </div>
+      <div id="alineacionesContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-outline" onclick="abrirModalGrupoClubes()">🗂️ Grupos de clubes</button>
@@ -1929,14 +1937,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -1963,7 +1971,7 @@ function getDefaultTab() {
 function buildNav() {
   if (sesion.esFamilia) { document.getElementById('navBar').innerHTML = ''; return; }
   let tabs = TABS_POR_ROL[sesion.rol] || [];
-  if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones');
+  if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones' && t !== 'alineaciones');
   const nav = document.getElementById('navBar');
   nav.innerHTML = tabs.map(t =>
     `<button class="nav-btn" data-tab="${t}" onclick="activarTab('${t}')">${TAB_LABELS[t]}</button>`
@@ -2030,7 +2038,8 @@ function renderTab(tab) {
     goleadores: renderGoleadores, actas: renderActas,
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
-    escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones
+    escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
+    alineaciones: renderAlineaciones
   };
   if (fn[tab]) fn[tab]();
 }
@@ -7000,6 +7009,171 @@ async function eliminarEvaluacion(id) {
   if (!DB._deleted) DB._deleted = {};
   DB._deleted[id] = Date.now();
   await saveCol('evaluaciones'); renderEvaluaciones(); toast('Evaluación eliminada');
+}
+
+// ══════════════════════════════════════════════════════
+//  ALINEACIONES (puntuación de jugadores + prompt para Claude)
+// ══════════════════════════════════════════════════════
+window._alinEquipoId = null;
+window._alinFormato  = '7';
+
+// Media de valoracionGeneral (estrellas 1-5) de todas las evaluaciones del jugador,
+// convertida a escala 0-10. Devuelve null si no tiene evaluaciones.
+function _calcPuntuacionDesdeEvaluaciones(jugadorId) {
+  const evs = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===jugadorId);
+  if (!evs.length) return null;
+  const valores = evs.map(ev => {
+    const idx = NIVELES_VALORACION.indexOf(ev.valoracionGeneral);
+    return idx >= 0 ? idx+1 : null;
+  }).filter(v=>v!==null);
+  if (!valores.length) return null;
+  const media = valores.reduce((a,b)=>a+b,0) / valores.length;
+  return Math.round(media*2*10)/10; // escala 1-5 → 0-10, un decimal
+}
+
+function renderAlineaciones() {
+  const el = document.getElementById('alineacionesContent');
+  if (!el) return;
+  if (sesion.rol==='club' && !puedeEvaluar()) {
+    el.innerHTML = '<div class="empty-state"><div class="ei">🔒</div><p>Este club no tiene activado el módulo de alineaciones.</p></div>';
+    return;
+  }
+  const jugadoresDisponibles = _misJugadoresEval();
+  const equipos = (DB.equipos||[]).filter(e => jugadoresDisponibles.some(j=>j.equipoId===e.id))
+    .slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+
+  if (!window._alinEquipoId && equipos.length) window._alinEquipoId = equipos[0].id;
+
+  let html = `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div style="min-width:220px;">
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Equipo</label>
+        <select onchange="_alinSetEquipo(this.value)" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--gris-linea);">
+          ${!equipos.length ? '<option value="">— Sin equipos —</option>' : equipos.map(e=>`<option value="${e.id}" ${window._alinEquipoId===e.id?'selected':''}>${e.nombre}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Formato</label>
+        <div style="display:flex;gap:6px;">
+          ${['5','7'].map(f=>`<button class="btn ${window._alinFormato===f?'btn-rojo':'btn-outline'} btn-sm" onclick="_alinSetFormato('${f}')">${f} jugadores</button>`).join('')}
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="sincronizarTodasPuntuaciones()">🔄 Actualizar todas desde evaluaciones</button>
+      <button class="btn btn-rojo btn-sm" onclick="generarPromptAlineacion()">🤖 Generar prompt para Claude</button>
+    </div>
+  </div>`;
+
+  const jugadoresEquipo = jugadoresDisponibles.filter(j => j.equipoId===window._alinEquipoId && j.activo!==false && j.activo!=='false')
+    .sort((a,b)=>(b.puntuacion??-1)-(a.puntuacion??-1));
+
+  html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <table class="tabla-base" style="min-width:480px;">
+      <thead><tr><th>Jugador</th><th>Posición</th><th style="width:120px;">Puntuación</th><th style="width:40px;"></th></tr></thead>
+      <tbody>
+        ${!jugadoresEquipo.length ? `<tr><td colspan="4" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores activos en este equipo.</td></tr>` :
+          jugadoresEquipo.map(j => `<tr>
+            <td style="font-weight:600;">${j.nombre} ${j.apellidos||''}</td>
+            <td style="font-size:12px;">${j.posicion||'—'}</td>
+            <td><input type="number" min="0" max="10" step="0.1" value="${j.puntuacion??''}" placeholder="—" onchange="actualizarPuntuacionManual('${j.id}',this.value)" style="width:70px;padding:5px 6px;border-radius:4px;border:1px solid var(--gris-linea);text-align:center;"></td>
+            <td style="text-align:center;"><button class="btn btn-outline btn-xs" title="Actualizar desde evaluaciones" onclick="sincronizarPuntuacionJugador('${j.id}')">🔄</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function _alinSetEquipo(equipoId) { window._alinEquipoId = equipoId; renderAlineaciones(); }
+function _alinSetFormato(formato) { window._alinFormato = formato; renderAlineaciones(); }
+
+async function actualizarPuntuacionManual(jugadorId, valor) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  const num = valor==='' ? null : Math.max(0, Math.min(10, parseFloat(valor)));
+  j.puntuacion = (num===null || isNaN(num)) ? '' : num;
+  await saveCol('jugadores');
+  toast('Puntuación actualizada');
+}
+
+async function sincronizarPuntuacionJugador(jugadorId) {
+  const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
+  const media = _calcPuntuacionDesdeEvaluaciones(jugadorId);
+  if (media===null) { toast('Este jugador no tiene evaluaciones todavía'); return; }
+  j.puntuacion = media;
+  await saveCol('jugadores');
+  renderAlineaciones();
+  toast('Puntuación actualizada desde evaluaciones');
+}
+
+async function sincronizarTodasPuntuaciones() {
+  const jugadoresEquipo = _misJugadoresEval().filter(j => j.equipoId===window._alinEquipoId);
+  let actualizados = 0;
+  jugadoresEquipo.forEach(j => {
+    const media = _calcPuntuacionDesdeEvaluaciones(j.id);
+    if (media!==null) { j.puntuacion = media; actualizados++; }
+  });
+  if (!actualizados) { toast('Ningún jugador de este equipo tiene evaluaciones todavía'); return; }
+  await saveCol('jugadores');
+  renderAlineaciones();
+  toast(`${actualizados} jugador(es) actualizados desde evaluaciones`);
+}
+
+function generarPromptAlineacion() {
+  const equipo = (DB.equipos||[]).find(e=>e.id===window._alinEquipoId);
+  if (!equipo) { toast('Selecciona un equipo'); return; }
+  const jugadoresEquipo = _misJugadoresEval().filter(j => j.equipoId===window._alinEquipoId && j.activo!==false && j.activo!=='false');
+  if (!jugadoresEquipo.length) { toast('Este equipo no tiene jugadores activos'); return; }
+
+  const formato = window._alinFormato;
+  const listaTexto = jugadoresEquipo
+    .slice().sort((a,b)=>(b.puntuacion??-1)-(a.puntuacion??-1))
+    .map(j => `- ${j.nombre} ${j.apellidos||''} · ${j.posicion||'Sin posición'} · Puntuación: ${j.puntuacion!==''&&j.puntuacion!=null?j.puntuacion:'sin valorar'}`)
+    .join('\n');
+
+  const prompt = `Eres el entrenador de ${equipo.nombre}. Tengo esta plantilla, con su posición habitual y una puntuación de 0 a 10 (a mayor puntuación, mejor nivel actual del jugador):
+
+${listaTexto}
+
+Genera posibles alineaciones de ${formato} jugadores (incluyendo portero) para el próximo partido:
+1. Cuatro alineaciones EQUILIBRADAS entre sí (reparto de posiciones realista, sin descompensar al equipo, pensando en que las 4 podrían usarse en distintos partidos o tramos).
+2. Una quinta alineación de MÁXIMA POTENCIA, con los jugadores de mayor puntuación posible, respetando que haya al menos un portero y un reparto de posiciones jugable.
+
+Para cada alineación, indica los jugadores elegidos y su posición, y una frase breve justificando el criterio usado.`;
+
+  _mostrarModalPromptAlineacion(prompt);
+}
+
+function _mostrarModalPromptAlineacion(prompt) {
+  let modal = document.getElementById('modalPromptAlineacion');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.id = 'modalPromptAlineacion';
+    modal.innerHTML = `<div class="modal-box" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>🤖 Prompt para Claude</h3>
+        <button class="modal-close" onclick="cerrarModal('modalPromptAlineacion')">✕</button>
+      </div>
+      <p style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;">Copia este texto y pégalo en una conversación nueva de Claude, o pulsa "Abrir en Claude" para llevarlo ya cargado.</p>
+      <textarea id="promptAlineacionTexto" readonly style="width:100%;min-height:220px;font-size:12px;font-family:monospace;border:1px solid var(--gris-linea);border-radius:8px;padding:10px;resize:vertical;"></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn btn-outline" onclick="_copiarPromptAlineacion()">📋 Copiar</button>
+        <a class="btn btn-rojo" id="btnAbrirClaude" href="#" target="_blank" rel="noopener">🤖 Abrir en Claude</a>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+  }
+  document.getElementById('promptAlineacionTexto').value = prompt;
+  document.getElementById('btnAbrirClaude').href = 'https://claude.ai/new?q=' + encodeURIComponent(prompt);
+  abrirModal('modalPromptAlineacion');
+}
+
+function _copiarPromptAlineacion() {
+  const ta = document.getElementById('promptAlineacionTexto');
+  ta.select();
+  navigator.clipboard?.writeText(ta.value).then(()=>toast('Prompt copiado')).catch(()=>{
+    document.execCommand('copy'); toast('Prompt copiado');
+  });
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
