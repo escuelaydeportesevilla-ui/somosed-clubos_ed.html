@@ -1707,6 +1707,12 @@ function aplicarEscala(pct) {
   const lbl = document.getElementById('escalaLabel');
   if (lbl) lbl.textContent = pct + '%';
 }
+// Algunos navegadores (sobre todo Chrome/WebView en Android) no recalculan bien el ancho
+// del contenido insertado por JS (innerHTML) después de aplicar "zoom". Reforzamos el
+// zoom tras cada cambio de contenido para forzar ese recálculo y evitar huecos laterales.
+function _reaplicarEscala() {
+  if (_escalaActual !== 100) document.documentElement.style.zoom = _escalaActual + '%';
+}
 function cambiarEscala(delta) {
   const idx = _escalasDisponibles.indexOf(_escalaActual);
   const nuevoIdx = Math.min(Math.max(idx + delta, 0), _escalasDisponibles.length - 1);
@@ -2048,6 +2054,7 @@ function renderTab(tab) {
     alineaciones: renderAlineaciones
   };
   if (fn[tab]) fn[tab]();
+  _reaplicarEscala();
 }
 
 // ══════════════════════════════════════════════════════
