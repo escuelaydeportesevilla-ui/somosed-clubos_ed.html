@@ -1115,7 +1115,7 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Evaluador</label><input id="evEvaluador" placeholder="Nombre del entrenador"></div>
 
       <div class="form-field form-full">
-        <label>Valoración general</label>
+        <label>Valoración general (media automática de las puntuaciones de abajo)</label>
         <div id="evValoracionEstrellas" style="margin-top:2px;"></div>
       </div>
 
@@ -6952,9 +6952,12 @@ function seleccionarJugadorEval(jugadorId) {
   document.getElementById('evJugadorBuscar').value = '';
   document.getElementById('evJugadorSugerencias').innerHTML = '';
   document.getElementById('evJugadorSeleccionado').textContent = '✅ ' + j.nombre + ' ' + (j.apellidos||'');
-  // Evaluación nueva (no edición): precargar la Valoración general con la puntuación de Alineaciones
+  // Evaluación nueva (no edición): repartir la puntuación de Alineaciones de forma equitativa
+  // entre las 9 características. La Valoración general se calculará sola como su media.
   if (!document.getElementById('evEditId').value && j.puntuacion) {
-    _pintarEstrellas('evValoracionEstrellas', Math.max(1, Math.min(5, Math.round(j.puntuacion))));
+    const estrellas = Math.max(1, Math.min(5, Math.round(j.puntuacion)));
+    ASPECTOS_EVAL.forEach(id => _pintarEstrellas(id, estrellas));
+    _actualizarValoracionGeneralEval();
   }
 }
 
@@ -6972,6 +6975,7 @@ function _pintarEstrellas(containerId, valorInicial) {
 
 function _clicEstrella(containerId, valor) {
   _pintarEstrellas(containerId, valor);
+  if (ASPECTOS_EVAL.includes(containerId)) _actualizarValoracionGeneralEval();
 }
 
 function _valorEstrellas(containerId) {
@@ -6985,8 +6989,26 @@ function _estrellasTexto(valor) {
   return '★'.repeat(n) + '☆'.repeat(5 - n);
 }
 
+// Widget de solo lectura para "Valoración general": no es clicable, se calcula sola.
+function _pintarEstrellasSoloLectura(containerId, valor) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  box.dataset.valor = valor || 0;
+  box.innerHTML = [1,2,3,4,5].map(i =>
+    `<span style="font-size:20px;color:${i<=(valor||0)?'#D4A017':'#ddd'};">★</span>`
+  ).join('');
+}
+
 const ASPECTOS_EVAL = ['ev_tecControl','ev_tecPase','ev_tecTiro','ev_fisVelocidad','ev_fisResistencia','ev_fisFuerza','ev_actEsfuerzo','ev_actEquipo','ev_actDisciplina'];
 const CAMPOS_ASPECTOS_EVAL = ['tecControl','tecPase','tecTiro','fisVelocidad','fisResistencia','fisFuerza','actEsfuerzo','actEquipo','actDisciplina'];
+
+// La "Valoración general" ya NO se introduce a mano: es la media de las 9 características
+// (técnico + físico + actitud) que sí se puntúan una a una.
+function _actualizarValoracionGeneralEval() {
+  const valores = ASPECTOS_EVAL.map(id => _valorEstrellas(id)).filter(v=>v>0);
+  const media = valores.length ? Math.round(valores.reduce((a,b)=>a+b,0)/valores.length) : 0;
+  _pintarEstrellasSoloLectura('evValoracionEstrellas', media);
+}
 
 function abrirModalEvaluacion() {
   if (!puedeEvaluar()) { toast('No tienes permiso para crear evaluaciones'); return; }
@@ -6995,8 +7017,8 @@ function abrirModalEvaluacion() {
   document.getElementById('evFecha').value = new Date().toISOString().slice(0,10);
   document.getElementById('evEvaluador').value = sesion.nombre || '';
   ['evTecnicos','evFisicos','evActitud','evObsFamilia'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
-  _pintarEstrellas('evValoracionEstrellas', 3);
   ASPECTOS_EVAL.forEach(id => _pintarEstrellas(id, 0));
+  _actualizarValoracionGeneralEval();
   const t = document.getElementById('modalEvaluacionTitle'); if(t) t.textContent = 'Nueva evaluación';
   abrirModal('modalEvaluacion');
 }
@@ -7011,9 +7033,8 @@ function editarEvaluacion(id) {
   document.getElementById('evFisicos').value     = ev.aspectosFisicos ||'';
   document.getElementById('evActitud').value     = ev.actitud     ||'';
   document.getElementById('evObsFamilia').value  = ev.observacionesParaFamilia ||'';
-  const nivelIdx = NIVELES_VALORACION.indexOf(ev.valoracionGeneral);
-  _pintarEstrellas('evValoracionEstrellas', nivelIdx>=0 ? nivelIdx+1 : 3);
   ASPECTOS_EVAL.forEach((id, i) => _pintarEstrellas(id, ev[CAMPOS_ASPECTOS_EVAL[i]] || 0));
+  _actualizarValoracionGeneralEval();
   const t = document.getElementById('modalEvaluacionTitle'); if(t) t.textContent = 'Editar evaluación';
   abrirModal('modalEvaluacion');
 }
@@ -7022,6 +7043,7 @@ async function guardarEvaluacion() {
   const editId = document.getElementById('evEditId').value;
   const jugadorId = document.getElementById('evJugador').value;
   if (!jugadorId) { toast('Selecciona un jugador'); return; }
+  _actualizarValoracionGeneralEval();
   const rec = {
     id:                       editId || uid(),
     jugadorId,
@@ -7255,11 +7277,13 @@ function generarPromptAlineacion() {
 
 ${listaTexto}
 
-Genera posibles alineaciones de ${formato} jugadores (incluyendo portero) para el próximo partido:
-1. Cuatro alineaciones EQUILIBRADAS entre sí (reparto de posiciones realista, sin descompensar al equipo, pensando en que las 4 podrían usarse en distintos partidos o tramos).
-2. Una quinta alineación de MÁXIMA POTENCIA, con los jugadores de mayor puntuación posible, respetando que haya al menos un portero y un reparto de posiciones jugable.
+El partido se juega a 4 TIEMPOS, con alineaciones de ${formato} jugadores (incluyendo portero) en cada tiempo. Norma obligatoria: TODOS los jugadores de la plantilla deben jugar al menos en uno de los 3 primeros tiempos (nadie puede quedarse sin jugar en esos 3 primeros tiempos).
 
-Para cada alineación, indica los jugadores elegidos y su posición, y una frase breve justificando el criterio usado.`;
+Genera:
+1. TRES alineaciones (tiempos 1º, 2º y 3º) EQUILIBRADAS entre sí, repartiendo a toda la plantilla entre las tres de forma que cada jugador participe en al menos una de ellas, con un reparto de posiciones realista y sin descompensar ningún tiempo.
+2. Una CUARTA alineación (4º tiempo) de MÁXIMA POTENCIA, libre de la norma de rotación anterior: puedes repetir a los jugadores de mayor puntuación, respetando que haya al menos un portero y un reparto de posiciones jugable.
+
+Para cada una de las 4 alineaciones, indica los jugadores elegidos y su posición, y una frase breve justificando el criterio usado. Al final, confirma explícitamente que los 3 primeros tiempos cubren entre todos a la plantilla completa.`;
 
   _mostrarModalPromptAlineacion(prompt);
 }
