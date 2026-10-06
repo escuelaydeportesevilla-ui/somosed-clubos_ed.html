@@ -557,6 +557,11 @@ tbody td.center{text-align:center;}
 @media (min-width:769px){
   .cards-equipos{display:none;}
   .tabla-equipos-desktop{display:block;overflow-x:auto;}
+  .tabla-equipos-desktop .tabla-base{table-layout:fixed;}
+  .tabla-equipos-desktop .tabla-base th,
+  .tabla-equipos-desktop .tabla-base td{padding:7px 8px;font-size:12px;white-space:normal;word-break:break-word;}
+  .tabla-equipos-desktop .tabla-base td a{word-break:break-all;}
+  .tabla-equipos-desktop .tabla-base td.td-comp{max-width:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 }
 
 /* ── Menú de navegación: versión compacta anclada, solo escritorio ── */
@@ -2612,7 +2617,7 @@ function renderEquipos() {
         <td>${kitTabla(e.eq1Camiseta||'#ccc',e.eq1Pantalon||'#333')}</td>
         <td>${e.categoria||'—'}</td>
         ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${nombreClub(e.clubId)||'—'}</td>`:''}
-        <td style="font-size:11px;color:var(--gris-suave);">${comp?comp.nombre:'—'}</td>
+        <td class="td-comp" style="font-size:11px;color:var(--gris-suave);" title="${comp?comp.nombre:''}">${comp?comp.nombre:'—'}</td>
         <td>${nJug}</td>
         ${(isAdmin||isClub||isArbitro)?delCell:''}
         <td>
