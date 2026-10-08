@@ -1782,6 +1782,29 @@ function _pendHay() {
   try { return JSON.parse(localStorage.getItem('clubos_ed_pend') || '[]').length > 0; } catch(e) { return false; }
 }
 
+// ── ENVÍO SOLO DE LO QUE CAMBIA ──────────────────────────
+// Se guarda una "huella" de cada registro tal como lo confirmó el servidor por última vez.
+// Al sincronizar una colección solo se envían los registros cuya huella ha cambiado
+// (antes se reenviaba la colección entera: 92 jugadores para cambiar el nombre de un equipo).
+function _hash(s) { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return h + '_' + s.length; }
+function _snapGet() { try { return JSON.parse(localStorage.getItem('clubos_ed_snap') || '{}'); } catch(e) { return {}; } }
+function _snapSet(s) { try { localStorage.setItem('clubos_ed_snap', JSON.stringify(s)); } catch(e) {} }
+function _payloadCol(col) {
+  const items = DB[col] || [];
+  return col === 'patrocinadores' ? items.map(p => { const { logoUrl, ...resto } = p; return resto; }) : items;
+}
+function _snapMarcar(col, items) {
+  const s = _snapGet(); if (!s[col]) s[col] = {};
+  (items || []).forEach(x => { if (x && x.id) s[col][x.id] = _hash(JSON.stringify(x)); });
+  _snapSet(s);
+}
+function _snapReconstruir() {
+  const s = {};
+  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido']
+    .forEach(col => { s[col] = {}; _payloadCol(col).forEach(x => { if (x && x.id) s[col][x.id] = _hash(JSON.stringify(x)); }); });
+  _snapSet(s);
+}
+
 // Guarda en local Y dispara sync inmediato solo de la colección afectada
 async function saveCol(col) {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
@@ -3085,7 +3108,7 @@ async function guardarEquipo() {
 
   editEquipoId = null;
   await saveCol('equipos');
-  if (_jugRenombrados) await saveCol('jugadores');
+  if (_jugRenombrados) saveCol('jugadores'); // en segundo plano: no hace esperar al usuario
   cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
 }
 
@@ -6554,14 +6577,18 @@ console.log('Familias: acceso directo (sin contraseña)');
 
       // Enviar items de la colección
       if (items && items.length) {
-        const payloadItems = (col === 'patrocinadores')
-          ? items.map(p => { const { logoUrl, ...resto } = p; return resto; })
-          : items;
-        const rc = await _enviarColeccionConfirmado(col, payloadItems, pwd);
-        if (!rc.ok) {
-          setSyncStatus('error');
-          alert('⚠️ NO SE HA GUARDADO EN EL SHEET (' + col + '): ' + rc.error + '.\n\nEl cambio queda guardado solo en este dispositivo y marcado como pendiente. Pulsa Sync para reintentar.');
-          return false;
+        const payloadItems = _payloadCol(col);
+        // Solo los registros nuevos o modificados desde la última confirmación del servidor
+        const snap = _snapGet()[col];
+        const cambiados = snap ? payloadItems.filter(x => snap[x.id] !== _hash(JSON.stringify(x))) : payloadItems;
+        if (cambiados.length) {
+          const rc = await _enviarColeccionConfirmado(col, cambiados, pwd);
+          if (!rc.ok) {
+            setSyncStatus('error');
+            alert('⚠️ NO SE HA GUARDADO EN EL SHEET (' + col + '): ' + rc.error + '.\n\nEl cambio queda guardado solo en este dispositivo y marcado como pendiente. Pulsa Sync para reintentar.');
+            return false;
+          }
+          _snapMarcar(col, cambiados);
         }
       }
 
@@ -6708,6 +6735,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.alineacionesPartido = sinBorrados(d.alineacionesPartido);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
+        _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
         renderAll(); setSyncStatus('ok');
         actualizarBadgeSugerencias();
         if (!silencioso) toast('Datos recargados desde el servidor');
@@ -6744,11 +6772,10 @@ console.log('Familias: acceso directo (sin contraseña)');
       for (const col of cols) {
         const items = DB[col];
         if (!items || !items.length) continue;
-        const payloadItems = (col === 'patrocinadores')
-          ? items.map(p => { const { logoUrl, ...resto } = p; return resto; })
-          : items;
+        const payloadItems = _payloadCol(col);
         const rc = await _enviarColeccionConfirmado(col, payloadItems, decodeURIComponent(pwd));
         if (!rc.ok) fallos.push(col + ' → ' + rc.error);
+        else _snapMarcar(col, payloadItems);
       }
       if (fallos.length) {
         setSyncStatus('error');
