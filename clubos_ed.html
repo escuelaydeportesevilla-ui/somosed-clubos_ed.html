@@ -3535,8 +3535,17 @@ window._listadoFiltroEquipos = null; // null = todos; Set de equipoIds si se ha 
 window._listadoFiltroSocio = 'todos';    // todos | si | no
 window._listadoFiltroAutoriza = 'todos'; // todos | si | no
 window._listadoFiltroJornada = 'todos';  // todos | completa | media
+window._listadoFiltroAnio = 'todos';     // todos | 'sin' | año (ej. '2016')
+window._listadoAgruparAnio = false;      // true = separar el listado por año de nacimiento
+
+// Año de nacimiento del jugador ('' si no tiene fecha): vale para 2016-05-04, 04/05/2016, etc.
+function _anioNac(j) {
+  const m = String(j.fechaNac || '').match(/(\d{4})/);
+  return m ? m[1] : '';
+}
 
 function irAListadoFiltrado(equipoId) {
+  window._listadoFiltroAnio = 'todos';
   window._listadoFiltroEquipos = new Set([equipoId]);
   window._listadoFiltroSocio = 'todos';
   window._listadoFiltroAutoriza = 'todos';
@@ -3662,6 +3671,7 @@ function _filtrosActivosLabel() {
   else if (window._listadoFiltroAutoriza === 'no') partes.push('No autoriza imagen');
   if (window._listadoFiltroJornada === 'completa') partes.push('Jornada completa');
   else if (window._listadoFiltroJornada === 'media') partes.push('Media jornada');
+  if (window._listadoFiltroAnio !== 'todos') partes.push(window._listadoFiltroAnio === 'sin' ? 'Sin fecha de nacimiento' : 'Nacidos en ' + window._listadoFiltroAnio);
   return partes.length ? partes.join(' + ') : 'Todos';
 }
 
@@ -3669,6 +3679,11 @@ function renderListadoJugadores() {
   const el = document.getElementById('listadoJugadoresContent');
   if (!el) return;
   const equipos = (DB.equipos||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  // Años de nacimiento presentes en los equipos seleccionados (para los botones del filtro)
+  const aniosDisp = [...new Set((DB.jugadores||[])
+    .filter(j => !window._listadoFiltroEquipos || window._listadoFiltroEquipos.has(j.equipoId))
+    .map(j => _anioNac(j) || 'sin'))]
+    .sort((a,b) => a==='sin' ? 1 : b==='sin' ? -1 : a.localeCompare(b));
 
   // ── Barra de filtros ──
   let html = `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
@@ -3708,6 +3723,15 @@ function renderListadoJugadores() {
         ).join('')}
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Año nac.:</span>
+        ${[['todos','Todos'], ...aniosDisp.map(a => [a, a==='sin' ? 'Sin fecha' : a])].map(([v,l])=>
+          `<button class="btn ${window._listadoFiltroAnio===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetAnio('${v}')">${l}</button>`
+        ).join('')}
+        <label style="font-size:12px;font-weight:700;cursor:pointer;margin-left:6px;white-space:nowrap;">
+          <input type="checkbox" ${window._listadoAgruparAnio?'checked':''} onchange="_listadoToggleAgrupar(this.checked)" style="vertical-align:middle;margin-right:4px;">Agrupar por año
+        </label>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
         <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Ordenar:</span>
         ${[['nombre','Nombre'],['apellidos','Apellido']].map(([v,l])=>
           `<button class="btn ${window._listadoOrden===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetOrden('${v}')">${l}</button>`
@@ -3717,6 +3741,9 @@ function renderListadoJugadores() {
   </div>`;
 
   const filas = _listadoJugadoresFiltrados();
+  let anioPrev = null;
+  const cuentaAnio = {};
+  filas.forEach(j => { const a = _anioNac(j) || 'sin'; cuentaAnio[a] = (cuentaAnio[a] || 0) + 1; });
   const nombresEquiposFiltro = window._listadoFiltroEquipos
     ? [...window._listadoFiltroEquipos].map(id => equipos.find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
     : 'Todos los equipos';
@@ -3733,7 +3760,14 @@ function renderListadoJugadores() {
           filas.map(j => {
             const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
             const activo = j.activo!==false && j.activo!=='false';
-            return `<tr>
+            // Con "Agrupar por año": fila de cabecera cada vez que cambia el año de nacimiento
+            const anioJ = _anioNac(j) || 'sin';
+            let cabAnio = '';
+            if (window._listadoAgruparAnio && anioJ !== anioPrev) {
+              anioPrev = anioJ;
+              cabAnio = `<tr><td colspan="7" style="background:#F3F4F6;font-weight:800;font-size:12px;color:var(--negro);padding:8px 14px;border-top:2px solid var(--gris-linea);">🎂 ${anioJ==='sin' ? 'Sin fecha de nacimiento' : 'Nacidos en ' + anioJ} · ${cuentaAnio[anioJ]} jugador${cuentaAnio[anioJ]===1?'':'es'}</td></tr>`;
+            }
+            return cabAnio + `<tr>
               <td style="text-align:center;white-space:nowrap;">
                 <button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button>
                 <input type="checkbox" title="Activo" ${activo?'checked':''} onchange="toggleActivo('${j.id}')" style="width:16px;height:16px;vertical-align:middle;cursor:pointer;margin-left:4px;">
@@ -3790,6 +3824,16 @@ function _listadoSetFiltro(categoria, valor) {
   renderListadoJugadores();
 }
 
+function _listadoSetAnio(valor) {
+  window._listadoFiltroAnio = valor;
+  renderListadoJugadores();
+}
+
+function _listadoToggleAgrupar(activo) {
+  window._listadoAgruparAnio = !!activo;
+  renderListadoJugadores();
+}
+
 window._listadoOrden = 'nombre'; // nombre | apellidos
 
 function _listadoSetOrden(orden) {
@@ -3806,9 +3850,15 @@ function _listadoJugadoresFiltrados() {
   else if (window._listadoFiltroAutoriza === 'no') lista = lista.filter(j => j.autorizacionImagen === 'no');
   if (window._listadoFiltroJornada === 'completa') lista = lista.filter(j => j.jornada === 'completa');
   else if (window._listadoFiltroJornada === 'media') lista = lista.filter(j => j.jornada === 'media');
-  return window._listadoOrden === 'apellidos'
-    ? [...lista].sort((a,b)=>(a.apellidos||'').localeCompare(b.apellidos||'') || (a.nombre||'').localeCompare(b.nombre||''))
-    : [...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
+  if (window._listadoFiltroAnio !== 'todos') lista = lista.filter(j => (_anioNac(j) || 'sin') === window._listadoFiltroAnio);
+  const porNombre = window._listadoOrden === 'apellidos'
+    ? (a,b)=>(a.apellidos||'').localeCompare(b.apellidos||'') || (a.nombre||'').localeCompare(b.nombre||'')
+    : (a,b)=>(a.nombre||'').localeCompare(b.nombre||'');
+  // Agrupado por año: primero por año de nacimiento (los sin fecha al final), luego por nombre/apellido
+  const cmp = window._listadoAgruparAnio
+    ? (a,b)=>(_anioNac(a)||'9999').localeCompare(_anioNac(b)||'9999') || porNombre(a,b)
+    : porNombre;
+  return [...lista].sort(cmp);
 }
 
 async function toggleActivo(jugadorId) {
