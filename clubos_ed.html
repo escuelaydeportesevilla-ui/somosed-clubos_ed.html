@@ -1759,10 +1759,32 @@ function save() {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
 }
 
+// Colecciones con cambios locales aún no enviados con éxito. Se guarda en localStorage para que
+// SOBREVIVA a cerrar/recargar la página (antes _pendienteSync vivía solo en memoria, y la recarga
+// automática del login sustituía los datos locales por los del servidor, perdiendo esos cambios).
+function _pendAdd(cols) {
+  try {
+    const s = new Set(JSON.parse(localStorage.getItem('clubos_ed_pend') || '[]'));
+    [].concat(cols).forEach(c => s.add(c));
+    localStorage.setItem('clubos_ed_pend', JSON.stringify([...s]));
+  } catch(e) {}
+}
+function _pendQuitar(col) {
+  try {
+    const s = new Set(JSON.parse(localStorage.getItem('clubos_ed_pend') || '[]'));
+    s.delete(col);
+    localStorage.setItem('clubos_ed_pend', JSON.stringify([...s]));
+  } catch(e) {}
+}
+function _pendHay() {
+  try { return JSON.parse(localStorage.getItem('clubos_ed_pend') || '[]').length > 0; } catch(e) { return false; }
+}
+
 // Guarda en local Y dispara sync inmediato solo de la colección afectada
 async function saveCol(col) {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   _pendienteSync = true;
+  _pendAdd(col);
   await syncColeccion(col);
 }
 
@@ -1770,8 +1792,9 @@ async function saveCol(col) {
 async function saveCols(cols) {
   localStorage.setItem('clubos_ed', JSON.stringify(DB));
   _pendienteSync = true;
-  await Promise.all(cols.map(c => syncColeccion(c)));
-  setSyncStatus('ok');
+  _pendAdd(cols);
+  const resultados = await Promise.all(cols.map(c => syncColeccion(c)));
+  if (resultados.every(r => r !== false)) setSyncStatus('ok');
 }
 function uid() { return 'id_' + Date.now() + '_' + Math.random().toString(36).slice(2,7) + Math.random().toString(36).slice(2,7); }
 
@@ -6377,7 +6400,14 @@ console.log('Familias: acceso directo (sin contraseña)');
     dots.style.display = 'block';
     status.textContent = '';
     document.getElementById('syncOverlay').classList.add('open');
-    try { await recargaCompleta(true); } finally {
+    try {
+      // Si quedaron cambios locales sin enviar (pestaña cerrada, sin conexión...), se suben ANTES
+      // de reemplazar los datos locales por los del servidor; si no se pueden subir, se fusiona
+      // (conserva lo local) en lugar de reemplazar.
+      if (_pendHay()) await _doSync();
+      if (_pendHay()) await manualSync();
+      else await recargaCompleta(true);
+    } finally {
       icon.classList.remove('girando');
       ocultarOverlay();
     }
@@ -6401,7 +6431,14 @@ console.log('Familias: acceso directo (sin contraseña)');
     } else if (_overlayModo === 'logout') {
       btnP.textContent = '⏳ Enviando...';
       status.textContent = 'Enviando datos al servidor...';
-      await _doSync();
+      const okEnvio = await _doSync();
+      if (!okEnvio) {
+        // No salir: los cambios no están en el servidor. Se puede reintentar o "Salir sin guardar".
+        btnP.textContent = '⚠️ Reintentar envío';
+        status.textContent = 'El servidor no confirmó el guardado.';
+        btnP.disabled = false;
+        return;
+      }
       ocultarOverlay();
       logout();
     }
@@ -6465,14 +6502,38 @@ console.log('Familias: acceso directo (sin contraseña)');
     for (let i = 0; i < ids.length; i += CHUNK) {
       const lote = ids.slice(i, i + CHUNK);
       try {
-        const r = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + colPart + '&ids=' + encodeURIComponent(JSON.stringify(lote)), 15000);
+        const r = await jsonpFetch(SCRIPT_URL + '?action=deleteIds&pwd=' + pwdEnc + colPart + '&ids=' + encodeURIComponent(JSON.stringify(lote)), 30000);
         if (r && r.ok) confirmados.push(...lote);
       } catch(e) { /* este lote no se confirma; se reintenta en el próximo sync */ }
     }
     return confirmados;
   }
 
+  // ── ENVÍO DE UNA COLECCIÓN CON CONFIRMACIÓN REAL ─────────
+  // El POST en modo no-cors NO permite leer la respuesta: antes la app daba "Sync ✓" con solo haber
+  // enviado la petición, aunque el servidor fallara (y el Sheet quedara sin cambios). Ahora el
+  // servidor deja un "recibo" (ok / error) con el reqId y aquí se consulta antes de dar nada por guardado.
+  async function _enviarColeccionConfirmado(col, items, pwd) {
+    const reqId = 'rq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveCollection', pwd, col, reqId, data: items })
+    });
+    for (let i = 0; i < 6; i++) {
+      try {
+        const r = await jsonpFetch(SCRIPT_URL + '?action=recibo&id=' + encodeURIComponent(reqId), 10000);
+        if (r && r.estado === 'ok') return { ok: true };
+        if (r && r.estado) return { ok: false, error: r.estado };
+      } catch(e) { /* reintentar */ }
+      await new Promise(res => setTimeout(res, 1500));
+    }
+    return { ok: false, error: 'el servidor no confirmó el guardado' };
+  }
+
   // ── SYNC DE UNA SOLA COLECCIÓN (rápido) ─────────────────
+  // Devuelve true solo si el servidor CONFIRMÓ el guardado.
   async function syncColeccion(col) {
     if (!SCRIPT_URL || !sesion) return;
     setSyncStatus('syncing');
@@ -6485,12 +6546,12 @@ console.log('Familias: acceso directo (sin contraseña)');
         const payloadItems = (col === 'patrocinadores')
           ? items.map(p => { const { logoUrl, ...resto } = p; return resto; })
           : items;
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveCollection', pwd, col, data: payloadItems })
-        });
+        const rc = await _enviarColeccionConfirmado(col, payloadItems, pwd);
+        if (!rc.ok) {
+          setSyncStatus('error');
+          alert('⚠️ NO SE HA GUARDADO EN EL SHEET (' + col + '): ' + rc.error + '.\n\nEl cambio queda guardado solo en este dispositivo y marcado como pendiente. Pulsa Sync para reintentar.');
+          return false;
+        }
       }
 
       // Enviar borrados si los hay (en lotes, con confirmación real del servidor)
@@ -6504,15 +6565,17 @@ console.log('Familias: acceso directo (sin contraseña)');
       }
 
       _pendienteSync = false;
+      _pendQuitar(col);
       setSyncStatus('ok');
-    } catch(e) { setSyncStatus('error'); }
+      return true;
+    } catch(e) { setSyncStatus('error'); return false; }
   }
 
   // ── ENVIAR AL SHEET (botón Sync) ──────────────────────────
   async function manualSyncEnviar() {
     if (!SCRIPT_URL || !sesion) return;
-    await _doSync();
-    _pendienteSync = false;
+    const ok = await _doSync();
+    if (ok) { _pendienteSync = false; toast('✅ Enviado y confirmado por el servidor'); }
   }
 
   // ── DESCARGAR DEL SHEET — merge local+remoto (uso interno) ─
@@ -6569,12 +6632,16 @@ console.log('Familias: acceso directo (sin contraseña)');
       const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
       if (j.ok && j.data) {
         const d = j.data;
-        // Si hay borrados locales aún no confirmados en el servidor, reenviarlos
-        // ahora y excluir esos ids de los datos que llegan del servidor, para que
-        // un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
+        // Si el servidor no devuelve una colección (backend sin actualizar, error parcial),
+        // se conserva la local en vez de vaciarla.
+        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido']
+          .forEach(k => { if (!Array.isArray(d[k])) d[k] = DB[k] || []; });
+        // Los borrados locales aún no confirmados se excluyen de lo que llega del servidor, para
+        // que un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
+        // Su confirmación en el servidor se hace DESPUÉS, en segundo plano: antes se esperaba aquí
+        // (lotes de hasta 15 s cada uno) y bloqueaba la recarga entera.
         const del = DB._deleted || {};
         const delIds = Object.keys(del);
-        const confirmados = delIds.length ? await _borrarIdsConfirmado(delIds, null) : [];
         const sinBorrados = arr => (arr||[]).filter(x => !x?.id || !del[x.id]);
         DB.competiciones  = sinBorrados(d.competiciones);
         DB.equipos        = sinBorrados(d.equipos);
@@ -6592,19 +6659,27 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.evaluaciones   = sinBorrados(d.evaluaciones);
         DB.gruposclubes   = sinBorrados(d.gruposclubes);
         DB.alineacionesPartido = sinBorrados(d.alineacionesPartido);
-        confirmados.forEach(id => delete DB._deleted[id]);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
         actualizarBadgeSugerencias();
         if (!silencioso) toast('Datos recargados desde el servidor');
+        if (delIds.length) {
+          _borrarIdsConfirmado(delIds, null).then(conf => {
+            if (conf.length && DB._deleted) {
+              conf.forEach(id => delete DB._deleted[id]);
+              localStorage.setItem('clubos_ed', JSON.stringify(DB));
+            }
+          }).catch(() => {});
+        }
       } else { setSyncStatus('error'); if (!silencioso) toast('No se pudo recargar'); }
     } catch(e) { setSyncStatus('error'); if (!silencioso) toast('Error al recargar'); }
   }
 
   // ── ENVIAR DATOS AL SHEET ─────────────────────────────────
+  // Devuelve true solo si TODAS las colecciones fueron confirmadas por el servidor.
   async function _doSync() {
-    if (!SCRIPT_URL || !sesion) return;
+    if (!SCRIPT_URL || !sesion) return false;
     setSyncStatus('syncing');
     try {
       const pwd = encodeURIComponent(
@@ -6612,20 +6687,24 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','personal','evaluaciones','alineacionesPartido'];
-      await Promise.all(cols.map(col => {
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido'];
+      // Envío SECUENCIAL: antes eran 14 POST simultáneos que el servidor ejecutaba a la vez
+      // sobre las mismas hojas (pisándose entre sí y saturando el límite de ejecuciones paralelas).
+      const fallos = [];
+      for (const col of cols) {
         const items = DB[col];
-        if (!items || !items.length) return Promise.resolve();
+        if (!items || !items.length) continue;
         const payloadItems = (col === 'patrocinadores')
           ? items.map(p => { const { logoUrl, ...resto } = p; return resto; })
           : items;
-        return fetch(SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: 'saveCollection', pwd: decodeURIComponent(pwd), col, data: payloadItems })
-        });
-      }));
+        const rc = await _enviarColeccionConfirmado(col, payloadItems, decodeURIComponent(pwd));
+        if (!rc.ok) fallos.push(col + ' → ' + rc.error);
+      }
+      if (fallos.length) {
+        setSyncStatus('error');
+        alert('⚠️ NO SE HA GUARDADO TODO EN EL SHEET:\n\n' + fallos.join('\n') + '\n\nLos cambios siguen pendientes en este dispositivo. Pulsa Sync para reintentar.');
+        return false;
+      }
       if (DB._deleted && Object.keys(DB._deleted).length) {
         const ids = Object.keys(DB._deleted);
         const confirmados = await _borrarIdsConfirmado(ids, null);
@@ -6635,8 +6714,10 @@ console.log('Familias: acceso directo (sin contraseña)');
         }
       }
       _pendienteSync = false;
+      localStorage.removeItem('clubos_ed_pend');
       setSyncStatus('ok');
-    } catch(e) { setSyncStatus('error'); }
+      return true;
+    } catch(e) { setSyncStatus('error'); return false; }
   }
 
   async function syncToSheets() { /* deprecated — use _doSync */ }
