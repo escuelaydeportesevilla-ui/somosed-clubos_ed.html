@@ -777,6 +777,8 @@ tbody td.center{text-align:center;}
   title="Descargar datos del servidor">
   <span>⬇️</span><span>Recargar</span>
 </button>
+<button id="btnDiagnostico" onclick="diagnosticoSync()" title="Diagnóstico: compara el Sheet conectado con la app"
+  style="background:#fff;color:#0B1F3A;border:1px solid #ccc;border-radius:8px;padding:7px 10px;font-size:13px;cursor:pointer;margin-right:8px;display:none;">🩺</button>
 <button class="btn-logout" onclick="pedirSyncAntesDeLogout()">← Salir</button>
     </div>
   </div>
@@ -1925,6 +1927,8 @@ function iniciarSesion(cred) {
   document.getElementById('tbUserName').textContent = cred.nombre || '';
   const btnRecarga = document.getElementById('btnRecargaTotal');
   if (btnRecarga) btnRecarga.style.display = (cred.rol === 'admin') ? 'flex' : 'none';
+  const btnDiag = document.getElementById('btnDiagnostico');
+  if (btnDiag) btnDiag.style.display = (cred.rol === 'admin') ? '' : 'none';
   const btnSyncTop = document.getElementById('btnSync');
   if (btnSyncTop) btnSyncTop.style.display = cred.esFamilia ? 'none' : '';
 
@@ -3056,6 +3060,11 @@ async function guardarEquipo() {
   const idx = DB.equipos.findIndex(e=>e.id===editEquipoId);
   if (idx>=0) DB.equipos[idx]=rec; else DB.equipos.push(rec);
 
+  // El nombre de equipo guardado en cada jugador (columna equipoNombre del Sheet) debe seguir al
+  // nombre real del equipo; antes quedaba con el nombre antiguo y el Sheet parecía incoherente.
+  let _jugRenombrados = false;
+  (DB.jugadores||[]).forEach(j => { if (j.equipoId === rec.id && j.equipoNombre !== rec.nombre) { j.equipoNombre = rec.nombre; _jugRenombrados = true; } });
+
   // Si se eligió un Personal concreto como entrenador, "reclamarlo" para este club/equipo
   const selEntrenador = document.getElementById('eqEntrenadorSelect');
   if (selEntrenador && selEntrenador.value) {
@@ -3075,7 +3084,9 @@ async function guardarEquipo() {
   }
 
   editEquipoId = null;
-  await saveCol('equipos'); cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
+  await saveCol('equipos');
+  if (_jugRenombrados) await saveCol('jugadores');
+  cerrarModal('modalEquipo'); renderEquipos(); renderCompeticion();
 }
 
 async function eliminarEquipo(id) {
@@ -6571,6 +6582,42 @@ console.log('Familias: acceso directo (sin contraseña)');
     } catch(e) { setSyncStatus('error'); return false; }
   }
 
+  // ── DIAGNÓSTICO: ¿a qué Sheet está conectada la app y qué equipos ve el servidor? ──
+  async function diagnosticoSync() {
+    if (sesion?.rol !== 'admin') return;
+    toast('Consultando al servidor…');
+    try {
+      const r = await jsonpFetch(SCRIPT_URL + '?action=diagnostico&pwd=' + encodeURIComponent('cbed2627'), 30000);
+      if (!r || !r.ok) {
+        alert('El servidor no soporta el diagnóstico (' + (r?.error || 'sin respuesta') + ').\n\nProbable causa: el backend desplegado NO es la versión nueva. Pega el backend actualizado en Apps Script y crea una NUEVA VERSIÓN del despliegue.');
+        return;
+      }
+      const loc = DB.equipos || [];
+      const locPorId = {}; loc.forEach(e => { locPorId[e.id] = e; });
+      const srvIds = new Set(r.equiposSheet.map(e => e.id));
+      const lin = [];
+      lin.push('HOJA CONECTADA: ' + r.hoja);
+      lin.push(r.url);
+      lin.push('');
+      lin.push('Equipos en el Sheet: ' + r.equiposSheet.length + '  |  en la app: ' + loc.length + '  |  ids en papelera: ' + r.nBorrados);
+      lin.push('');
+      r.equiposSheet.forEach(e => {
+        const l = locPorId[e.id];
+        let est = '✅ igual';
+        if (e.oculto) est = '🚫 OCULTO por la papelera (el servidor no lo envía a la app y no deja guardarlo)';
+        else if (!l) est = '❌ NO está en la app';
+        else if (l.nombre !== e.nombre) est = '⚠️ en la app se llama: ' + l.nombre;
+        lin.push(est + '  ·  ' + e.nombre);
+      });
+      loc.filter(e => !srvIds.has(e.id)).forEach(e => lin.push('📱 SOLO en la app (no en el Sheet): ' + e.nombre));
+      lin.push('');
+      lin.push('Borrados locales pendientes: ' + Object.keys(DB._deleted || {}).length + '  |  Colecciones sin enviar: ' + (_pendHay() ? 'SÍ' : 'no'));
+      alert(lin.join('\n'));
+    } catch(e) {
+      alert('No se pudo contactar con el servidor: ' + e.message);
+    }
+  }
+
   // ── ENVIAR AL SHEET (botón Sync) ──────────────────────────
   async function manualSyncEnviar() {
     if (!SCRIPT_URL || !sesion) return;
@@ -6690,6 +6737,9 @@ console.log('Familias: acceso directo (sin contraseña)');
       const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido'];
       // Envío SECUENCIAL: antes eran 14 POST simultáneos que el servidor ejecutaba a la vez
       // sobre las mismas hojas (pisándose entre sí y saturando el límite de ejecuciones paralelas).
+      // Saneado previo: equipoNombre de cada jugador = nombre actual de su equipo (corrige el Sheet).
+      const _nomEq = {}; (DB.equipos||[]).forEach(e => { _nomEq[e.id] = e.nombre; });
+      (DB.jugadores||[]).forEach(j => { if (j.equipoId && _nomEq[j.equipoId]) j.equipoNombre = _nomEq[j.equipoId]; });
       const fallos = [];
       for (const col of cols) {
         const items = DB[col];
