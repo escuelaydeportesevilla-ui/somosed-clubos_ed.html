@@ -951,6 +951,14 @@ tbody td.center{text-align:center;}
       <div id="alineacionesContent"></div>
     </div>
 
+    <!-- ══ PANEL: CONVOCATORIAS ══ -->
+    <div class="tab-panel" id="panel-convocatorias">
+      <div class="section-header">
+        <h2>📣 Convocatorias especiales</h2><div class="section-line"></div>
+      </div>
+      <div id="convocatoriasContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-outline" onclick="abrirModalGrupoClubes()">🗂️ Grupos de clubes</button>
@@ -1800,7 +1808,7 @@ function _snapMarcar(col, items) {
 }
 function _snapReconstruir() {
   const s = {};
-  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido']
+  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias']
     .forEach(col => { s[col] = {}; _payloadCol(col).forEach(x => { if (x && x.id) s[col][x.id] = _hash(JSON.stringify(x)); }); });
   _snapSet(s);
 }
@@ -2004,14 +2012,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -2106,7 +2114,7 @@ function renderTab(tab) {
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
     escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
-    alineaciones: renderAlineaciones
+    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias
   };
   if (fn[tab]) fn[tab]();
   _reaplicarEscala();
@@ -6746,6 +6754,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.evaluaciones?.length)  DB.evaluaciones  = merge(DB.evaluaciones,  d.evaluaciones);
         if (d.gruposclubes?.length)  DB.gruposclubes  = merge(DB.gruposclubes,  d.gruposclubes);
         if (d.alineacionesPartido?.length) DB.alineacionesPartido = merge(DB.alineacionesPartido, d.alineacionesPartido);
+        if (d.convocatorias?.length) DB.convocatorias = merge(DB.convocatorias, d.convocatorias);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -6766,7 +6775,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         const d = j.data;
         // Si el servidor no devuelve una colección (backend sin actualizar, error parcial),
         // se conserva la local en vez de vaciarla.
-        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido']
+        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias']
           .forEach(k => { if (!Array.isArray(d[k])) d[k] = DB[k] || []; });
         // Los borrados locales aún no confirmados se excluyen de lo que llega del servidor, para
         // que un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
@@ -6791,6 +6800,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.evaluaciones   = sinBorrados(d.evaluaciones);
         DB.gruposclubes   = sinBorrados(d.gruposclubes);
         DB.alineacionesPartido = sinBorrados(d.alineacionesPartido);
+        DB.convocatorias = sinBorrados(d.convocatorias);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
@@ -6820,7 +6830,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido'];
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias'];
       // Envío SECUENCIAL: antes eran 14 POST simultáneos que el servidor ejecutaba a la vez
       // sobre las mismas hojas (pisándose entre sí y saturando el límite de ejecuciones paralelas).
       // Saneado previo: equipoNombre de cada jugador = nombre actual de su equipo (corrige el Sheet).
@@ -7540,6 +7550,268 @@ function _copiarPromptAlineacion() {
   navigator.clipboard?.writeText(ta.value).then(()=>toast('Prompt copiado')).catch(()=>{
     document.execCommand('copy'); toast('Prompt copiado');
   });
+}
+
+// ══════════════════════════════════════════════════════
+//  CONVOCATORIAS ESPECIALES
+// ══════════════════════════════════════════════════════
+const CONV_TIPOS = ['Convivencia','Partido de entrenamiento','Invitación a trofeo','Torneo','Otro'];
+window._conv = null; // convocatoria en edición
+window._convBusca = ''; window._convEq = ''; window._convAnio = '';
+
+function _convJugadoresDisponibles() {
+  if (sesion.rol === 'admin') return DB.jugadores || [];
+  const eqs = new Set((DB.equipos||[]).filter(e => e.clubId === sesion.user).map(e => e.id));
+  return (DB.jugadores||[]).filter(j => j.clubId === sesion.user || eqs.has(j.equipoId));
+}
+function _convVisibles() {
+  const l = DB.convocatorias || [];
+  return (sesion.rol === 'admin' ? l : l.filter(c => c.clubId === sesion.user))
+    .slice().sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
+}
+function _convFmtFecha(f) {
+  const m = String(f||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}/${m[2]}/${m[1]}` : (f || 'Sin fecha');
+}
+function _convNombreJ(j) { return ((j.nombre||'') + ' ' + (j.apellidos||'')).trim(); }
+function _convJugadoresDe(c) {
+  const mapa = {}; (DB.jugadores||[]).forEach(j => mapa[j.id] = j);
+  return (c.miembros||[]).map(id => mapa[id]).filter(Boolean)
+    .sort((a,b) => (a.equipoNombre||'').localeCompare(b.equipoNombre||'') || _convNombreJ(a).localeCompare(_convNombreJ(b)));
+}
+
+function renderConvocatorias() {
+  const el = document.getElementById('convocatoriasContent');
+  if (!el) return;
+  const lista = _convVisibles();
+  let html = `<div style="margin-bottom:14px;"><button class="btn btn-primary" onclick="nuevaConvocatoria()">+ Nueva convocatoria</button></div>`;
+  if (!lista.length) {
+    html += '<div class="empty-state"><div class="ei">📣</div><p>No hay convocatorias especiales todavía.</p></div>';
+  } else {
+    html += lista.map(c => {
+      const js = _convJugadoresDe(c);
+      const porEq = {};
+      js.forEach(j => { const k = j.equipoNombre || 'Sin equipo'; porEq[k] = (porEq[k]||0) + 1; });
+      const resumen = Object.keys(porEq).map(k => `${_escHtml(k)} (${porEq[k]})`).join(' · ');
+      return `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+          <div style="min-width:220px;flex:1;">
+            <div style="font-weight:800;font-size:15px;">${_escHtml(c.nombre||'Sin nombre')}</div>
+            <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">
+              ${_escHtml(c.tipo||'')} · 📅 ${_convFmtFecha(c.fecha)}${c.hora?' · ⏰ '+_escHtml(c.hora):''}${c.lugar?' · 📍 '+_escHtml(c.lugar):''}
+            </div>
+            ${c.motivo?`<div style="font-size:12px;margin-top:4px;">${_escHtml(c.motivo)}</div>`:''}
+            <div style="font-size:12px;margin-top:6px;"><b>${js.length}</b> convocados${resumen?': '+resumen:''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="editarConvocatoria('${c.id}')">✏️ Editar</button>
+            <button class="btn btn-outline btn-sm" onclick="duplicarConvocatoria('${c.id}')">📄 Duplicar</button>
+            <button class="btn btn-outline btn-sm" onclick="compartirConvocatoriaWhatsApp('${c.id}')">💬 WhatsApp</button>
+            <button class="btn btn-outline btn-sm" onclick="copiarConvocatoria('${c.id}')">📋 Copiar</button>
+            <button class="btn btn-outline btn-sm" onclick="exportarConvocatoriaPDF('${c.id}')">🖨️ PDF</button>
+            <button class="btn btn-rojo btn-sm" onclick="eliminarConvocatoria('${c.id}')">🗑</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  el.innerHTML = html;
+}
+
+function _convAsegurarModal() {
+  if (document.getElementById('modalConvocatoria')) return;
+  const d = document.createElement('div');
+  d.className = 'modal'; d.id = 'modalConvocatoria';
+  d.innerHTML = `<div class="modal-box" style="max-width:980px;">
+    <div class="modal-header"><h3 id="convTitulo">Convocatoria</h3>
+      <button class="modal-close" onclick="cerrarModal('modalConvocatoria')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-field form-full"><label>Nombre del equipo especial convocado</label><input id="convNombre" placeholder="Selección Sub-12 Trofeo Ciudad"></div>
+      <div class="form-field"><label>Tipo</label><select id="convTipo">${CONV_TIPOS.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div class="form-field"><label>Fecha</label><input id="convFecha" type="date"></div>
+      <div class="form-field"><label>Hora</label><input id="convHora" type="time"></div>
+      <div class="form-field"><label>Lugar</label><input id="convLugar" placeholder="Campo / sede"></div>
+      <div class="form-field form-full"><label>Motivo</label><input id="convMotivo" placeholder="Invitación al trofeo..., partido de preparación..."></div>
+      <div class="form-field form-full"><label>Notas</label><textarea id="convNotas" rows="2" placeholder="Equipación, punto de encuentro..."></textarea></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:12px;">
+      <div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;">Jugadores disponibles</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">
+          <input id="convBusca" placeholder="Buscar..." oninput="_convSetFiltro()" style="flex:1;min-width:110px;padding:6px;border:1px solid var(--gris-linea);border-radius:8px;">
+          <select id="convFEq" onchange="_convSetFiltro()" style="padding:6px;border:1px solid var(--gris-linea);border-radius:8px;max-width:150px;"></select>
+          <select id="convFAnio" onchange="_convSetFiltro()" style="padding:6px;border:1px solid var(--gris-linea);border-radius:8px;"></select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="_convAnadirFiltrados()" style="margin-bottom:6px;">＋ Añadir todos los filtrados</button>
+        <div id="convDisp" style="max-height:340px;overflow-y:auto;border:1px solid var(--gris-linea);border-radius:8px;"></div>
+      </div>
+      <div>
+        <div style="font-weight:700;font-size:12px;margin-bottom:6px;">Convocados (<span id="convNum">0</span>)</div>
+        <button class="btn btn-outline btn-sm" onclick="_convQuitarTodos()" style="margin-bottom:6px;">Quitar todos</button>
+        <div id="convSel" style="max-height:376px;overflow-y:auto;border:1px solid var(--gris-linea);border-radius:8px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalConvocatoria')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarConvocatoria()">💾 Guardar</button>
+    </div></div>`;
+  document.body.appendChild(d);
+  d.addEventListener('click', e => { if (e.target === d) d.classList.remove('open'); });
+}
+
+function nuevaConvocatoria() {
+  window._conv = { id: uid(), nombre:'', tipo:CONV_TIPOS[0], fecha:'', hora:'', lugar:'', motivo:'', notas:'', miembros:[], _nueva:true };
+  _convAbrirEditor('Nueva convocatoria');
+}
+function editarConvocatoria(id) {
+  const c = (DB.convocatorias||[]).find(x => x.id === id);
+  if (!c) return;
+  window._conv = JSON.parse(JSON.stringify(c));
+  _convAbrirEditor('Editar convocatoria');
+}
+function duplicarConvocatoria(id) {
+  const c = (DB.convocatorias||[]).find(x => x.id === id);
+  if (!c) return;
+  window._conv = JSON.parse(JSON.stringify(c));
+  window._conv.id = uid(); window._conv.fecha = ''; window._conv._nueva = true;
+  window._conv.nombre = (c.nombre||'') + ' (copia)';
+  _convAbrirEditor('Duplicar convocatoria');
+}
+function _convAbrirEditor(titulo) {
+  _convAsegurarModal();
+  const c = window._conv;
+  document.getElementById('convTitulo').textContent = titulo;
+  document.getElementById('convNombre').value = c.nombre||'';
+  document.getElementById('convTipo').value = CONV_TIPOS.includes(c.tipo) ? c.tipo : 'Otro';
+  document.getElementById('convFecha').value = c.fecha||'';
+  document.getElementById('convHora').value = c.hora||'';
+  document.getElementById('convLugar').value = c.lugar||'';
+  document.getElementById('convMotivo').value = c.motivo||'';
+  document.getElementById('convNotas').value = c.notas||'';
+  document.getElementById('convBusca').value = '';
+  const disp = _convJugadoresDisponibles();
+  const eqs = {}; disp.forEach(j => { if (j.equipoId) eqs[j.equipoId] = j.equipoNombre || j.equipoId; });
+  document.getElementById('convFEq').innerHTML = '<option value="">Todos los equipos</option>' +
+    Object.keys(eqs).sort((a,b)=>eqs[a].localeCompare(eqs[b])).map(k=>`<option value="${k}">${_escHtml(eqs[k])}</option>`).join('');
+  const anios = [...new Set(disp.map(_anioNac).filter(Boolean))].sort();
+  document.getElementById('convFAnio').innerHTML = '<option value="">Todos los años</option>' +
+    anios.map(a=>`<option>${a}</option>`).join('');
+  _convPintar();
+  abrirModal('modalConvocatoria');
+}
+function _convSetFiltro() { _convPintarDisp(); }
+function _convFiltrados() {
+  const q = (document.getElementById('convBusca').value||'').toLowerCase().trim();
+  const eq = document.getElementById('convFEq').value;
+  const an = document.getElementById('convFAnio').value;
+  const sel = new Set(window._conv.miembros);
+  return _convJugadoresDisponibles().filter(j =>
+    !sel.has(j.id) &&
+    (!q || _convNombreJ(j).toLowerCase().includes(q)) &&
+    (!eq || j.equipoId === eq) && (!an || _anioNac(j) === an)
+  ).sort((a,b) => (a.equipoNombre||'').localeCompare(b.equipoNombre||'') || _convNombreJ(a).localeCompare(_convNombreJ(b)));
+}
+function _convFila(j, accion, txt) {
+  return `<div onclick="${accion}('${j.id}')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 10px;border-bottom:1px solid var(--gris-linea);cursor:pointer;font-size:12px;">
+    <span><b>${_escHtml(_convNombreJ(j))}</b><br><span style="color:var(--gris-suave);font-size:11px;">${_escHtml(j.equipoNombre||'Sin equipo')}${_anioNac(j)?' · '+_anioNac(j):''}</span></span>
+    <span style="font-weight:800;">${txt}</span></div>`;
+}
+function _convPintarDisp() {
+  const l = _convFiltrados();
+  document.getElementById('convDisp').innerHTML = l.length ? l.map(j => _convFila(j,'_convAnadir','＋')).join('')
+    : '<div style="padding:10px;font-size:12px;color:var(--gris-suave);">Sin resultados</div>';
+}
+function _convPintarSel() {
+  const mapa = {}; (DB.jugadores||[]).forEach(j => mapa[j.id] = j);
+  const l = window._conv.miembros.map(id => mapa[id]).filter(Boolean)
+    .sort((a,b) => (a.equipoNombre||'').localeCompare(b.equipoNombre||'') || _convNombreJ(a).localeCompare(_convNombreJ(b)));
+  document.getElementById('convNum').textContent = l.length;
+  document.getElementById('convSel').innerHTML = l.length ? l.map(j => _convFila(j,'_convQuitar','✕')).join('')
+    : '<div style="padding:10px;font-size:12px;color:var(--gris-suave);">Pulsa un jugador para convocarlo</div>';
+}
+function _convPintar() { _convPintarDisp(); _convPintarSel(); }
+function _convAnadir(id) { if (!window._conv.miembros.includes(id)) window._conv.miembros.push(id); _convPintar(); }
+function _convQuitar(id) { window._conv.miembros = window._conv.miembros.filter(x => x !== id); _convPintar(); }
+function _convAnadirFiltrados() { _convFiltrados().forEach(j => window._conv.miembros.push(j.id)); _convPintar(); }
+function _convQuitarTodos() { window._conv.miembros = []; _convPintar(); }
+
+async function guardarConvocatoria() {
+  const c = window._conv;
+  const nombre = document.getElementById('convNombre').value.trim();
+  if (!nombre) { toast('Indica el nombre del equipo convocado'); return; }
+  if (!c.miembros.length) { toast('Selecciona al menos un jugador'); return; }
+  const rec = {
+    id: c.id, nombre,
+    tipo: document.getElementById('convTipo').value,
+    fecha: document.getElementById('convFecha').value,
+    hora: document.getElementById('convHora').value,
+    lugar: document.getElementById('convLugar').value.trim(),
+    motivo: document.getElementById('convMotivo').value.trim(),
+    notas: document.getElementById('convNotas').value.trim(),
+    miembros: c.miembros.slice(),
+    clubId: c.clubId || (sesion.rol === 'admin' ? 'cbedadmin' : sesion.user),
+    creadoPor: c.creadoPor || sesion.user || '',
+    fechaCreacion: c.fechaCreacion || new Date().toISOString(),
+  };
+  if (!DB.convocatorias) DB.convocatorias = [];
+  const i = DB.convocatorias.findIndex(x => x.id === rec.id);
+  if (i >= 0) DB.convocatorias[i] = rec; else DB.convocatorias.push(rec);
+  cerrarModal('modalConvocatoria');
+  renderConvocatorias();
+  await saveCol('convocatorias');
+  toast('Convocatoria guardada');
+}
+async function eliminarConvocatoria(id) {
+  if (!confirm('¿Eliminar esta convocatoria?')) return;
+  DB.convocatorias = (DB.convocatorias||[]).filter(x => x.id !== id);
+  if (!DB._deleted) DB._deleted = {};
+  DB._deleted[id] = Date.now();
+  renderConvocatorias();
+  await saveCol('convocatorias');
+  toast('Convocatoria eliminada');
+}
+
+function _convTexto(c) {
+  const js = _convJugadoresDe(c);
+  let t = `📣 *${c.nombre}*\n${c.tipo||''}\n📅 ${_convFmtFecha(c.fecha)}${c.hora?' ⏰ '+c.hora:''}\n`;
+  if (c.lugar) t += `📍 ${c.lugar}\n`;
+  if (c.motivo) t += `\n${c.motivo}\n`;
+  t += `\n*Convocados (${js.length}):*\n`;
+  let eqAct = null;
+  js.forEach(j => {
+    const eq = j.equipoNombre || 'Sin equipo';
+    if (eq !== eqAct) { t += `\n_${eq}_\n`; eqAct = eq; }
+    t += `• ${_convNombreJ(j)}\n`;
+  });
+  if (c.notas) t += `\n📝 ${c.notas}\n`;
+  return t;
+}
+function compartirConvocatoriaWhatsApp(id) {
+  const c = (DB.convocatorias||[]).find(x => x.id === id); if (!c) return;
+  window.open('https://wa.me/?text=' + encodeURIComponent(_convTexto(c)), '_blank');
+}
+async function copiarConvocatoria(id) {
+  const c = (DB.convocatorias||[]).find(x => x.id === id); if (!c) return;
+  try { await navigator.clipboard.writeText(_convTexto(c)); toast('Texto copiado'); }
+  catch (e) { prompt('Copia el texto:', _convTexto(c)); }
+}
+function exportarConvocatoriaPDF(id) {
+  const c = (DB.convocatorias||[]).find(x => x.id === id); if (!c) return;
+  const js = _convJugadoresDe(c);
+  const filas = js.map((j,i) => `<tr><td>${i+1}</td><td>${_escHtml(_convNombreJ(j))}</td><td>${_escHtml(j.equipoNombre||'')}</td><td>${_escHtml(_fechaNacTxt(j))}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  if (!w) { toast('Permite las ventanas emergentes'); return; }
+  w.document.write(`<html><head><title>${_escHtml(c.nombre)}</title><style>
+    body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 4px}
+    .m{color:#555;font-size:13px;margin-bottom:12px}table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#eee}</style></head><body>
+    <h1>${_escHtml(c.nombre)}</h1>
+    <div class="m">${_escHtml(c.tipo||'')} · ${_convFmtFecha(c.fecha)}${c.hora?' · '+_escHtml(c.hora):''}${c.lugar?' · '+_escHtml(c.lugar):''}</div>
+    ${c.motivo?`<p>${_escHtml(c.motivo)}</p>`:''}
+    <table><tr><th>#</th><th>Jugador</th><th>Equipo</th><th>Nacimiento</th></tr>${filas}</table>
+    ${c.notas?`<p><b>Notas:</b> ${_escHtml(c.notas)}</p>`:''}
+    <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
