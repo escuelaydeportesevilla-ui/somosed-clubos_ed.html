@@ -1062,6 +1062,14 @@ tbody td.center{text-align:center;}
       <div id="convocatoriasContent"></div>
     </div>
 
+    <!-- ══ PANEL: PAGOS ══ -->
+    <div class="tab-panel" id="panel-pagos">
+      <div class="section-header">
+        <h2>💶 Pagos</h2><div class="section-line"></div>
+      </div>
+      <div id="pagosContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-outline" onclick="abrirModalGrupoClubes()">🗂️ Grupos de clubes</button>
@@ -1912,7 +1920,7 @@ function _snapMarcar(col, items) {
 }
 function _snapReconstruir() {
   const s = {};
-  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias']
+  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos']
     .forEach(col => { s[col] = {}; _payloadCol(col).forEach(x => { if (x && x.id) s[col][x.id] = _hash(JSON.stringify(x)); }); });
   _snapSet(s);
 }
@@ -2116,14 +2124,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias', pagos:'💶 Pagos',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -2288,7 +2296,7 @@ function renderTab(tab) {
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
     escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
-    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias
+    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos
   };
   if (fn[tab]) fn[tab]();
   _reaplicarEscala();
@@ -6275,6 +6283,7 @@ function renderVistaFamiliaJugador() {
       ${btnTab('evaluaciones','📝 Evaluaciones')}
       ${btnTab('noticias','📰 Noticias')}
       ${btnTab('sugerencias','💬 Sugerencias')}
+      ${btnTab('pagos','💶 Pagos')}
       ${btnTab('partidos','⚽ Partidos')}
       <button class="btn btn-outline btn-sm" style="margin-left:auto;" onclick="actualizarVistaFamiliaJugador()">🔄 Actualizar</button>
     </div>
@@ -6330,6 +6339,8 @@ function renderVistaFamiliaJugador() {
           </div>`).join('')}
       </div>
     </div>
+
+    <div style="display:${tab==='pagos'?'block':'none'};">${_famPagosHtml(j)}</div>
 
     <div style="display:${tab==='partidos'?'block':'none'};">
       <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:6px;">⚽ Partidos de ${eq?eq.nombre:'su equipo'}</h2>
@@ -6931,6 +6942,8 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.gruposclubes?.length)  DB.gruposclubes  = merge(DB.gruposclubes,  d.gruposclubes);
         if (d.alineacionesPartido?.length) DB.alineacionesPartido = merge(DB.alineacionesPartido, d.alineacionesPartido);
         if (d.convocatorias?.length) DB.convocatorias = merge(DB.convocatorias, d.convocatorias);
+        if (d.conceptos?.length) DB.conceptos = merge(DB.conceptos, d.conceptos);
+        if (d.pagos?.length) DB.pagos = merge(DB.pagos, d.pagos);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -6951,7 +6964,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         const d = j.data;
         // Si el servidor no devuelve una colección (backend sin actualizar, error parcial),
         // se conserva la local en vez de vaciarla.
-        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias']
+        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos']
           .forEach(k => { if (!Array.isArray(d[k])) d[k] = DB[k] || []; });
         // Los borrados locales aún no confirmados se excluyen de lo que llega del servidor, para
         // que un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
@@ -6977,6 +6990,8 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.gruposclubes   = sinBorrados(d.gruposclubes);
         DB.alineacionesPartido = sinBorrados(d.alineacionesPartido);
         DB.convocatorias = sinBorrados(d.convocatorias);
+        DB.conceptos = sinBorrados(d.conceptos);
+        DB.pagos = sinBorrados(d.pagos);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
@@ -7006,7 +7021,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias'];
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos'];
       // Envío SECUENCIAL: antes eran 14 POST simultáneos que el servidor ejecutaba a la vez
       // sobre las mismas hojas (pisándose entre sí y saturando el límite de ejecuciones paralelas).
       // Saneado previo: equipoNombre de cada jugador = nombre actual de su equipo (corrige el Sheet).
@@ -7836,7 +7851,7 @@ function _convAsegurarModal() {
 }
 
 function nuevaConvocatoria() {
-  window._conv = { id: uid(), nombre:'', tipo:CONV_TIPOS[0], fecha:'', hora:'', lugar:'', motivo:'', notas:'', miembros:[], _nueva:true };
+  window._conv = { id: uid(), nombre:'', tipo:CONV_TIPOS[0], fecha:'', hora:'', lugar:'', motivo:'', observaciones:'', miembros:[], _nueva:true };
   _convAbrirEditor('Nueva convocatoria');
 }
 function editarConvocatoria(id) {
@@ -7863,7 +7878,7 @@ function _convAbrirEditor(titulo) {
   document.getElementById('convHora').value = c.hora||'';
   document.getElementById('convLugar').value = c.lugar||'';
   document.getElementById('convMotivo').value = c.motivo||'';
-  document.getElementById('convNotas').value = c.notas||'';
+  document.getElementById('convNotas').value = c.observaciones||'';
   document.getElementById('convBusca').value = '';
   const disp = _convJugadoresDisponibles();
   const eqs = {}; disp.forEach(j => { if (j.equipoId) eqs[j.equipoId] = j.equipoNombre || j.equipoId; });
@@ -7923,7 +7938,7 @@ async function guardarConvocatoria() {
     hora: document.getElementById('convHora').value,
     lugar: document.getElementById('convLugar').value.trim(),
     motivo: document.getElementById('convMotivo').value.trim(),
-    notas: document.getElementById('convNotas').value.trim(),
+    observaciones: document.getElementById('convNotas').value.trim(),
     miembros: c.miembros.slice(),
     clubId: c.clubId || (sesion.rol === 'admin' ? 'cbedadmin' : sesion.user),
     creadoPor: c.creadoPor || sesion.user || '',
@@ -7959,7 +7974,7 @@ function _convTexto(c) {
     if (eq !== eqAct) { t += `\n_${eq}_\n`; eqAct = eq; }
     t += `• ${_convNombreJ(j)}\n`;
   });
-  if (c.notas) t += `\n📝 ${c.notas}\n`;
+  if (c.observaciones) t += `\n📝 ${c.observaciones}\n`;
   return t;
 }
 function compartirConvocatoriaWhatsApp(id) {
@@ -7985,9 +8000,468 @@ function exportarConvocatoriaPDF(id) {
     <div class="m">${_escHtml(c.tipo||'')} · ${_convFmtFecha(c.fecha)}${c.hora?' · '+_escHtml(c.hora):''}${c.lugar?' · '+_escHtml(c.lugar):''}</div>
     ${c.motivo?`<p>${_escHtml(c.motivo)}</p>`:''}
     <table><tr><th>#</th><th>Jugador</th><th>Equipo</th><th>Nacimiento</th></tr>${filas}</table>
-    ${c.notas?`<p><b>Notas:</b> ${_escHtml(c.notas)}</p>`:''}
+    ${c.observaciones?`<p><b>Notas:</b> ${_escHtml(c.observaciones)}</p>`:''}
     <script>window.onload=function(){window.print()}<\/script></body></html>`);
   w.document.close();
+}
+
+// ══════════════════════════════════════════════════════
+//  PAGOS (control de cobros: mensualidades y pagos extraordinarios)
+// ══════════════════════════════════════════════════════
+const PAG_TIPOS = ['Mensualidad','Licencia','Seguro','Equipación','Excursión','Convivencia','Otro'];
+const PAG_ICONO = {Mensualidad:'📅',Licencia:'🪪',Seguro:'🛡️',Equipación:'👕',Excursión:'🚌',Convivencia:'🎉',Otro:'💶'};
+const PAG_METODOS = ['Transferencia','Efectivo','Bizum','Otro'];
+const _PAG_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+window._pagVista = 'cobros'; window._pagConceptoId = null; window._pagEq = ''; window._pagFiltro = 'todos'; window._pagBusca = '';
+
+function _pagNum(x) { const n = parseFloat(String(x ?? '').replace(',', '.')); return isNaN(n) ? 0 : n; }
+function _pagEur(n) { return (Number(n) || 0).toLocaleString('es-ES', { style:'currency', currency:'EUR' }); }
+function _pagHoy() { return new Date().toISOString().slice(0, 10); }
+function _pagEst(p) {
+  if (p.estado === 'exento') return 'exento';
+  const d = _pagNum(p.importe), c = _pagNum(p.pagado);
+  if (d > 0 && c >= d - 0.005) return 'pagado';
+  return c > 0 ? 'parcial' : 'pendiente';
+}
+function _pagPendiente(p) { return _pagEst(p) === 'exento' ? 0 : Math.max(0, _pagNum(p.importe) - _pagNum(p.pagado)); }
+function _pagMesTxt(m) { const x = String(m || '').match(/^(\d{4})-(\d{2})/); return x ? `${_PAG_MESES[+x[2]-1]} ${x[1]}` : ''; }
+function _pagMesCorto(m) { const x = String(m || '').match(/^(\d{4})-(\d{2})/); return x ? `${_PAG_MESES[+x[2]-1].slice(0,3)}${x[1].slice(2)}` : ''; }
+function _pagNombreJ(j) { return j ? ((j.nombre || '') + ' ' + (j.apellidos || '')).trim() : '(jugador eliminado)'; }
+function _pagMapaJ() { const m = {}; (DB.jugadores || []).forEach(j => m[j.id] = j); return m; }
+function _pagMapaC() { const m = {}; (DB.conceptos || []).forEach(c => m[c.id] = c); return m; }
+
+function _pagVisibles() {
+  const l = (DB.pagos || []).filter(p => p && p.id);
+  const base = sesion.rol === 'admin' ? l : l.filter(p => String(p.clubId) === sesion.user);
+  return window._pagEq ? base.filter(p => p.equipoId === window._pagEq) : base;
+}
+function _pagTotales(pagos) {
+  let debido = 0, cobrado = 0;
+  pagos.forEach(p => { if (_pagEst(p) === 'exento') return; debido += _pagNum(p.importe); cobrado += Math.min(_pagNum(p.pagado), _pagNum(p.importe) || _pagNum(p.pagado)); });
+  return { debido, cobrado, pendiente: Math.max(0, debido - cobrado), pct: debido > 0 ? Math.round(cobrado * 100 / debido) : 0 };
+}
+function _pagChip(p, accion) {
+  const e = _pagEst(p);
+  const est = {
+    pagado:    ['✓ Pagado', '#D5F5E3', '#1E8449'],
+    pendiente: ['Pendiente', '#F6E9ED', '#7B1E3A'],
+    parcial:   [`Parcial ${_pagNum(p.pagado)}/${_pagNum(p.importe)} €`, '#FEF3CD', '#8A6D00'],
+    exento:    ['Exento', '#EEE', '#666']
+  }[e];
+  return `<button ${accion ? `onclick="${accion}"` : 'disabled'} style="border:none;border-radius:10px;padding:8px 12px;min-height:38px;font-size:12px;font-weight:800;background:${est[1]};color:${est[2]};cursor:${accion?'pointer':'default'};white-space:nowrap;font-family:inherit;">${est[0]}</button>`;
+}
+
+function renderPagos() {
+  const el = document.getElementById('pagosContent'); if (!el) return;
+  if (window._pagConceptoId && !(DB.conceptos || []).some(c => c.id === window._pagConceptoId)) window._pagConceptoId = null;
+  if (window._pagConceptoId) { _pagRenderConcepto(el); _marcarFab(); return; }
+  const pagos = _pagVisibles();
+  const t = _pagTotales(pagos);
+  const disp = _convJugadoresDisponibles();
+  const eqs = {}; disp.forEach(j => { if (j.equipoId) eqs[j.equipoId] = j.equipoNombre || j.equipoId; });
+  const chip = (id, txt) => `<button class="btn ${window._pagVista===id?'btn-rojo':'btn-outline'} btn-sm" onclick="_pagSetVista('${id}')">${txt}</button>`;
+  let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <button class="btn btn-primary" onclick="nuevoConceptoPago()">+ Nuevo cobro</button>
+      <select onchange="_pagSetEq(this.value)" style="padding:9px;border-radius:10px;border:1px solid var(--gris-linea);max-width:190px;">
+        <option value="">Todos los equipos</option>
+        ${Object.keys(eqs).sort((a,b)=>eqs[a].localeCompare(eqs[b])).map(k=>`<option value="${k}" ${window._pagEq===k?'selected':''}>${_escHtml(eqs[k])}</option>`).join('')}
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportarPagosCSV()">📊 Excel</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+      ${[['Cobrado', _pagEur(t.cobrado), '#1E8449'], ['Pendiente', _pagEur(t.pendiente), '#7B1E3A'], ['% cobro', t.pct + '%', '#222']].map(k =>
+        `<div style="background:white;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 1px 3px rgba(60,20,30,.07);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.5;">${k[0]}</div><div style="font-size:1.15rem;font-weight:900;color:${k[2]};margin-top:2px;">${k[1]}</div></div>`).join('')}
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${chip('cobros','📋 Cobros')}${chip('jugadores','👤 Por jugador')}${chip('impagados','⚠️ Impagados')}</div>`;
+  if (window._pagVista === 'jugadores') html += _pagVistaJugadores(pagos);
+  else if (window._pagVista === 'impagados') html += _pagVistaImpagados(pagos);
+  else html += _pagVistaCobros(pagos);
+  el.innerHTML = html;
+  _marcarFab();
+}
+function _pagSetVista(v) { window._pagVista = v; window._pagBusca = ''; renderPagos(); }
+function _pagSetEq(v) { window._pagEq = v; renderPagos(); }
+
+function _pagVistaCobros(pagos) {
+  const porC = {}; pagos.forEach(p => (porC[p.conceptoId] = porC[p.conceptoId] || []).push(p));
+  const conc = (DB.conceptos || []).filter(c => porC[c.id] || (!window._pagEq && (sesion.rol === 'admin' || c.clubId === sesion.user)))
+    .sort((a,b) => String(b.mes || b.fechaLimite || b.fechaCreacion || '').localeCompare(String(a.mes || a.fechaLimite || a.fechaCreacion || '')));
+  if (!conc.length) return '<div class="empty-state"><div class="ei">💶</div><p>Aún no hay cobros. Crea el primero con "+ Nuevo cobro".</p></div>';
+  const hoy = _pagHoy();
+  return conc.map(c => {
+    const ps = porC[c.id] || [], t = _pagTotales(ps);
+    const nPag = ps.filter(p => _pagEst(p) === 'pagado').length, nVal = ps.filter(p => _pagEst(p) !== 'exento').length;
+    const vencido = c.fechaLimite && c.fechaLimite < hoy && t.pendiente > 0;
+    return `<div onclick="_pagAbrirConcepto('${c.id}')" style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.07),0 6px 18px rgba(60,20,30,.06);cursor:pointer;">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+        <div><div style="font-weight:800;font-size:15px;">${PAG_ICONO[c.tipo]||'💶'} ${_escHtml(c.nombre||'')}</div>
+        <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">${_pagEur(_pagNum(c.importe))} por jugador${c.fechaLimite?` · vence ${_convFmtFecha(c.fechaLimite)}`:''}${vencido?' <b style="color:#7B1E3A;">· VENCIDO</b>':''}</div></div>
+        <div style="text-align:right;font-size:12px;"><b>${nPag}/${nVal}</b> pagados</div>
+      </div>
+      <div style="height:7px;background:#eee;border-radius:4px;margin:10px 0 6px;overflow:hidden;"><div style="height:100%;width:${t.pct}%;background:#1E8449;"></div></div>
+      <div style="font-size:12px;display:flex;justify-content:space-between;"><span>Cobrado <b>${_pagEur(t.cobrado)}</b></span><span style="color:#7B1E3A;">Pendiente <b>${_pagEur(t.pendiente)}</b></span></div>
+    </div>`;
+  }).join('');
+}
+
+function _pagVistaJugadores(pagos) {
+  const mj = _pagMapaJ(), mc = _pagMapaC();
+  const porJ = {}; pagos.forEach(p => (porJ[p.jugadorId] = porJ[p.jugadorId] || []).push(p));
+  const q = (window._pagBusca || '').toLowerCase();
+  let lista = Object.keys(porJ).map(id => ({ j: mj[id], id, ps: porJ[id], pend: porJ[id].reduce((s,p)=>s+_pagPendiente(p),0) }))
+    .filter(x => !q || _pagNombreJ(x.j).toLowerCase().includes(q))
+    .sort((a,b) => b.pend - a.pend || _pagNombreJ(a.j).localeCompare(_pagNombreJ(b.j)));
+  let h = `<input type="text" placeholder="🔎 Buscar jugador…" value="${_escHtml(window._pagBusca||'')}" oninput="window._pagBusca=this.value;_pagRefrescarLista()" style="width:100%;padding:10px 12px;border:1px solid var(--gris-linea);border-radius:12px;margin-bottom:12px;">`;
+  h += `<div id="pagLista">${_pagListaJugadoresHtml(lista, mc)}</div>`;
+  return h;
+}
+function _pagListaJugadoresHtml(lista, mc) {
+  if (!lista.length) return '<div class="empty-state"><p>Sin resultados.</p></div>';
+  return lista.map(x => `<details style="background:white;border-radius:16px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+    <summary style="cursor:pointer;display:flex;justify-content:space-between;gap:8px;list-style:none;">
+      <span><b>${_escHtml(_pagNombreJ(x.j))}</b><br><span style="font-size:11px;color:var(--gris-suave);">${_escHtml(x.j?.equipoNombre||'')}</span></span>
+      <span style="font-weight:800;color:${x.pend>0?'#7B1E3A':'#1E8449'};white-space:nowrap;">${x.pend>0?_pagEur(x.pend):'Al día ✓'}</span></summary>
+    <div style="margin-top:10px;">${x.ps.slice().sort((a,b)=>String(mc[b.conceptoId]?.mes||mc[b.conceptoId]?.fechaCreacion||'').localeCompare(String(mc[a.conceptoId]?.mes||mc[a.conceptoId]?.fechaCreacion||''))).map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--gris-linea);">
+        <span style="font-size:13px;">${_escHtml(mc[p.conceptoId]?.nombre||'(cobro eliminado)')}<br><span style="font-size:11px;color:var(--gris-suave);">${_pagEur(_pagNum(p.importe))}${p.fechaPago?' · pagado '+_convFmtFecha(p.fechaPago):''}</span></span>
+        ${_pagChip(p, `_pagToggle('${p.id}')`)}</div>`).join('')}</div></details>`).join('');
+}
+function _pagRefrescarLista() {
+  const mj = _pagMapaJ(), mc = _pagMapaC(), q = (window._pagBusca || '').toLowerCase();
+  const porJ = {}; _pagVisibles().forEach(p => (porJ[p.jugadorId] = porJ[p.jugadorId] || []).push(p));
+  const lista = Object.keys(porJ).map(id => ({ j: mj[id], id, ps: porJ[id], pend: porJ[id].reduce((s,p)=>s+_pagPendiente(p),0) }))
+    .filter(x => !q || _pagNombreJ(x.j).toLowerCase().includes(q)).sort((a,b) => b.pend - a.pend || _pagNombreJ(a.j).localeCompare(_pagNombreJ(b.j)));
+  const el = document.getElementById('pagLista'); if (el) el.innerHTML = _pagListaJugadoresHtml(lista, mc);
+}
+
+function _pagImpagadosLista(pagos) {
+  const mj = _pagMapaJ(), mc = _pagMapaC(), hoy = _pagHoy();
+  const porJ = {};
+  pagos.filter(p => _pagPendiente(p) > 0).forEach(p => (porJ[p.jugadorId] = porJ[p.jugadorId] || []).push(p));
+  return Object.keys(porJ).map(id => {
+    const ps = porJ[id].slice().sort((a,b)=>String(mc[a.conceptoId]?.mes||mc[a.conceptoId]?.fechaCreacion||'').localeCompare(String(mc[b.conceptoId]?.mes||mc[b.conceptoId]?.fechaCreacion||'')));
+    return { id, j: mj[id], ps, total: ps.reduce((s,p)=>s+_pagPendiente(p),0),
+      vencido: ps.some(p => mc[p.conceptoId]?.fechaLimite && mc[p.conceptoId].fechaLimite < hoy) };
+  }).sort((a,b) => (b.vencido - a.vencido) || b.total - a.total || _pagNombreJ(a.j).localeCompare(_pagNombreJ(b.j)));
+}
+function _pagVistaImpagados(pagos) {
+  const lista = _pagImpagadosLista(pagos), mc = _pagMapaC();
+  if (!lista.length) return '<div class="empty-state"><div class="ei">✅</div><p>No hay pagos pendientes.</p></div>';
+  const tot = lista.reduce((s,x)=>s+x.total,0);
+  return `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="font-size:13px;"><b>${lista.length}</b> jugadores · <b style="color:#7B1E3A;">${_pagEur(tot)}</b> pendiente</div>
+      <button class="btn btn-outline btn-sm" onclick="exportarImpagadosPDF()">🖨️ PDF</button></div>` +
+    lista.map(x => `<div style="background:white;border-radius:16px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(60,20,30,.07);${x.vencido?'border-left:4px solid #7B1E3A;':''}">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+        <div><b>${_escHtml(_pagNombreJ(x.j))}</b>${x.vencido?' <span style="font-size:10px;font-weight:800;color:#7B1E3A;">VENCIDO</span>':''}<br><span style="font-size:11px;color:var(--gris-suave);">${_escHtml(x.j?.equipoNombre||'')}</span></div>
+        <b style="color:#7B1E3A;white-space:nowrap;">${_pagEur(x.total)}</b></div>
+      <div style="font-size:12px;margin-top:6px;color:#444;">${x.ps.map(p=>`• ${_escHtml(mc[p.conceptoId]?.nombre||'?')} (${_pagEur(_pagPendiente(p))})`).join('<br>')}</div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" onclick="_pagRecordatorio('${x.id}','wa')">💬 WhatsApp</button>
+        <button class="btn btn-outline btn-sm" onclick="_pagRecordatorio('${x.id}','copiar')">📋 Copiar</button></div></div>`).join('');
+}
+function _pagTextoRecordatorio(x) {
+  const mc = _pagMapaC(), nom = _pagNombreJ(x.j);
+  return `Hola, le escribimos de Escuela & Deporte. Según nuestros registros, ${nom} tiene pendiente:\n` +
+    x.ps.map(p => `• ${mc[p.conceptoId]?.nombre || 'Cobro'}: ${_pagEur(_pagPendiente(p))}`).join('\n') +
+    `\nTotal: ${_pagEur(x.total)}.\nSi ya lo ha abonado, envíenos el justificante. Al pagar por transferencia indique en el concepto: ${_pagMesCorto(_pagHoy().slice(0,7))} ${nom}.\nGracias.`;
+}
+async function _pagRecordatorio(jid, modo) {
+  const x = _pagImpagadosLista(_pagVisibles()).find(y => y.id === jid); if (!x) return;
+  const txt = _pagTextoRecordatorio(x);
+  if (modo === 'copiar') { try { await navigator.clipboard.writeText(txt); toast('Texto copiado'); } catch (e) { prompt('Copia el texto:', txt); } return; }
+  let tel = String(x.j?.tutorTelefono || x.j?.telefono || '').replace(/\D/g, '');
+  if (tel.length === 9) tel = '34' + tel;
+  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(txt), '_blank');
+}
+
+// ── Detalle de un cobro ──
+function _pagAbrirConcepto(id) { window._pagConceptoId = id; window._pagFiltro = 'todos'; window._pagBusca = ''; renderPagos(); window.scrollTo(0, 0); }
+function _pagVolver() { window._pagConceptoId = null; renderPagos(); }
+function _pagSetFiltro(f) { window._pagFiltro = f; renderPagos(); }
+function _pagRenderConcepto(el) {
+  const c = (DB.conceptos || []).find(x => x.id === window._pagConceptoId);
+  const mj = _pagMapaJ();
+  let ps = _pagVisibles().filter(p => p.conceptoId === c.id);
+  const t = _pagTotales(ps);
+  const q = (window._pagBusca || '').toLowerCase();
+  ps = ps.filter(p => {
+    const e = _pagEst(p);
+    if (window._pagFiltro === 'pendientes' && !(e === 'pendiente' || e === 'parcial')) return false;
+    if (window._pagFiltro === 'pagados' && e !== 'pagado') return false;
+    return !q || _pagNombreJ(mj[p.jugadorId]).toLowerCase().includes(q);
+  }).sort((a,b) => String(mj[a.jugadorId]?.equipoNombre||'').localeCompare(String(mj[b.jugadorId]?.equipoNombre||'')) || _pagNombreJ(mj[a.jugadorId]).localeCompare(_pagNombreJ(mj[b.jugadorId])));
+  const f = (id, txt) => `<button class="btn ${window._pagFiltro===id?'btn-rojo':'btn-outline'} btn-sm" onclick="_pagSetFiltro('${id}')">${txt}</button>`;
+  let eqAct = null;
+  el.innerHTML = `<button class="btn btn-outline btn-sm" onclick="_pagVolver()" style="margin-bottom:10px;">← Volver</button>
+    <div style="background:white;border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+      <div style="font-weight:800;font-size:16px;">${PAG_ICONO[c.tipo]||'💶'} ${_escHtml(c.nombre||'')}</div>
+      <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">${_pagEur(_pagNum(c.importe))} por jugador${c.fechaLimite?` · vence ${_convFmtFecha(c.fechaLimite)}`:''}</div>
+      ${c.observaciones?`<div style="font-size:12px;margin-top:4px;">${_escHtml(c.observaciones)}</div>`:''}
+      <div style="font-size:13px;margin-top:8px;">Cobrado <b style="color:#1E8449;">${_pagEur(t.cobrado)}</b> · Pendiente <b style="color:#7B1E3A;">${_pagEur(t.pendiente)}</b> (${t.pct}%)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn btn-outline btn-sm" onclick="_pagAnadirJugador('${c.id}')">+ Añadir jugador</button>
+        <button class="btn btn-outline btn-sm" onclick="editarConceptoPago('${c.id}')">✏️ Editar cobro</button>
+        <button class="btn btn-rojo btn-sm" onclick="eliminarConceptoPago('${c.id}')">🗑 Eliminar</button></div></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">${f('todos','Todos')}${f('pendientes','Pendientes')}${f('pagados','Pagados')}</div>
+    <input type="text" placeholder="🔎 Buscar jugador…" value="${_escHtml(window._pagBusca||'')}" oninput="window._pagBusca=this.value;_pagRefrescarConcepto()" style="width:100%;padding:10px 12px;border:1px solid var(--gris-linea);border-radius:12px;margin-bottom:10px;">
+    <div id="pagFilas">${ps.length ? ps.map(p => { const j = mj[p.jugadorId]; const eq = j?.equipoNombre || 'Sin equipo';
+      const cab = eq !== eqAct ? `<div style="font-size:11px;font-weight:800;color:#7B1E3A;text-transform:uppercase;letter-spacing:1px;margin:12px 4px 6px;">${_escHtml(eq)}</div>` : ''; eqAct = eq;
+      return cab + `<div style="display:flex;align-items:center;gap:8px;background:white;border-radius:14px;padding:8px 10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(60,20,30,.06);">
+        <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14px;">${_escHtml(_pagNombreJ(j))}</div>
+        <div style="font-size:11px;color:var(--gris-suave);">${_pagEur(_pagNum(p.importe))}${p.fechaPago?' · '+_convFmtFecha(p.fechaPago):''}${p.metodo&&_pagEst(p)!=='pendiente'?' · '+_escHtml(p.metodo):''}</div></div>
+        ${_pagChip(p, `_pagToggle('${p.id}')`)}
+        <button class="btn btn-outline btn-xs" onclick="editarPago('${p.id}')">✏️</button></div>`; }).join('')
+      : '<div class="empty-state"><p>Sin resultados.</p></div>'}</div>`;
+}
+function _pagRefrescarConcepto() {
+  // re-render solo la lista para no perder el foco del buscador
+  const el = document.getElementById('pagosContent'), foco = document.activeElement;
+  const pos = foco && foco.selectionStart; const val = foco && foco.value;
+  renderPagos();
+  const inp = el.querySelector('input[type=text]'); if (inp) { inp.focus(); try { inp.setSelectionRange(pos, pos); } catch(e) {} }
+}
+
+function _pagToggle(id) {
+  const p = (DB.pagos || []).find(x => x.id === id); if (!p) return;
+  if (_pagEst(p) === 'pagado') { p.pagado = 0; p.fechaPago = ''; p.estado = 'pendiente'; }
+  else { p.pagado = _pagNum(p.importe); p.fechaPago = _pagHoy(); p.metodo = p.metodo || 'Transferencia'; p.estado = 'pagado'; }
+  renderPagos(); saveCol('pagos');
+}
+
+// ── Editar un pago ──
+function _pagAsegurarModales() {
+  if (document.getElementById('modalPago')) return;
+  const d = document.createElement('div'); d.className = 'modal'; d.id = 'modalPago';
+  d.innerHTML = `<div class="modal-box" style="max-width:460px;">
+    <div class="modal-header"><h3 id="pgTitulo">Pago</h3><button class="modal-close" onclick="cerrarModal('modalPago')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-field"><label>Importe a pagar (€)</label><input id="pgImporte" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="form-field"><label>Importe pagado (€)</label><input id="pgPagado" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="form-field"><label>Fecha de pago</label><input id="pgFecha" type="date"></div>
+      <div class="form-field"><label>Método</label><select id="pgMetodo">${PAG_METODOS.map(m=>`<option>${m}</option>`).join('')}</select></div>
+      <div class="form-field form-full"><label>Nota interna (no la ven las familias)</label><input id="pgNota" placeholder="Beca, hermano, reclamado por WhatsApp…"></div>
+      <div class="form-field form-full"><label style="display:flex;align-items:center;gap:8px;text-transform:none;opacity:1;"><input type="checkbox" id="pgExento" style="width:auto;min-height:auto;"> Exento (no debe pagar este cobro)</label></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" style="color:#7B1E3A;" onclick="quitarPago()">Quitar</button>
+      <button class="btn btn-outline" onclick="cerrarModal('modalPago')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarPago()">Guardar</button></div></div>`;
+  document.body.appendChild(d);
+  d.addEventListener('click', e => { if (e.target === d) d.classList.remove('open'); });
+  const g = document.createElement('div'); g.className = 'modal'; g.id = 'modalConceptoPago';
+  g.innerHTML = `<div class="modal-box" style="max-width:520px;">
+    <div class="modal-header"><h3 id="cpTitulo">Nuevo cobro</h3><button class="modal-close" onclick="cerrarModal('modalConceptoPago')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-field"><label>Tipo</label><select id="cpTipo" onchange="_cpTipoCambio()">${PAG_TIPOS.map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div class="form-field" id="cpMesWrap"><label>Mes</label><input id="cpMes" type="month" onchange="_cpTipoCambio()"></div>
+      <div class="form-field form-full"><label>Nombre del cobro</label><input id="cpNombre" placeholder="Equipación temporada 26/27"></div>
+      <div class="form-field"><label>Importe por jugador (€)</label><input id="cpImporte" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="form-field"><label>Fecha límite (opcional)</label><input id="cpLimite" type="date"></div>
+      <div class="form-field form-full"><label>Observaciones (opcional)</label><input id="cpObs" placeholder="Datos que quieras recordar"></div>
+      <div class="form-field form-full" id="cpEquiposWrap"><label>Se cobra a estos equipos</label><div id="cpEquipos" style="max-height:200px;overflow-y:auto;border:1px solid var(--gris-linea);border-radius:10px;padding:6px 10px;"></div></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalConceptoPago')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarConceptoPago()">Guardar</button></div></div>`;
+  document.body.appendChild(g);
+  g.addEventListener('click', e => { if (e.target === g) g.classList.remove('open'); });
+  const a = document.createElement('div'); a.className = 'modal'; a.id = 'modalPagoAdd';
+  a.innerHTML = `<div class="modal-box" style="max-width:460px;">
+    <div class="modal-header"><h3>Añadir jugador al cobro</h3><button class="modal-close" onclick="cerrarModal('modalPagoAdd')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-field form-full"><label>Jugador</label><select id="paJugador"></select></div>
+      <div class="form-field form-full"><label>Importe (€)</label><input id="paImporte" type="number" step="0.01" inputmode="decimal"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalPagoAdd')">Cancelar</button>
+      <button class="btn btn-rojo" onclick="guardarPagoAdd()">Añadir</button></div></div>`;
+  document.body.appendChild(a);
+  a.addEventListener('click', e => { if (e.target === a) a.classList.remove('open'); });
+}
+function editarPago(id) {
+  const p = (DB.pagos || []).find(x => x.id === id); if (!p) return;
+  _pagAsegurarModales(); window._pagEditId = id;
+  const j = _pagMapaJ()[p.jugadorId];
+  document.getElementById('pgTitulo').textContent = _pagNombreJ(j);
+  document.getElementById('pgImporte').value = _pagNum(p.importe);
+  document.getElementById('pgPagado').value = _pagNum(p.pagado);
+  document.getElementById('pgFecha').value = p.fechaPago || '';
+  document.getElementById('pgMetodo').value = PAG_METODOS.includes(p.metodo) ? p.metodo : 'Transferencia';
+  document.getElementById('pgNota').value = p.nota || '';
+  document.getElementById('pgExento').checked = p.estado === 'exento';
+  abrirModal('modalPago');
+}
+function guardarPago() {
+  const p = (DB.pagos || []).find(x => x.id === window._pagEditId); if (!p) return;
+  p.importe = _pagNum(document.getElementById('pgImporte').value);
+  p.pagado = _pagNum(document.getElementById('pgPagado').value);
+  p.fechaPago = document.getElementById('pgFecha').value || (p.pagado > 0 ? _pagHoy() : '');
+  p.metodo = document.getElementById('pgMetodo').value;
+  p.nota = document.getElementById('pgNota').value.trim();
+  p.estado = document.getElementById('pgExento').checked ? 'exento' : _pagEst({ importe: p.importe, pagado: p.pagado });
+  cerrarModal('modalPago'); renderPagos(); saveCol('pagos');
+}
+async function quitarPago() {
+  if (!confirm('¿Quitar a este jugador de este cobro?')) return;
+  const id = window._pagEditId;
+  DB.pagos = (DB.pagos || []).filter(x => x.id !== id);
+  if (!DB._deleted) DB._deleted = {}; DB._deleted[id] = Date.now();
+  cerrarModal('modalPago'); renderPagos(); await saveCol('pagos');
+}
+
+// ── Crear / editar un cobro ──
+function _cpNombreAuto() {
+  const tipo = document.getElementById('cpTipo').value, mes = document.getElementById('cpMes').value;
+  return tipo === 'Mensualidad' && mes ? 'Mensualidad ' + _pagMesTxt(mes) : '';
+}
+function _cpTipoCambio() {
+  const tipo = document.getElementById('cpTipo').value;
+  document.getElementById('cpMesWrap').style.display = tipo === 'Mensualidad' ? '' : 'none';
+  const n = document.getElementById('cpNombre'), auto = _cpNombreAuto();
+  if (auto && (!n.value || n.dataset.auto === '1')) { n.value = auto; n.dataset.auto = '1'; }
+  if (tipo === 'Mensualidad' && !window._cpEditId && !document.getElementById('cpImporte').value) {
+    const ult = (DB.conceptos || []).filter(c => c.tipo === 'Mensualidad' && c.importe).sort((a,b)=>String(b.mes||'').localeCompare(String(a.mes||'')))[0];
+    if (ult) document.getElementById('cpImporte').value = _pagNum(ult.importe);
+  }
+}
+function nuevoConceptoPago() {
+  _pagAsegurarModales(); window._cpEditId = null;
+  document.getElementById('cpTitulo').textContent = 'Nuevo cobro';
+  document.getElementById('cpTipo').value = 'Mensualidad';
+  document.getElementById('cpMes').value = _pagHoy().slice(0, 7);
+  const n = document.getElementById('cpNombre'); n.value = ''; n.dataset.auto = '';
+  document.getElementById('cpImporte').value = ''; document.getElementById('cpLimite').value = ''; document.getElementById('cpObs').value = '';
+  const disp = _convJugadoresDisponibles().filter(j => j.activo !== false && j.activo !== 'false');
+  const eqs = {}; disp.forEach(j => { if (j.equipoId) eqs[j.equipoId] = (eqs[j.equipoId] || { n: j.equipoNombre || j.equipoId, c: 0 }); if (j.equipoId) eqs[j.equipoId].c++; });
+  document.getElementById('cpEquipos').innerHTML = Object.keys(eqs).sort((a,b)=>eqs[a].n.localeCompare(eqs[b].n)).map(k =>
+    `<label style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;text-transform:none;opacity:1;"><input type="checkbox" class="cpEq" value="${k}" checked style="width:auto;min-height:auto;"> ${_escHtml(eqs[k].n)} <span style="color:var(--gris-suave);font-size:12px;">(${eqs[k].c})</span></label>`).join('')
+    || '<div style="padding:8px;font-size:12px;">No hay equipos con jugadores.</div>';
+  document.getElementById('cpEquiposWrap').style.display = '';
+  _cpTipoCambio(); abrirModal('modalConceptoPago');
+}
+function editarConceptoPago(id) {
+  const c = (DB.conceptos || []).find(x => x.id === id); if (!c) return;
+  _pagAsegurarModales(); window._cpEditId = id;
+  document.getElementById('cpTitulo').textContent = 'Editar cobro';
+  document.getElementById('cpTipo').value = PAG_TIPOS.includes(c.tipo) ? c.tipo : 'Otro';
+  document.getElementById('cpMes').value = c.mes || '';
+  const n = document.getElementById('cpNombre'); n.value = c.nombre || ''; n.dataset.auto = '';
+  document.getElementById('cpImporte').value = _pagNum(c.importe);
+  document.getElementById('cpLimite').value = c.fechaLimite || '';
+  document.getElementById('cpObs').value = c.observaciones || '';
+  document.getElementById('cpEquiposWrap').style.display = 'none';
+  document.getElementById('cpMesWrap').style.display = c.tipo === 'Mensualidad' ? '' : 'none';
+  abrirModal('modalConceptoPago');
+}
+async function guardarConceptoPago() {
+  const tipo = document.getElementById('cpTipo').value;
+  const mes = tipo === 'Mensualidad' ? document.getElementById('cpMes').value : '';
+  const nombre = document.getElementById('cpNombre').value.trim() || _cpNombreAuto();
+  const importe = _pagNum(document.getElementById('cpImporte').value);
+  if (!nombre) { toast('Indica el nombre del cobro'); return; }
+  if (!(importe > 0)) { toast('Indica el importe'); return; }
+  if (tipo === 'Mensualidad' && !mes) { toast('Indica el mes'); return; }
+  if (!DB.conceptos) DB.conceptos = []; if (!DB.pagos) DB.pagos = [];
+  const editId = window._cpEditId;
+  if (tipo === 'Mensualidad' && DB.conceptos.some(c => c.id !== editId && c.tipo === 'Mensualidad' && c.mes === mes && (sesion.rol === 'admin' ? c.clubId === 'cbedadmin' : c.clubId === sesion.user))) {
+    toast('Ya existe la mensualidad de ' + _pagMesTxt(mes)); return;
+  }
+  if (editId) {
+    const c = DB.conceptos.find(x => x.id === editId); if (!c) return;
+    const cambioImp = _pagNum(c.importe) !== importe;
+    Object.assign(c, { nombre, tipo, mes, importe, fechaLimite: document.getElementById('cpLimite').value, observaciones: document.getElementById('cpObs').value.trim() });
+    let cols = ['conceptos'];
+    if (cambioImp && confirm('¿Aplicar el nuevo importe a los jugadores que aún no han pagado nada?')) {
+      DB.pagos.filter(p => p.conceptoId === editId && _pagNum(p.pagado) === 0 && p.estado !== 'exento').forEach(p => p.importe = importe);
+      cols.push('pagos');
+    }
+    cerrarModal('modalConceptoPago'); renderPagos(); await saveCols(cols); return;
+  }
+  const eqSel = [...document.querySelectorAll('.cpEq:checked')].map(x => x.value);
+  if (!eqSel.length) { toast('Selecciona al menos un equipo'); return; }
+  const jug = _convJugadoresDisponibles().filter(j => eqSel.includes(j.equipoId) && j.activo !== false && j.activo !== 'false');
+  const eqMapa = {}; (DB.equipos || []).forEach(e => eqMapa[e.id] = e);
+  const cid = uid(), ahora = new Date().toISOString();
+  DB.conceptos.push({ id: cid, nombre, tipo, mes, importe, fechaLimite: document.getElementById('cpLimite').value, temporada: '', observaciones: document.getElementById('cpObs').value.trim(),
+    clubId: sesion.rol === 'admin' ? 'cbedadmin' : sesion.user, creadoPor: sesion.user || '', fechaCreacion: ahora });
+  jug.forEach(j => DB.pagos.push({ id: uid(), conceptoId: cid, jugadorId: j.id, equipoId: j.equipoId, clubId: eqMapa[j.equipoId]?.clubId || 'cbedadmin',
+    importe, pagado: 0, estado: 'pendiente', fechaPago: '', metodo: '', nota: '', fechaCreacion: ahora }));
+  cerrarModal('modalConceptoPago');
+  window._pagConceptoId = cid; renderPagos();
+  toast(`Cobro creado para ${jug.length} jugadores`);
+  await saveCols(['conceptos', 'pagos']);
+}
+async function eliminarConceptoPago(id) {
+  const n = (DB.pagos || []).filter(p => p.conceptoId === id).length;
+  if (!confirm(`¿Eliminar este cobro y los ${n} registros de pago que contiene? No se puede deshacer.`)) return;
+  if (!DB._deleted) DB._deleted = {};
+  (DB.pagos || []).filter(p => p.conceptoId === id).forEach(p => DB._deleted[p.id] = Date.now());
+  DB.pagos = (DB.pagos || []).filter(p => p.conceptoId !== id);
+  DB.conceptos = (DB.conceptos || []).filter(c => c.id !== id); DB._deleted[id] = Date.now();
+  window._pagConceptoId = null; renderPagos();
+  await saveCols(['conceptos', 'pagos']); toast('Cobro eliminado');
+}
+function _pagAnadirJugador(cid) {
+  _pagAsegurarModales(); window._paConcepto = cid;
+  const c = (DB.conceptos || []).find(x => x.id === cid);
+  const ya = new Set((DB.pagos || []).filter(p => p.conceptoId === cid).map(p => p.jugadorId));
+  const l = _convJugadoresDisponibles().filter(j => !ya.has(j.id)).sort((a,b) => (a.equipoNombre||'').localeCompare(b.equipoNombre||'') || _pagNombreJ(a).localeCompare(_pagNombreJ(b)));
+  document.getElementById('paJugador').innerHTML = l.map(j => `<option value="${j.id}">${_escHtml(_pagNombreJ(j))} — ${_escHtml(j.equipoNombre||'sin equipo')}</option>`).join('') || '<option value="">(todos ya incluidos)</option>';
+  document.getElementById('paImporte').value = _pagNum(c.importe);
+  abrirModal('modalPagoAdd');
+}
+async function guardarPagoAdd() {
+  const jid = document.getElementById('paJugador').value; if (!jid) return;
+  const j = _pagMapaJ()[jid], eq = (DB.equipos || []).find(e => e.id === j.equipoId);
+  DB.pagos.push({ id: uid(), conceptoId: window._paConcepto, jugadorId: jid, equipoId: j.equipoId || '', clubId: eq?.clubId || 'cbedadmin',
+    importe: _pagNum(document.getElementById('paImporte').value), pagado: 0, estado: 'pendiente', fechaPago: '', metodo: '', nota: '', fechaCreacion: new Date().toISOString() });
+  cerrarModal('modalPagoAdd'); renderPagos(); await saveCol('pagos');
+}
+
+// ── Exportar ──
+function exportarPagosCSV() {
+  const mj = _pagMapaJ(), mc = _pagMapaC();
+  const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const filas = [['Jugador','Equipo','Cobro','Importe','Pagado','Pendiente','Estado','Fecha pago','Método']];
+  _pagVisibles().forEach(p => filas.push([_pagNombreJ(mj[p.jugadorId]), mj[p.jugadorId]?.equipoNombre || '', mc[p.conceptoId]?.nombre || '',
+    _pagNum(p.importe).toFixed(2).replace('.', ','), _pagNum(p.pagado).toFixed(2).replace('.', ','), _pagPendiente(p).toFixed(2).replace('.', ','), _pagEst(p), p.fechaPago || '', p.metodo || '']));
+  const blob = new Blob(['﻿' + filas.map(f => f.map(esc).join(';')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pagos_' + _pagHoy() + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function exportarImpagadosPDF() {
+  const lista = _pagImpagadosLista(_pagVisibles()), mc = _pagMapaC();
+  const w = window.open('', '_blank'); if (!w) { toast('Permite las ventanas emergentes'); return; }
+  const tot = lista.reduce((s, x) => s + x.total, 0);
+  w.document.write(`<html><head><title>Impagados</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111}h1{margin:0 0 4px}.m{color:#555;font-size:13px;margin-bottom:12px}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eee}</style></head><body>
+    <h1>Pagos pendientes</h1><div class="m">${_convFmtFecha(_pagHoy())} · ${lista.length} jugadores · ${_pagEur(tot)}</div>
+    <table><tr><th>Jugador</th><th>Equipo</th><th>Pendiente de</th><th>Total</th></tr>${lista.map(x => `<tr><td>${_escHtml(_pagNombreJ(x.j))}</td><td>${_escHtml(x.j?.equipoNombre||'')}</td>
+    <td>${x.ps.map(p => _escHtml(mc[p.conceptoId]?.nombre || '?') + ' (' + _pagEur(_pagPendiente(p)) + ')').join('<br>')}</td><td>${_pagEur(x.total)}</td></tr>`).join('')}</table>
+    <script>window.onload=function(){window.print()}<\/script></body></html>`);
+  w.document.close();
+}
+
+// ── Vista de familias (solo lectura) ──
+function _famPagosHtml(j) {
+  const mc = _pagMapaC();
+  const ps = (DB.pagos || []).filter(p => p.jugadorId === j.id)
+    .sort((a,b) => String(mc[b.conceptoId]?.mes || mc[b.conceptoId]?.fechaCreacion || '').localeCompare(String(mc[a.conceptoId]?.mes || mc[a.conceptoId]?.fechaCreacion || '')));
+  const t = _pagTotales(ps);
+  const pagado = ps.filter(p => _pagEst(p) !== 'exento').reduce((s, p) => s + _pagNum(p.pagado), 0);
+  return `<h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #F6E9ED;padding-bottom:6px;margin-bottom:14px;">💶 Pagos</h2>
+    ${!ps.length ? '<div class="empty-state"><div class="ei">💶</div><p>Todavía no hay pagos registrados.</p></div>' : `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
+      <div style="background:#D5F5E3;border-radius:14px;padding:12px;text-align:center;"><div style="font-size:11px;font-weight:700;color:#1E8449;text-transform:uppercase;">Pagado</div><div style="font-size:1.3rem;font-weight:900;color:#1E8449;">${_pagEur(pagado)}</div></div>
+      <div style="background:${t.pendiente>0?'#F6E9ED':'#EEE'};border-radius:14px;padding:12px;text-align:center;"><div style="font-size:11px;font-weight:700;color:${t.pendiente>0?'#7B1E3A':'#666'};text-transform:uppercase;">Pendiente</div><div style="font-size:1.3rem;font-weight:900;color:${t.pendiente>0?'#7B1E3A':'#666'};">${_pagEur(t.pendiente)}</div></div>
+    </div>
+    ${ps.map(p => { const c = mc[p.conceptoId];
+      return `<div class="fam-item-card" style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;padding:12px;">
+        <div><div style="font-weight:700;font-size:14px;">${PAG_ICONO[c?.tipo]||'💶'} ${_escHtml(c?.nombre||'Cobro')}</div>
+        <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">${_pagEur(_pagNum(p.importe))}${c?.fechaLimite&&_pagEst(p)!=='pagado'?` · vence ${_convFmtFecha(c.fechaLimite)}`:''}${p.fechaPago?` · pagado el ${_convFmtFecha(p.fechaPago)}`:''}${p.metodo&&_pagEst(p)==='pagado'?' · '+_escHtml(p.metodo):''}</div></div>
+        ${_pagChip(p, '')}</div>`; }).join('')}`}
+    <div style="font-size:12px;color:var(--gris-suave);margin-top:12px;line-height:1.5;">Los pagos se actualizan cuando el club los registra, por lo que una transferencia reciente puede tardar unos días en aparecer. Al pagar por transferencia indica en el concepto: <b>${_pagMesCorto(_pagHoy().slice(0,7))} ${_escHtml(_pagNombreJ(j))}</b>.</div>`;
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
