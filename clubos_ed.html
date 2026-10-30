@@ -666,6 +666,8 @@ tbody td.center{text-align:center;}
 @keyframes rebotarDot { 0%,80%,100%{ transform:translateY(0); opacity:.5; } 40%{ transform:translateY(-8px); opacity:1; } }
 
 
+#tbVersion{font-size:10px;font-weight:700;color:var(--gris-suave);line-height:1.3;border-left:1px solid var(--gris-linea);padding-left:10px;white-space:nowrap;}
+#tbVersion.desfase{color:#B45309;}
 /* ═══════════════════════════════════════════════
    MÓVIL — rediseño (≤768px)
 ═══════════════════════════════════════════════ */
@@ -681,6 +683,7 @@ tbody td.center{text-align:center;}
   .topbar-left .tb-logo-text .tb-club{font-size:1.45rem;}
   .topbar-left .tb-logo-text .tb-sub{display:block;font-size:9px;letter-spacing:1.5px;margin-top:1px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .topbar-right{gap:8px;}
+  #tbVersion{font-size:9px;padding-left:8px;}
   #escalaControl,.rol-badge,#tbUserName,#btnRecargaTotal,#btnDiagnostico,.btn-logout{display:none!important;}
   #btnSync{margin:0!important;min-width:40px;height:40px;padding:0 11px!important;border-radius:12px!important;justify-content:center;box-shadow:none!important;}
   #btnSync span:first-child{font-size:18px!important;}
@@ -853,6 +856,7 @@ tbody td.center{text-align:center;}
         <div class="tb-club">Club<span>OS</span></div>
         <div class="tb-sub" id="tbSub">ClubOS ED</div>
       </div>
+      <div id="tbVersion" title="Versión de la app y del script del servidor"></div>
     </div>
     <div class="topbar-right">
       <div id="escalaControl" title="Ajustar tamaño de la app" style="display:flex;align-items:center;gap:2px;background:var(--crema);border:1px solid var(--gris-linea);border-radius:8px;padding:2px;margin-right:6px;">
@@ -1848,6 +1852,19 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
+const APP_VERSION = '2.1.0';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.1.0';   // versión mínima del script de Apps Script que necesita esta app
+function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
+function actualizarVersiones(gs) {
+  if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
+  let g = gs; if (!g) { try { g = localStorage.getItem('clubos_ed_gsver'); } catch(e) {} }
+  const el = document.getElementById('tbVersion'); if (!el) return;
+  const antiguo = g && _verNum(g) < _verNum(GS_VERSION_MIN);
+  el.innerHTML = `App v${APP_VERSION}<br>GS ${g ? 'v' + g : '—'}${antiguo ? ' ⚠️' : ''}`;
+  el.classList.toggle('desfase', !!antiguo);
+  el.title = antiguo ? `El script del servidor (v${g}) está desactualizado: pega el último backend y crea una nueva versión de la implementación (se necesita v${GS_VERSION_MIN}).` : 'Versión de la app y del script del servidor';
+}
+document.addEventListener('DOMContentLoaded', () => actualizarVersiones());
 let sesion = JSON.parse(localStorage.getItem('clubos_ed_sesion') || 'null');
 let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
   competicion: null,
@@ -2336,6 +2353,7 @@ function renderCompeticion() {
       ${isAdmin ? `<div style="display:flex;gap:4px;margin-top:10px;flex-wrap:wrap;border-top:1px solid var(--gris-linea);padding-top:8px;">
         <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️ Editar</button>
         <button class="btn" style="padding:5px 10px;font-size:10px;background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();abrirImportarCalendario('${c.id}')">📥 Importar</button>
         <button class="btn" style="padding:5px 10px;font-size:10px;background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑️ Eliminar</button>
       </div>` : `<div style="font-size:11px;color:var(--rojo);margin-top:8px;font-weight:700;">Ver detalles →</div>`}
     </div>`;
@@ -6912,6 +6930,7 @@ console.log('Familias: acceso directo (sin contraseña)');
     try {
       const pwd = encodeURIComponent(sesion.rol==='admin'?'cbed2627':sesion.rol==='club'?sesion.user:sesion.rol==='arbitro'?'arb2627':'');
       const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
+      if (j && j.ok) actualizarVersiones(j.version || '1.0.0'); // sin campo version = backend antiguo
       if (j.ok && j.data) {
         const d   = j.data;
         const del = DB._deleted || {};
@@ -6960,6 +6979,7 @@ console.log('Familias: acceso directo (sin contraseña)');
     try {
       const pwd = encodeURIComponent(sesion.rol==='admin'?'cbed2627':sesion.rol==='club'?sesion.user:sesion.rol==='arbitro'?'arb2627':'');
       const j = await jsonpFetch(SCRIPT_URL + '?action=getAll&pwd=' + pwd, 30000);
+      if (j && j.ok) actualizarVersiones(j.version || '1.0.0'); // sin campo version = backend antiguo
       if (j.ok && j.data) {
         const d = j.data;
         // Si el servidor no devuelve una colección (backend sin actualizar, error parcial),
@@ -8462,6 +8482,125 @@ function _famPagosHtml(j) {
         <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">${_pagEur(_pagNum(p.importe))}${c?.fechaLimite&&_pagEst(p)!=='pagado'?` · vence ${_convFmtFecha(c.fechaLimite)}`:''}${p.fechaPago?` · pagado el ${_convFmtFecha(p.fechaPago)}`:''}${p.metodo&&_pagEst(p)==='pagado'?' · '+_escHtml(p.metodo):''}</div></div>
         ${_pagChip(p, '')}</div>`; }).join('')}`}
     <div style="font-size:12px;color:var(--gris-suave);margin-top:12px;line-height:1.5;">Los pagos se actualizan cuando el club los registra, por lo que una transferencia reciente puede tardar unos días en aparecer. Al pagar por transferencia indica en el concepto: <b>${_pagMesCorto(_pagHoy().slice(0,7))} ${_escHtml(_pagNombreJ(j))}</b>.</div>`;
+}
+
+// ══════════════════════════════════════════════════════
+//  IMPORTAR CALENDARIO (CSV / texto pegado) en una competición
+// ══════════════════════════════════════════════════════
+window._impComp = null; window._impFilas = []; window._impEquipos = [];
+
+function _impNorm(s) {
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9 ]/g, ' ').replace(/\b(c d|cd|e d|ed|club|colegio)\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function _impFecha(s) {
+  s = String(s || '').trim();
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/); if (m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (m) { const y = m[3].length === 2 ? '20' + m[3] : m[3]; return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`; }
+  return '';
+}
+function _impHora(s) { const m = String(s || '').match(/(\d{1,2})[:.hH](\d{2})/); return m ? m[1].padStart(2,'0') + ':' + m[2] : ''; }
+
+function _impAsegurarModal() {
+  if (document.getElementById('modalImportarCal')) return;
+  const d = document.createElement('div'); d.className = 'modal'; d.id = 'modalImportarCal';
+  d.innerHTML = `<div class="modal-box" style="max-width:760px;">
+    <div class="modal-header"><h3 id="impTitulo">Importar calendario</h3><button class="modal-close" onclick="cerrarModal('modalImportarCal')">✕</button></div>
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:8px;">Columnas (separadas por ; , o tabulador): <b>Jornada · Fecha · Hora · Local · Visitante · Campo</b> (opcional: Goles local · Goles visitante)</div>
+    <input type="file" id="impArchivo" accept=".csv,.txt,.tsv" onchange="_impLeerArchivo(this)" style="margin-bottom:8px;">
+    <textarea id="impTexto" rows="5" placeholder="…o pega aquí las filas" oninput="_impAnalizar()" style="width:100%;font-size:12px;font-family:monospace;border:1px solid var(--gris-linea);border-radius:10px;padding:8px;"></textarea>
+    <div id="impPrevia" style="margin-top:12px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" onclick="cerrarModal('modalImportarCal')">Cancelar</button>
+      <button class="btn btn-rojo" id="impBtnOk" onclick="confirmarImportarCal()" disabled>Importar</button></div></div>`;
+  document.body.appendChild(d);
+  d.addEventListener('click', e => { if (e.target === d) d.classList.remove('open'); });
+}
+function abrirImportarCalendario(compId) {
+  const c = (DB.competiciones || []).find(x => x.id === compId); if (!c) return;
+  _impAsegurarModal(); window._impComp = compId;
+  document.getElementById('impTitulo').textContent = 'Importar calendario · ' + c.nombre;
+  document.getElementById('impTexto').value = ''; document.getElementById('impArchivo').value = '';
+  document.getElementById('impPrevia').innerHTML = ''; document.getElementById('impBtnOk').disabled = true;
+  abrirModal('modalImportarCal');
+}
+function _impLeerArchivo(inp) {
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById('impTexto').value = String(r.result).replace(/^﻿/, ''); _impAnalizar(); };
+  r.readAsText(f, 'UTF-8');
+}
+function _impAnalizar() {
+  const txt = document.getElementById('impTexto').value.trim();
+  const prev = document.getElementById('impPrevia'), ok = document.getElementById('impBtnOk');
+  if (!txt) { prev.innerHTML = ''; ok.disabled = true; return; }
+  const lineas = txt.split(/\r?\n/).filter(l => l.trim());
+  const sep = (lineas[0].match(/;/g) || []).length ? ';' : (lineas[0].match(/\t/g) || []).length ? '\t' : ',';
+  const filas = [], errores = [];
+  lineas.forEach((l, i) => {
+    const c = l.split(sep).map(x => x.trim().replace(/^"|"$/g, ''));
+    if (i === 0 && /jornada/i.test(c[0])) return;
+    const jor = parseInt(String(c[0]).replace(/\D/g, ''), 10), fecha = _impFecha(c[1]);
+    if (!jor || !fecha || !c[3] || !c[4]) { errores.push(`Línea ${i + 1}: ${l.slice(0, 80)}`); return; }
+    const gl = c[6] !== undefined && c[6] !== '' ? parseInt(c[6], 10) : null, gv = c[7] !== undefined && c[7] !== '' ? parseInt(c[7], 10) : null;
+    filas.push({ jornada: jor, fecha, hora: _impHora(c[2]), local: c[3], visitante: c[4], campo: c[5] || '',
+      gl: isNaN(gl) ? null : gl, gv: isNaN(gv) ? null : gv });
+  });
+  window._impFilas = filas;
+  const nombres = [...new Set(filas.flatMap(f => [f.local, f.visitante]))].sort((a, b) => a.localeCompare(b));
+  const existentes = (DB.equipos || []).slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+  window._impEquipos = nombres.map(n => {
+    const nn = _impNorm(n);
+    const ex = existentes.find(e => _impNorm(e.nombre) === nn && e.competicionId === window._impComp) || existentes.find(e => _impNorm(e.nombre) === nn);
+    return { nombre: n, destino: ex ? ex.id : '__nuevo__' };
+  });
+  const fechas = filas.map(f => f.fecha).sort();
+  prev.innerHTML = `<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}</div>
+    ${errores.length ? `<div style="font-size:12px;color:#7B1E3A;margin-bottom:8px;">⚠️ ${errores.length} líneas ignoradas:<br>${errores.slice(0, 4).map(_escHtml).join('<br>')}</div>` : ''}
+    <div style="font-weight:700;font-size:12px;margin:10px 0 6px;">Equipos (revisa a cuál corresponde cada uno)</div>
+    ${window._impEquipos.map((e, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+      <span style="flex:1;font-size:13px;">${_escHtml(e.nombre)}</span>
+      <select onchange="window._impEquipos[${i}].destino=this.value" style="max-width:55%;padding:8px;border:1px solid var(--gris-linea);border-radius:10px;">
+        <option value="__nuevo__" ${e.destino === '__nuevo__' ? 'selected' : ''}>➕ Crear equipo nuevo</option>
+        ${existentes.map(x => `<option value="${x.id}" ${e.destino === x.id ? 'selected' : ''}>${_escHtml(x.nombre)}</option>`).join('')}</select></div>`).join('')}
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;"><input type="checkbox" id="impSustituir" style="width:auto;min-height:auto;"> Sustituir los partidos que ya tiene esta competición</label>`;
+  ok.disabled = !filas.length;
+}
+async function confirmarImportarCal() {
+  const comp = (DB.competiciones || []).find(c => c.id === window._impComp); if (!comp) return;
+  const filas = window._impFilas; if (!filas.length) return;
+  if (!DB._deleted) DB._deleted = {};
+  const idDe = {}; let nuevos = 0;
+  window._impEquipos.forEach(e => {
+    if (e.destino !== '__nuevo__') {
+      idDe[e.nombre] = e.destino;
+      const ex = DB.equipos.find(x => x.id === e.destino);
+      if (ex && !ex.competicionId) { ex.competicionId = comp.id; ex.competicionNombre = comp.nombre; }
+    } else {
+      const id = uid(); nuevos++;
+      DB.equipos.push({ id, competicionId: comp.id, competicionNombre: comp.nombre, nombre: e.nombre, categoria: comp.categoria || '',
+        delegado: '', emailDelegado: '', telDelegado: '', clubId: 'cbedadmin', eq1Camiseta: '', eq1Pantalon: '', delegado2: '', emailDelegado2: '', telDelegado2: '' });
+      idDe[e.nombre] = id;
+    }
+  });
+  if (document.getElementById('impSustituir')?.checked) {
+    (DB.partidos || []).filter(p => p.competicionId === comp.id).forEach(p => DB._deleted[p.id] = Date.now());
+    DB.partidos = (DB.partidos || []).filter(p => p.competicionId !== comp.id);
+  }
+  const clave = p => [p.competicionId, p.jornada, p.localId, p.visitanteId].join('|');
+  const ya = new Set((DB.partidos || []).map(clave));
+  let creados = 0, repetidos = 0;
+  filas.forEach(f => {
+    const p = { id: uid(), competicionId: comp.id, jornada: String(f.jornada), fecha: f.fecha, hora: f.hora, sedeId: '', campoNombre: '', campo: f.campo,
+      localId: idDe[f.local], visitanteId: idDe[f.visitante], golesLocal: f.gl, golesVisitante: f.gv,
+      estado: (f.gl !== null && f.gv !== null) ? 'jugado' : 'pendiente', acta: '' };
+    if (ya.has(clave(p))) { repetidos++; return; }
+    ya.add(clave(p)); DB.partidos.push(p); creados++;
+  });
+  cerrarModal('modalImportarCal');
+  await saveCols(['equipos', 'partidos']); renderAll();
+  toast(`Importados ${creados} partidos${nuevos ? ` y ${nuevos} equipos nuevos` : ''}${repetidos ? ` (${repetidos} ya existían)` : ''}`);
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
