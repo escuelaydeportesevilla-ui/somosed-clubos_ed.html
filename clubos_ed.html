@@ -1074,6 +1074,14 @@ tbody td.center{text-align:center;}
       <div id="pagosContent"></div>
     </div>
 
+    <!-- ══ PANEL: MI JORNADA ══ -->
+    <div class="tab-panel" id="panel-misjornadas">
+      <div class="section-header">
+        <h2>🗓️ Mi jornada</h2><div class="section-line"></div>
+      </div>
+      <div id="misjornadasContent"></div>
+    </div>
+
     <div class="tab-panel" id="panel-clubes">      <div class="section-header">
         <h2>🏛️ Clubes</h2><div class="section-line"></div>
         <button class="btn btn-outline" onclick="abrirModalGrupoClubes()">🗂️ Grupos de clubes</button>
@@ -1852,8 +1860,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.1.1';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.1.0';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '2.3.0';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.2.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2141,14 +2149,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias', pagos:'💶 Pagos',
+  escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias', pagos:'💶 Pagos', misjornadas:'🗓️ Mi jornada',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -2212,8 +2220,8 @@ function buildNav() {
 //  MÓVIL: barra inferior, menú ⋯, botón flotante
 // ══════════════════════════════════════════════════════
 const _BN_PRIORIDAD = {
-  admin:['equipos','jugadores','calendario','clasificacion'],
-  club:['equipos','jugadores','calendario','clasificacion'],
+  admin:['misjornadas','calendario','equipos','jugadores'],
+  club:['misjornadas','calendario','equipos','jugadores'],
   arbitro:['calendario','equipos','jugadores','actas'],
   familias:['calendario','clasificacion','equipos','noticias']
 };
@@ -2313,7 +2321,7 @@ function renderTab(tab) {
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
     escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
-    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos
+    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos, misjornadas: renderMisJornadas
   };
   if (fn[tab]) fn[tab]();
   _reaplicarEscala();
@@ -4899,16 +4907,31 @@ function renderCalendario() {
         </span>
       </div>
       <div id="${contId}" style="display:none;padding-top:12px;">
+        ${(() => {
+          const f = (window._calFiltro && window._calFiltro[compId]) || {};
+          const ids = [...new Set(partidosComp.flatMap(p => [p.localId, p.visitanteId]).filter(Boolean))];
+          const eqs = ids.map(id => ({ id, n: (DB.equipos.find(e => e.id === id) || {}).nombre || '—' })).sort((a, b) => a.n.localeCompare(b.n));
+          return `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+            <select id="calJor_${compId}" onchange="calFiltrar('${compId}',true)" style="padding:9px;border:1px solid var(--gris-linea);border-radius:10px;min-width:140px;">
+              <option value="">Todas las jornadas</option>
+              ${jornadas.map(j => `<option value="${j}" ${String(f.j) === String(j) ? 'selected' : ''}>${/^\d+$/.test(String(j)) ? 'Jornada ' + j : j}</option>`).join('')}</select>
+            <select id="calEq_${compId}" onchange="calFiltrar('${compId}',true)" style="padding:9px;border:1px solid var(--gris-linea);border-radius:10px;min-width:180px;max-width:100%;">
+              <option value="">Todos los equipos</option>
+              ${eqs.map(e => `<option value="${e.id}" ${f.e === e.id ? 'selected' : ''}>${e.n}</option>`).join('')}</select>
+            <button class="btn btn-outline btn-xs" onclick="calLimpiar('${compId}')">✕ Limpiar</button>
+            <span id="calCnt_${compId}" style="font-size:12px;color:var(--gris-suave);"></span></div>`;
+        })()}
+        <div id="calLista_${compId}">
         ${jornadas.map(j => {
           const partidos = partidosComp.filter(p=>p.jornada==j);
-          return `<div class="jornada-section">
+          return `<div class="jornada-section" data-jornada="${j}">
             <div class="jornada-title">${/^\d+$/.test(String(j))?'Jornada '+j:j}</div>
             ${partidos.map(p => {
               const local = DB.equipos.find(e=>e.id===p.localId);
               const visit = DB.equipos.find(e=>e.id===p.visitanteId);
               const lNom = local ? local.nombre : '—';
               const vNom = visit ? visit.nombre : '—';
-              return `<div class="partido-card">
+              return `<div class="partido-card" data-local="${p.localId||''}" data-visit="${p.visitanteId||''}">
                 <div class="equipo-col">
                   ${kitCirculo(local?.eq1Camiseta, local?.eq1Pantalon)}
                   <div class="equipo-nombre">${lNom}</div>
@@ -4922,8 +4945,10 @@ function renderCalendario() {
                     ${_limpiarFecha(p.fecha)} ${_limpiarHora(p.hora)}<br>📍 ${p.campo||'Lugar por confirmar'}
                   </div>
                   <span class="badge badge-${p.estado||'pendiente'}">${p.estado||'Pendiente'}</span>
+                  ${_avisoActivo(p) ? _avisoBadge(p, esAdmin) : ''}
                   <div class="partido-actions">
                     ${esAdmin ? `<button class="btn btn-outline btn-xs" onclick="editarPartido('${p.id}')">✏️ Editar</button>` : ''}
+                    ${esAdmin && !_avisoActivo(p) && p.estado!=='jugado' ? `<button class="btn btn-outline btn-xs" onclick="suspenderPartido('${p.id}')">⚠️ Suspender</button>` : ''}
                     ${(esAdmin||esArb) ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">📋 Acta</button>` : ''}
                     ${esAdmin ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarPartido('${p.id}')">🗑️</button>` : ''}
                   </div>
@@ -4936,10 +4961,41 @@ function renderCalendario() {
             }).join('')}
           </div>`;
         }).join('')}
+        <div id="calVacio_${compId}" class="empty-state" style="display:none;"><p>Ningún partido con ese filtro.</p></div>
+        </div>
       </div>
     </div>`;
   }).join('');
   aplicarEstadoAcordeones();
+  Object.keys(compGroups).forEach(id => calFiltrar(id, false));
+}
+
+// Filtro por jornada y equipo dentro de cada competición del calendario
+window._calFiltro = window._calFiltro || {};
+function calFiltrar(compId, guardar) {
+  const sj = document.getElementById('calJor_' + compId), se = document.getElementById('calEq_' + compId);
+  const lista = document.getElementById('calLista_' + compId);
+  if (!sj || !se || !lista) return;
+  if (guardar) window._calFiltro[compId] = { j: sj.value, e: se.value };
+  const j = sj.value, e = se.value;
+  let visibles = 0;
+  lista.querySelectorAll('.jornada-section').forEach(sec => {
+    let n = 0;
+    const jornadaOk = !j || String(sec.dataset.jornada) === String(j);
+    sec.querySelectorAll('.partido-card').forEach(c => {
+      const ok = jornadaOk && (!e || c.dataset.local === e || c.dataset.visit === e);
+      c.style.display = ok ? '' : 'none'; if (ok) n++;
+    });
+    sec.style.display = n ? '' : 'none'; visibles += n;
+  });
+  const cnt = document.getElementById('calCnt_' + compId); if (cnt) cnt.textContent = (j || e) ? visibles + ' partido' + (visibles === 1 ? '' : 's') : '';
+  const vac = document.getElementById('calVacio_' + compId); if (vac) vac.style.display = visibles ? 'none' : '';
+}
+function calLimpiar(compId) {
+  delete window._calFiltro[compId];
+  const sj = document.getElementById('calJor_' + compId), se = document.getElementById('calEq_' + compId);
+  if (sj) sj.value = ''; if (se) se.value = '';
+  calFiltrar(compId, false);
 }
 
 function kitCirculo(camiseta, pantalon) {
@@ -5653,6 +5709,7 @@ async function guardarActa() {
   DB.partidos[idx].golesLocal     = gl;
   DB.partidos[idx].golesVisitante = gv;
   DB.partidos[idx].estado = 'jugado';
+  DB.partidos[idx].actaCerrada = '1'; // acta guardada: permite retirar el aviso de suspensión
   DB.partidos[idx].golesAsignados = JSON.stringify(sesionGoles);
   window._actaContextoGol = null;
   window._actaSesionGoles = [];
@@ -8603,6 +8660,142 @@ async function confirmarImportarCal() {
   cerrarModal('modalImportarCal');
   await saveCols(['equipos', 'partidos']); renderAll();
   toast(`Importados ${creados} partidos${nuevos ? ` y ${nuevos} equipos nuevos` : ''}${repetidos ? ` (${repetidos} ya existían)` : ''}`);
+}
+
+// ══════════════════════════════════════════════════════
+//  AVISOS DE SUSPENSIÓN + MI JORNADA (mis equipos de todas las competiciones)
+// ══════════════════════════════════════════════════════
+// El aviso se mantiene hasta que el partido esté jugado Y el acta cerrada (guardada).
+function _avisoActivo(p) { return !!p.avisoTipo && !(p.estado === 'jugado' && p.actaCerrada); }
+function _avisoTexto(p) {
+  const fm = (f, h) => `${_convFmtFecha(f)}${h ? ' ' + _limpiarHora(h) : ''}`;
+  const orig = p.fechaOriginal ? fm(p.fechaOriginal, p.horaOriginal) : '';
+  const reprog = p.fecha && p.fechaOriginal && (_limpiarFecha(p.fecha) !== _limpiarFecha(p.fechaOriginal) || (p.hora || '') !== (p.horaOriginal || ''));
+  const base = reprog ? `APLAZADO · antes ${orig} → ahora ${fm(_limpiarFecha(p.fecha), p.hora)}` : `SUSPENDIDO · pendiente de nueva fecha${orig ? ' (era ' + orig + ')' : ''}`;
+  return base + (p.avisoMotivo ? ` · ${p.avisoMotivo}` : '');
+}
+function _avisoBadge(p, conBoton) {
+  return `<div style="background:#FEF3CD;color:#7A5C00;border:1px solid #F0D98A;border-radius:10px;padding:8px 10px;font-size:12px;font-weight:700;margin-top:8px;text-align:left;">
+    ⚠️ ${_escHtml(_avisoTexto(p))}
+    ${conBoton ? `<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;"><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();editarPartido('${p.id}')">📅 Asignar fecha</button><button class="btn btn-outline btn-xs" onclick="event.stopPropagation();quitarAvisoPartido('${p.id}')">Quitar aviso</button></div>` : ''}</div>`;
+}
+async function suspenderPartido(id) {
+  const p = (DB.partidos || []).find(x => x.id === id); if (!p) return;
+  const m = prompt('Motivo de la suspensión (lluvia, pista no disponible, falta de jugadores…):', '');
+  if (m === null) return;
+  p.avisoTipo = 'suspendido'; p.avisoMotivo = m.trim();
+  if (!p.fechaOriginal) { p.fechaOriginal = _limpiarFecha(p.fecha) || ''; p.horaOriginal = p.hora || ''; }
+  if (p.estado === 'jugado') p.estado = 'pendiente';
+  p.actaCerrada = '';
+  await saveCol('partidos'); renderAll();
+  toast('Aviso puesto. Cuando sepas la nueva fecha, pulsa ✏️ Editar y cámbiala: el aviso se mantiene.');
+}
+async function quitarAvisoPartido(id) {
+  const p = (DB.partidos || []).find(x => x.id === id); if (!p) return;
+  if (!confirm('¿Quitar el aviso de este partido?')) return;
+  p.avisoTipo = ''; p.avisoMotivo = ''; p.fechaOriginal = ''; p.horaOriginal = '';
+  await saveCol('partidos'); renderAll();
+}
+
+window._mjSel = null; window._mjJornada = null; window._mjAbierto = false;
+function _mjKey() { return 'clubos_ed_misequipos_' + (sesion?.user || ''); }
+function _mjEquiposDisp() {
+  const l = (DB.equipos || []).filter(e => e.competicionId);
+  return sesion.rol === 'admin' ? l : l.filter(e => e.clubId === sesion.user);
+}
+function _mjSeleccion() {
+  if (window._mjSel) return window._mjSel;
+  let s = null; try { s = JSON.parse(localStorage.getItem(_mjKey()) || 'null'); } catch (e) {}
+  if (!Array.isArray(s)) { const conJug = new Set((DB.jugadores || []).map(j => j.equipoId)); s = _mjEquiposDisp().filter(e => conJug.has(e.id)).map(e => e.id); }
+  window._mjSel = new Set(s); return window._mjSel;
+}
+function _mjGuardar() { try { localStorage.setItem(_mjKey(), JSON.stringify([...window._mjSel])); } catch (e) {} }
+function _mjToggleEq(id) { const s = _mjSeleccion(); s.has(id) ? s.delete(id) : s.add(id); _mjGuardar(); window._mjJornada = null; renderMisJornadas(); }
+function _mjToggleComp(cid) {
+  const s = _mjSeleccion(), ids = _mjEquiposDisp().filter(e => e.competicionId === cid).map(e => e.id);
+  const todos = ids.every(i => s.has(i)); ids.forEach(i => todos ? s.delete(i) : s.add(i)); _mjGuardar(); window._mjJornada = null; renderMisJornadas();
+}
+function _mjAbrirSel() { window._mjAbierto = !window._mjAbierto; renderMisJornadas(); }
+function _mjSetJornada(j) { window._mjJornada = j; renderMisJornadas(); }
+
+function _mjFechaTxt(f) {
+  const d = new Date(_limpiarFecha(f) + 'T00:00:00');
+  return isNaN(d) ? (f || 'Sin fecha') : d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+}
+function _mjPartidoCard(p, sel) {
+  const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
+  const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId], rival = mE[esLocal ? p.visitanteId : p.localId];
+  const hora = _limpiarHora(p.hora);
+  return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.07),0 6px 18px rgba(60,20,30,.06);${_avisoActivo(p) ? 'border-left:4px solid #D4A017;' : ''}">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+      <div style="min-width:0;"><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7B1E3A;">${_escHtml(comp ? _etiquetaCompeticion(comp) : '')}</div>
+        <div style="font-weight:800;font-size:15px;margin-top:3px;">${_escHtml(mio?.nombre || '—')} <span style="font-weight:600;color:var(--gris-suave);">${p.estado === 'jugado' ? `${p.golesLocal ?? ''}–${p.golesVisitante ?? ''}` : 'vs'}</span> ${_escHtml(rival?.nombre || '—')}</div></div>
+      <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:8px;white-space:nowrap;background:${esLocal ? '#D5F5E3' : '#EEE'};color:${esLocal ? '#1E8449' : '#555'};">${esLocal ? 'LOCAL' : 'VISITANTE'}</span></div>
+    <div style="font-size:13px;margin-top:8px;">📅 <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
+    <div style="font-size:13px;margin-top:3px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
+    ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}</div>`;
+}
+function _mjProximaJornada(parts) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  const fut = parts.filter(p => p.estado !== 'jugado' && _limpiarFecha(p.fecha) >= hoy).sort((a, b) => _limpiarFecha(a.fecha).localeCompare(_limpiarFecha(b.fecha)));
+  if (fut.length) return String(fut[0].jornada);
+  const js = [...new Set(parts.map(p => String(p.jornada)))].sort(_ordenarJornadas); return js[js.length - 1] || '';
+}
+
+function renderMisJornadas() {
+  const el = document.getElementById('misjornadasContent'); if (!el) return;
+  const sel = _mjSeleccion(), disp = _mjEquiposDisp();
+  const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const partidos = (DB.partidos || []).filter(p => sel.has(p.localId) || sel.has(p.visitanteId));
+  const jornadas = [...new Set(partidos.map(p => String(p.jornada)))].sort(_ordenarJornadas);
+  if (window._mjJornada === null || !jornadas.includes(window._mjJornada)) window._mjJornada = _mjProximaJornada(partidos);
+  const jor = window._mjJornada;
+  const delaJ = partidos.filter(p => String(p.jornada) === jor).sort((a, b) => (_limpiarFecha(a.fecha) + (a.hora || '')).localeCompare(_limpiarFecha(b.fecha) + (b.hora || '')));
+  // equipos seleccionados que descansan esa jornada (su competición tiene la jornada pero ellos no juegan)
+  const descansan = [];
+  const compsSel = new Set([...sel].map(id => mE[id]?.competicionId).filter(Boolean));
+  compsSel.forEach(cid => {
+    if (!(DB.partidos || []).some(p => p.competicionId === cid && String(p.jornada) === jor)) return;
+    [...sel].filter(id => mE[id]?.competicionId === cid && !delaJ.some(p => p.localId === id || p.visitanteId === id)).forEach(id => descansan.push(mE[id].nombre));
+  });
+  const avisos = partidos.filter(_avisoActivo).sort((a, b) => _limpiarFecha(a.fecha).localeCompare(_limpiarFecha(b.fecha)));
+  const porComp = {}; disp.forEach(e => (porComp[e.competicionId] = porComp[e.competicionId] || []).push(e));
+  let h = '';
+  if (avisos.length) h += `<div style="background:#FFF8E1;border:1px solid #F0D98A;border-radius:16px;padding:12px;margin-bottom:14px;">
+      <div style="font-weight:800;font-size:13px;margin-bottom:8px;">⚠️ Partidos con aviso (${avisos.length})</div>${avisos.map(p => _mjPartidoCard(p, sel)).join('')}</div>`;
+  h += `<div style="background:white;border-radius:16px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><b style="font-size:14px;">Mis equipos (${sel.size})</b>
+      <button class="btn btn-outline btn-sm" onclick="_mjAbrirSel()">${window._mjAbierto ? 'Cerrar' : '✏️ Elegir'}</button></div>
+      ${window._mjAbierto ? Object.keys(porComp).map(cid => { const comp = (DB.competiciones || []).find(c => c.id === cid);
+        return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:800;color:#7B1E3A;text-transform:uppercase;">${_escHtml(comp ? _etiquetaCompeticion(comp) : 'Sin competición')}</span>
+          <button class="btn btn-outline btn-xs" onclick="_mjToggleComp('${cid}')">todos/ninguno</button></div>
+          ${porComp[cid].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')).map(e => `<label style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;"><input type="checkbox" ${sel.has(e.id) ? 'checked' : ''} onchange="_mjToggleEq('${e.id}')" style="width:auto;min-height:auto;"> ${_escHtml(e.nombre)}</label>`).join('')}</div>`; }).join('')
+        : `<div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${sel.size ? [...sel].map(id => _escHtml(mE[id]?.nombre || '?')).join(' · ') : 'Pulsa "Elegir" para seleccionar tus equipos.'}</div>`}</div>`;
+  if (!jornadas.length) { el.innerHTML = h + '<div class="empty-state"><div class="ei">🗓️</div><p>Selecciona equipos que tengan partidos en el calendario.</p></div>'; return; }
+  h += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
+      <select onchange="_mjSetJornada(this.value)" style="padding:10px;border:1px solid var(--gris-linea);border-radius:12px;min-width:150px;font-weight:700;">
+        ${jornadas.map(j => `<option value="${j}" ${j === jor ? 'selected' : ''}>${/^\d+$/.test(j) ? 'Jornada ' + j : j}</option>`).join('')}</select>
+      <span style="font-size:14px;"><b>${delaJ.length}</b> partido${delaJ.length === 1 ? '' : 's'}</span>
+      <span style="margin-left:auto;display:flex;gap:6px;"><button class="btn btn-outline btn-sm" onclick="_mjCompartir('wa')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="_mjCompartir('copiar')">📋</button></span></div>`;
+  h += delaJ.length ? delaJ.map(p => _mjPartidoCard(p, sel)).join('') : '<div class="empty-state"><p>Ninguno de tus equipos juega esta jornada.</p></div>';
+  if (descansan.length) h += `<div style="font-size:13px;color:var(--gris-suave);margin-top:6px;">😴 Descansan: ${descansan.map(_escHtml).join(', ')}</div>`;
+  el.innerHTML = h;
+}
+function _mjTextoJornada() {
+  const sel = _mjSeleccion(), mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const jor = window._mjJornada;
+  const l = (DB.partidos || []).filter(p => String(p.jornada) === jor && (sel.has(p.localId) || sel.has(p.visitanteId)))
+    .sort((a, b) => (_limpiarFecha(a.fecha) + (a.hora || '')).localeCompare(_limpiarFecha(b.fecha) + (b.hora || '')));
+  return `📋 *Jornada ${jor}*\n` + l.map(p => {
+    const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId], rival = mE[esLocal ? p.visitanteId : p.localId];
+    return `\n⚽ ${mio?.nombre || ''} ${esLocal ? 'vs' : '@'} ${rival?.nombre || ''}\n📅 ${_mjFechaTxt(p.fecha)} ${_limpiarHora(p.hora)}\n📍 ${p.campo || 'Lugar por confirmar'}${_avisoActivo(p) ? '\n⚠️ ' + _avisoTexto(p) : ''}`;
+  }).join('\n');
+}
+async function _mjCompartir(modo) {
+  const t = _mjTextoJornada();
+  if (modo === 'copiar') { try { await navigator.clipboard.writeText(t); toast('Texto copiado'); } catch (e) { prompt('Copia el texto:', t); } return; }
+  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
