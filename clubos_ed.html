@@ -218,6 +218,24 @@ body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--g
   body.side .jornada-section .partido-card{margin-bottom:0;}
 }
 
+
+/* ═══ PORTADA renovada (v2.6) ═══ */
+#portada{background:radial-gradient(1200px 600px at 15% -10%,#7B1E3A 0%,transparent 60%),radial-gradient(900px 500px at 100% 110%,#15315C 0%,transparent 60%),#0B1F3A;}
+.portada-hero{background:none;justify-content:center;}
+.hero-badge{background:rgba(255,255,255,.1);color:#F0C9D4;border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(4px);}
+.hero-title{font-size:clamp(3.4rem,9vw,6.4rem);letter-spacing:2px;text-shadow:0 6px 30px rgba(0,0,0,.35);}
+.hero-title span{color:#F0C9D4;}
+.hero-sub{color:#C9D3E6;font-size:15px;max-width:520px;margin-left:auto;margin-right:auto;}
+.login-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;max-width:1040px;}
+.login-card{width:auto;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);backdrop-filter:blur(8px);padding:28px 20px;border-radius:18px;color:#fff;}
+.login-card::before{height:3px;opacity:.9;}
+.login-card:hover{background:rgba(255,255,255,.14);border-color:var(--color-rol);transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.35);}
+.lc-icon{width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:2rem;}
+.lc-role{color:#fff;font-size:1.15rem;}
+.lc-desc{color:#B8C4D9;font-size:12px;}
+.patrocinadores-portada{border:none;background:rgba(255,255,255,.06);border-radius:14px;padding:10px 18px;}
+@media (max-width:600px){.login-cards{grid-template-columns:1fr 1fr;gap:10px;}.login-card{padding:18px 12px;}.lc-icon{width:52px;height:52px;font-size:1.6rem;}.lc-desc{display:none;}}
+
 /* ── TOPBAR ── */
 .topbar{
   background:var(--blanco);
@@ -1374,15 +1392,17 @@ tbody td.center{text-align:center;}
 </div>
 
 <div class="modal" id="modalSolicitudFamilia">
-  <div class="modal-box" style="max-width:560px;">
+  <div class="modal-box" style="max-width:760px;">
     <div class="modal-header">
       <h3>Solicitud de inscripción</h3>
       <button class="modal-close" onclick="cerrarModal('modalSolicitudFamilia')">✕</button>
     </div>
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">Rellena la ficha del jugador/a. El club la revisará y confirmará la inscripción.</div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin:18px 0 8px;">⚽ Datos básicos</div>
     <div class="form-grid">
-      <div class="form-field"><label>Nombre *</label><input id="sfNombre"></div>
-      <div class="form-field"><label>Apellidos</label><input id="sfApellidos"></div>
-      <div class="form-field"><label>Fecha nacimiento</label><input type="date" id="sfFechaNac" onchange="autoSeleccionarCategoriaFamilia()"></div>
+      <div class="form-field"><label>Nombre *</label><input id="sfNombre" placeholder="Nombre"></div>
+      <div class="form-field"><label>Apellidos</label><input id="sfApellidos" placeholder="Apellidos"></div>
+      <div class="form-field"><label>Fecha de nacimiento</label><input type="date" id="sfFechaNac" onchange="autoSeleccionarCategoriaFamilia()"></div>
       <div class="form-field"><label>Categoría orientativa</label>
         <select id="sfCategoria">
           <option value="">— Sin especificar —</option>
@@ -1396,17 +1416,33 @@ tbody td.center{text-align:center;}
           <option value="Otro">Otro</option>
         </select>
       </div>
-      <div class="form-field"><label>DNI/NIE (si tiene)</label><input id="sfDni"></div>
-      <div class="form-field"><label>Email de contacto</label><input type="email" id="sfEmail"></div>
-      <div class="form-field"><label>Teléfono de contacto</label><input type="tel" id="sfTelefono"></div>
-      <div class="form-field"><label>Nombre del tutor/a</label><input id="sfTutorNombre"></div>
-      <div class="form-field"><label>Parentesco</label><input id="sfTutorParentesco"></div>
-      <div class="form-field"><label>Teléfono del tutor/a</label><input type="tel" id="sfTutorTelefono"></div>
-      <div class="form-field"><label>Email del tutor/a</label><input type="email" id="sfTutorEmail"></div>
-      <div class="form-field form-full"><label>Alergias</label><textarea id="sfAlergias" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
-      <div class="form-field form-full"><label>Medicación</label><textarea id="sfMedicacion" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
-      <div class="form-field form-full"><label>Observaciones médicas</label><textarea id="sfObsMedicas" rows="2" style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;font-family:inherit;"></textarea></div>
-      <div class="form-field form-full" style="border-top:1px solid var(--gris-linea);padding-top:12px;margin-top:4px;">
+      <div class="form-field"><label>Posición</label><select id="sfPosicion"><option value="">— Sin especificar —</option><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
+      <div class="form-field"><label>Altura (cm)</label><input type="number" id="sfAltura" placeholder="Sin especificar"></div>
+      <div class="form-field"><label>Peso (kg)</label><input type="number" id="sfPeso" placeholder="Sin especificar"></div>
+    </div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin:18px 0 8px;">🪪 Datos personales</div>
+    <div class="form-grid">
+      <div class="form-field"><label>DNI / NIE (si tiene)</label><input id="sfDni" placeholder="12345678A"></div>
+      <div class="form-field"><label>Email</label><input type="email" id="sfEmail" placeholder="jugador@email.com"></div>
+      <div class="form-field"><label>Teléfono</label><input type="tel" id="sfTelefono" placeholder="600000000"></div>
+      <div class="form-field"><label>Socio</label><select id="sfEsSocio"><option value="">— Sin indicar —</option><option value="si">✅ Socio</option><option value="no">❌ No socio</option></select></div>
+      <div class="form-field"><label>Jornada</label><select id="sfJornada"><option value="">— Sin indicar —</option><option value="completa">🕐 Jornada completa</option><option value="media">🕐 Media jornada</option></select></div>
+    </div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin:18px 0 8px;">👨‍👩‍👦 Tutor / Familiar</div>
+    <div class="form-grid">
+      <div class="form-field"><label>Nombre del tutor</label><input id="sfTutorNombre" placeholder="Nombre y apellidos"></div>
+      <div class="form-field"><label>Teléfono tutor</label><input type="tel" id="sfTutorTelefono" placeholder="600000000"></div>
+      <div class="form-field"><label>Email tutor</label><input type="email" id="sfTutorEmail" placeholder="tutor@email.com"></div>
+      <div class="form-field"><label>Parentesco</label><select id="sfTutorParentesco"><option value="">— Seleccionar —</option><option>Padre</option><option>Madre</option><option>Tutor legal</option><option>Otro</option></select></div>
+    </div>
+    <div style="font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin:18px 0 8px;">🏥 Datos médicos</div>
+    <div class="form-grid" style="grid-template-columns:1fr;">
+      <div class="form-field"><label>Alergias</label><textarea id="sfAlergias" rows="2" placeholder="Alergias conocidas..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;"></textarea></div>
+      <div class="form-field"><label>Medicación habitual</label><textarea id="sfMedicacion" rows="2" placeholder="Medicación o tratamientos..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;"></textarea></div>
+      <div class="form-field"><label>Observaciones médicas</label><textarea id="sfObsMedicas" rows="2" placeholder="Otras observaciones médicas relevantes..." style="width:100%;font-size:13px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;resize:vertical;"></textarea></div>
+    </div>
+    <div class="form-grid" style="margin-top:14px;">
+      <div class="form-field form-full" style="border-top:1px solid var(--gris-linea);padding-top:12px;">
         <label style="display:flex;align-items:flex-start;gap:8px;font-weight:400;cursor:pointer;">
           <input type="checkbox" id="sfAceptaProteccion" style="width:18px;height:18px;flex-shrink:0;margin-top:2px;">
           <span style="font-size:13px;">He leído y acepto la <strong>política de protección de datos</strong> del club, y autorizo el tratamiento de los datos aquí facilitados para la gestión de la inscripción. <span style="color:var(--rojo);">*</span></span>
@@ -1421,9 +1457,9 @@ tbody td.center{text-align:center;}
         </label>
       </div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
-      <button class="btn btn-outline" onclick="cerrarModal('modalSolicitudFamilia')">Cancelar</button>
-      <button class="btn btn-rojo" onclick="enviarSolicitudFamilia()">Enviar solicitud</button>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">
+      <button class="btn btn-outline" style="flex:1 1 auto;min-width:100px;" onclick="cerrarModal('modalSolicitudFamilia')">Cancelar</button>
+      <button class="btn btn-rojo" style="flex:1 1 auto;min-width:100px;" onclick="enviarSolicitudFamilia()">Enviar solicitud</button>
     </div>
   </div>
 </div>
@@ -1906,8 +1942,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.5.0';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.2.0';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '2.6.0';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -4458,7 +4494,7 @@ async function duplicarJugador() {
 function abrirModalSolicitudFamilia() {
   ['sfNombre','sfApellidos','sfFechaNac','sfDni','sfEmail','sfTelefono',
    'sfTutorNombre','sfTutorParentesco','sfTutorTelefono','sfTutorEmail',
-   'sfAlergias','sfMedicacion','sfObsMedicas'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
+   'sfAlergias','sfMedicacion','sfObsMedicas','sfPosicion','sfAltura','sfPeso','sfEsSocio','sfJornada'].forEach(id=>{ const e=document.getElementById(id); if(e) e.value=''; });
   document.getElementById('sfCategoria').value = '';
   document.getElementById('sfAceptaProteccion').checked = false;
   document.getElementById('sfAutorizaImagen').checked = false;
@@ -4496,6 +4532,11 @@ async function enviarSolicitudFamilia() {
     telefono:              document.getElementById('sfTelefono').value.trim(),
     tutorNombre:           document.getElementById('sfTutorNombre').value.trim(),
     tutorParentesco:       document.getElementById('sfTutorParentesco').value.trim(),
+    posicion:              document.getElementById('sfPosicion').value,
+    altura:                document.getElementById('sfAltura').value,
+    peso:                  document.getElementById('sfPeso').value,
+    esSocio:               document.getElementById('sfEsSocio').value,
+    jornada:               document.getElementById('sfJornada').value,
     tutorTelefono:         document.getElementById('sfTutorTelefono').value.trim(),
     tutorEmail:            document.getElementById('sfTutorEmail').value.trim(),
     alergias:              document.getElementById('sfAlergias').value.trim(),
@@ -5134,21 +5175,22 @@ function calBusBuscar() {
   const filas = ps.map(p => {
     const l = DB.equipos.find(e => e.id === p.localId), v = DB.equipos.find(e => e.id === p.visitanteId);
     const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
+    const admin = sesion && sesion.rol === 'admin', av = _avisoActivo(p);
     let cab = '';
-    if (p.jornada !== jAct) { jAct = p.jornada; cab = `<tr><td colspan="4" style="background:var(--rojo-suave);color:var(--rojo);font-weight:800;font-size:12px;padding:6px 8px;">${/^\d+$/.test(String(jAct)) ? 'JORNADA ' + _escHtml(jAct) : _escHtml(jAct)}</td></tr>`; }
-    const av = _avisoActivo(p);
-    const admin = sesion && sesion.rol === 'admin';
-    return cab + `<tr ${admin ? `onclick="editarPartido('${p.id}')" title="Pulsa para editar"` : ''} style="${av ? 'background:#fff4e5;' : ''}border-bottom:1px solid #eee;${admin ? 'cursor:pointer;' : ''}">
-      <td style="padding:6px 8px;"><b>${_escHtml(l ? l.nombre : '—')}</b> vs <b>${_escHtml(v ? v.nombre : '—')}</b>${p.estado === 'jugado' ? ` <span style="color:#555;">(${p.golesLocal ?? ''}-${p.golesVisitante ?? ''})</span>` : ''}
-        ${comp ? `<div style="font-size:11px;color:#888;">${_escHtml(_etiquetaCompeticion(comp))}</div>` : ''}${av ? `<div style="font-size:11px;color:#b45309;">⚠️ ${_escHtml(_avisoTexto(p))}</div>` : ''}</td>
-      <td style="padding:6px 8px;white-space:nowrap;">${_escHtml((_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim())}</td>
-      <td style="padding:6px 8px;">📍 ${_escHtml(p.campo || 'Por confirmar')}</td></tr>`;
+    if (p.jornada !== jAct) { jAct = p.jornada; cab = `<div style="grid-column:1/-1;background:var(--rojo-suave);color:var(--rojo);font-weight:800;font-size:12px;letter-spacing:1px;padding:6px 10px;border-radius:8px;margin-top:4px;">${/^\d+$/.test(String(jAct)) ? 'JORNADA ' + _escHtml(jAct) : _escHtml(jAct)}</div>`; }
+    const marcador = p.estado === 'jugado' ? `<span style="font-weight:800;color:var(--rojo);">${p.golesLocal ?? ''} - ${p.golesVisitante ?? ''}</span>` : '<span style="color:#999;font-weight:700;">vs</span>';
+    return cab + `<div ${admin ? `onclick="editarPartido('${p.id}')" title="Pulsa para editar"` : ''} style="background:${av ? '#fff4e5' : '#fff'};border:1px solid ${av ? '#F5C27A' : '#e5e5e0'};border-left:4px solid ${av ? '#D97706' : 'var(--rojo)'};border-radius:10px;padding:10px 12px;${admin ? 'cursor:pointer;' : ''}">
+      ${comp ? `<div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#888;margin-bottom:4px;">🏆 ${_escHtml(_etiquetaCompeticion(comp))}</div>` : ''}
+      <div style="font-size:14px;line-height:1.3;"><b>${_escHtml(l ? l.nombre : '—')}</b> ${marcador} <b>${_escHtml(v ? v.nombre : '—')}</b></div>
+      <div style="font-size:12px;color:#444;margin-top:5px;">🕒 ${_escHtml((_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim() || 'Por confirmar')}</div>
+      <div style="font-size:12px;color:#444;margin-top:2px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
+      ${av ? `<div style="font-size:12px;font-weight:700;color:#B45309;margin-top:5px;">⚠️ ${_escHtml(_avisoTexto(p))}</div>` : ''}</div>`;
   }).join('');
   res.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:700;">${ps.length} partido${ps.length === 1 ? '' : 's'}${nSusp ? ` · <span style="color:#b45309;">⚠️ ${nSusp} suspendido${nSusp === 1 ? '' : 's'}</span>` : ''}</div>
       <div style="display:flex;gap:6px;"><button class="btn btn-outline btn-xs" onclick="calBusCopiar()">📋 Copiar</button><button class="btn btn-outline btn-xs" onclick="calBusWhatsApp()">💬 WhatsApp</button></div></div>
     ${sesion && sesion.rol === 'admin' ? '<div style="font-size:11px;color:#888;margin-bottom:4px;">Pulsa un partido para editarlo</div>' : ''}
-    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${filas}</tbody></table></div>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;">${filas}</div>`;
 }
 function calBusCopiar() {
   const t = window._calBusTxt || '';
