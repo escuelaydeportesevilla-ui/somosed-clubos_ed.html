@@ -1852,7 +1852,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.1.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.1.1';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.1.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2727,7 +2727,9 @@ function _autolink(texto) {
 // Etiqueta legible de competición: nombre + categoría/temporada si existen,
 // para distinguir competiciones con el mismo nombre pero distinta categoría.
 function _etiquetaCompeticion(c) {
-  const extra = [c.categoria, c.temporada].filter(Boolean).join(' · ');
+  // Evita repetir la categoría si ya va en el nombre
+  const n = String(c.nombre || '').toLowerCase();
+  const extra = [c.categoria, c.temporada].filter(x => x && !n.includes(String(x).toLowerCase())).join(' · ');
   return extra ? `${c.nombre} (${extra})` : c.nombre;
 }
 
@@ -2938,7 +2940,7 @@ function renderEquipos() {
     // ── VISTA CLUB: SIN ACORDEÓN (sin cambios) ──
     Object.entries(comps).forEach(([compId, equipos]) => {
       const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-      const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
+      const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
       html += `<div style="margin-bottom:24px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:10px;padding-bottom:6px;border-bottom:2px solid var(--rojo-suave);">${compNombre}</div>
         ${renderGrupoEquipos(equipos)}
@@ -2966,7 +2968,7 @@ function exportarEquiposPDF(soloCompId) {
     </span>`;
   let body = Object.entries(compGroups).map(([compId, equipos]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || 'Sin competición asignada';
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : 'Sin competición asignada');
     return `<h2>${compNombre}</h2>
     <table>
       <thead><tr><th>Equipo</th><th>Equipación</th><th>Categoría</th><th>Club</th><th>Jugadores</th><th>Entrenador</th><th>Contacto</th></tr></thead>
@@ -3057,7 +3059,7 @@ function exportarDelegadosPDF() {
   const porComp = {};
   equipos.forEach(e => {
     const comp = (DB.competiciones||[]).find(x=>x.id===e.competicionId);
-    const compNombre = comp ? comp.nombre : 'Sin competición';
+    const compNombre = comp ? _etiquetaCompeticion(comp) : 'Sin competición';
     if (!porComp[compNombre]) porComp[compNombre] = [];
     porComp[compNombre].push(e);
   });
@@ -4882,7 +4884,7 @@ function renderCalendario() {
 
   el.innerHTML = Object.entries(compGroups).map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
     const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     const contId = 'calComp_' + compId;
 
@@ -4963,7 +4965,7 @@ function exportarCalendarioPDF(soloCompId) {
   });
   let body = Object.entries(compGroups).map(([compId, partidosComp]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || 'Sin competición asignada';
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : 'Sin competición asignada');
     const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     return `<h2>${compNombre}</h2>` + jornadas.map(j => {
       const partidos = partidosComp.filter(p=>p.jornada==j);
@@ -5177,7 +5179,7 @@ function renderClasificacion() {
 
   el.innerHTML = Object.entries(compGroups).map(([compId, equiposComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
     const contId = 'clasComp_' + compId;
     const tabla = _calcularClasificacion(equiposComp);
 
@@ -5207,7 +5209,7 @@ function exportarClasificacionPDF(soloCompId) {
   });
   let body = Object.entries(compGroups).map(([compId, equiposComp]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || 'Sin competición asignada';
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : 'Sin competición asignada');
     const tabla = _calcularClasificacion(equiposComp);
     return `<h2>${compNombre}</h2>
     <table>
@@ -5426,7 +5428,7 @@ function renderActas() {
 
   el.innerHTML = Object.entries(compGroups).map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || (compId==='__none__'?'Sin competición asignada':'Competición desconocida');
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
     const contId = 'actasComp_' + compId;
 
     return `<div style="margin-bottom:14px;">
@@ -5470,7 +5472,7 @@ function exportarActasPDF(soloCompId) {
   });
   let body = Object.entries(compGroups).map(([compId, partidosComp]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
-    const compNombre = comp?.nombre || 'Sin competición asignada';
+    const compNombre = (comp ? _etiquetaCompeticion(comp) : 'Sin competición asignada');
     return `<h2>${compNombre}</h2>` + partidosComp.map(p => {
       const local = DB.equipos.find(e=>e.id===p.localId);
       const visit = DB.equipos.find(e=>e.id===p.visitanteId);
