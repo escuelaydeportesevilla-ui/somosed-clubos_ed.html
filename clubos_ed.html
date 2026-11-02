@@ -1860,7 +1860,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.3.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.3.1';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.2.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -4890,13 +4890,13 @@ function renderCalendario() {
     compGroups[key].push(p);
   });
 
-  el.innerHTML = Object.entries(compGroups).map(([compId, partidosComp], idx) => {
+  el.innerHTML = _calBarraGlobal() + Object.entries(compGroups).map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
     const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
     const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     const contId = 'calComp_' + compId;
 
-    return `<div style="margin-bottom:14px;">
+    return `<div id="calBloque_${compId}" style="margin-bottom:14px;">
       <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
            font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
            padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
@@ -4931,7 +4931,7 @@ function renderCalendario() {
               const visit = DB.equipos.find(e=>e.id===p.visitanteId);
               const lNom = local ? local.nombre : '—';
               const vNom = visit ? visit.nombre : '—';
-              return `<div class="partido-card" data-local="${p.localId||''}" data-visit="${p.visitanteId||''}">
+              return `<div class="partido-card" data-local="${p.localId||''}" data-visit="${p.visitanteId||''}" data-nombres="${_calNorm(lNom+' '+vNom+' '+(p.campo||''))}" data-estado="${p.estado||'pendiente'}" data-aviso="${_avisoActivo(p)?'1':''}">
                 <div class="equipo-col">
                   ${kitCirculo(local?.eq1Camiseta, local?.eq1Pantalon)}
                   <div class="equipo-nombre">${lNom}</div>
@@ -4967,29 +4967,71 @@ function renderCalendario() {
     </div>`;
   }).join('');
   aplicarEstadoAcordeones();
-  Object.keys(compGroups).forEach(id => calFiltrar(id, false));
+  _calAplicarTodo();
 }
 
-// Filtro por jornada y equipo dentro de cada competición del calendario
+// Filtro por jornada y equipo dentro de cada competición + filtro global de todas las competiciones
 window._calFiltro = window._calFiltro || {};
+window._calGlobal = window._calGlobal || { q: '', j: '', e: '' };
+function _calNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/["<>&]/g, ''); }
+function _calBarraGlobal() {
+  const g = window._calGlobal;
+  const js = [...new Set((DB.partidos || []).map(p => String(p.jornada)))].sort(_ordenarJornadas);
+  return `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar en todas las competiciones</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <input id="calG_q" type="text" placeholder="Equipo o campo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calGlobalCambio()" style="flex:1 1 200px;min-width:150px;padding:10px 12px;border:1px solid #ddd;border-radius:10px;">
+      <select id="calG_j" onchange="calGlobalCambio()" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+        <option value="">Todas las jornadas</option>${js.map(j => `<option value="${_escHtml(j)}" ${String(g.j) === j ? 'selected' : ''}>${/^\d+$/.test(j) ? 'Jornada ' + j : _escHtml(j)}</option>`).join('')}</select>
+      <select id="calG_e" onchange="calGlobalCambio()" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+        ${[['', 'Todos los estados'], ['pendiente', 'Pendientes'], ['jugado', 'Jugados'], ['aviso', '⚠️ Con aviso']].map(o => `<option value="${o[0]}" ${g.e === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <button class="btn btn-outline btn-xs" onclick="calGlobalLimpiar()">✕ Limpiar</button>
+    </div>
+    <div id="calG_cnt" style="font-size:12px;color:#888;margin-top:8px;"></div></div>`;
+}
+function calGlobalCambio() {
+  window._calGlobal = { q: document.getElementById('calG_q').value, j: document.getElementById('calG_j').value, e: document.getElementById('calG_e').value };
+  _calAplicarTodo();
+}
+function calGlobalLimpiar() {
+  window._calGlobal = { q: '', j: '', e: '' };
+  ['calG_q', 'calG_j', 'calG_e'].forEach(id => { const x = document.getElementById(id); if (x) x.value = ''; });
+  _calAplicarTodo();
+}
+function _calAplicarTodo() {
+  const ids = [...document.querySelectorAll('[id^="calBloque_"]')].map(b => b.id.slice('calBloque_'.length));
+  let total = 0, comps = 0;
+  ids.forEach(id => { const n = calFiltrar(id, false); if (n) { total += n; comps++; } });
+  const g = window._calGlobal, activo = !!(g.q.trim() || g.j || g.e);
+  const cnt = document.getElementById('calG_cnt');
+  if (cnt) cnt.textContent = activo ? `${total} partido${total === 1 ? '' : 's'} en ${comps} ${comps === 1 ? 'competición' : 'competiciones'}` : '';
+  if (!activo) aplicarEstadoAcordeones();
+}
 function calFiltrar(compId, guardar) {
   const sj = document.getElementById('calJor_' + compId), se = document.getElementById('calEq_' + compId);
   const lista = document.getElementById('calLista_' + compId);
-  if (!sj || !se || !lista) return;
+  if (!sj || !se || !lista) return 0;
   if (guardar) window._calFiltro[compId] = { j: sj.value, e: se.value };
   const j = sj.value, e = se.value;
+  const g = window._calGlobal, q = _calNorm(g.q).trim(), gActivo = !!(q || g.j || g.e);
   let visibles = 0;
   lista.querySelectorAll('.jornada-section').forEach(sec => {
     let n = 0;
-    const jornadaOk = !j || String(sec.dataset.jornada) === String(j);
+    const jornadaOk = (!j || String(sec.dataset.jornada) === String(j)) && (!g.j || String(sec.dataset.jornada) === String(g.j));
     sec.querySelectorAll('.partido-card').forEach(c => {
-      const ok = jornadaOk && (!e || c.dataset.local === e || c.dataset.visit === e);
+      const ok = jornadaOk && (!e || c.dataset.local === e || c.dataset.visit === e)
+        && (!q || (c.dataset.nombres || '').includes(q))
+        && (!g.e || (g.e === 'aviso' ? c.dataset.aviso === '1' : c.dataset.estado === g.e));
       c.style.display = ok ? '' : 'none'; if (ok) n++;
     });
     sec.style.display = n ? '' : 'none'; visibles += n;
   });
   const cnt = document.getElementById('calCnt_' + compId); if (cnt) cnt.textContent = (j || e) ? visibles + ' partido' + (visibles === 1 ? '' : 's') : '';
-  const vac = document.getElementById('calVacio_' + compId); if (vac) vac.style.display = visibles ? 'none' : '';
+  const vac = document.getElementById('calVacio_' + compId); if (vac) vac.style.display = (visibles || gActivo) ? 'none' : '';
+  const bloque = document.getElementById('calBloque_' + compId), cont = document.getElementById('calComp_' + compId);
+  if (bloque) bloque.style.display = (gActivo && !visibles) ? 'none' : '';
+  if (gActivo && visibles && cont) { cont.style.display = ''; const ic = document.getElementById('calComp_' + compId + '_icon'); if (ic) ic.textContent = '▼'; }
+  return visibles;
 }
 function calLimpiar(compId) {
   delete window._calFiltro[compId];
