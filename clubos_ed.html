@@ -1860,7 +1860,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.3.1';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.4.0';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.2.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -4967,70 +4967,144 @@ function renderCalendario() {
     </div>`;
   }).join('');
   aplicarEstadoAcordeones();
+  Object.keys(compGroups).forEach(id => calFiltrar(id, false));
   _calAplicarTodo();
 }
 
 // Filtro por jornada y equipo dentro de cada competición + filtro global de todas las competiciones
 window._calFiltro = window._calFiltro || {};
-window._calGlobal = window._calGlobal || { q: '', j: '', e: '' };
-function _calNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/["<>&]/g, ''); }
+// ===== Buscador de partidos (resumen copiable) =====
+window._calBus = window._calBus || { q: '', off: [], j: '', e: '', hecho: false };
+function _calNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function _calBusFecha(f) { const m = String(_limpiarFecha(f) || '').match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return _limpiarFecha(f) || ''; const d = new Date(+m[1], +m[2] - 1, +m[3]); return ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()] + ' ' + m[3] + '/' + m[2] + '/' + m[1]; }
+function _calBusEquipos() {
+  const ids = new Set(); (DB.partidos || []).forEach(p => { ids.add(p.localId); ids.add(p.visitanteId); });
+  const q = _calNorm(window._calBus.q).trim();
+  return (DB.equipos || []).filter(e => ids.has(e.id) && (!q || _calNorm(e.nombre).includes(q))).sort((x, y) => x.nombre.localeCompare(y.nombre));
+}
+function _calBusChips() {
+  const off = window._calBus.off, eqs = _calBusEquipos();
+  if (!eqs.length) return '<span style="font-size:12px;color:#888;">Ningún equipo coincide.</span>';
+  return eqs.map(e => {
+    const on = !off.includes(e.id);
+    return `<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin:0 6px 6px 0;border-radius:20px;border:1px solid ${on ? 'var(--rojo)' : '#ddd'};background:${on ? 'var(--rojo-suave)' : '#fff'};font-size:12px;cursor:pointer;">
+      <input type="checkbox" ${on ? 'checked' : ''} onchange="calBusToggle('${e.id}')" style="width:auto;margin:0;"> ${_escHtml(e.nombre)}</label>`;
+  }).join('');
+}
 function _calBarraGlobal() {
-  const g = window._calGlobal;
+  const g = window._calBus;
   const js = [...new Set((DB.partidos || []).map(p => String(p.jornada)))].sort(_ordenarJornadas);
   return `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
-    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar en todas las competiciones</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-      <input id="calG_q" type="text" placeholder="Equipo o campo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calGlobalCambio()" style="flex:1 1 200px;min-width:150px;padding:10px 12px;border:1px solid #ddd;border-radius:10px;">
-      <select id="calG_j" onchange="calGlobalCambio()" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar partidos (todas las competiciones)</div>
+    <input id="calB_q" type="text" placeholder="Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;margin-bottom:8px;box-sizing:border-box;">
+    <div id="calB_chips" style="margin-bottom:4px;">${_calBusChips()}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;">
+      <select id="calB_j" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
         <option value="">Todas las jornadas</option>${js.map(j => `<option value="${_escHtml(j)}" ${String(g.j) === j ? 'selected' : ''}>${/^\d+$/.test(j) ? 'Jornada ' + j : _escHtml(j)}</option>`).join('')}</select>
-      <select id="calG_e" onchange="calGlobalCambio()" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
-        ${[['', 'Todos los estados'], ['pendiente', 'Pendientes'], ['jugado', 'Jugados'], ['aviso', '⚠️ Con aviso']].map(o => `<option value="${o[0]}" ${g.e === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <button class="btn btn-outline btn-xs" onclick="calGlobalLimpiar()">✕ Limpiar</button>
+      <select id="calB_e" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+        ${[['', 'Todos los estados'], ['pendiente', 'Pendientes'], ['jugado', 'Jugados'], ['aviso', '⚠️ Suspendidos / con aviso']].map(o => `<option value="${o[0]}" ${g.e === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
+      <button class="btn btn-rojo btn-xs" onclick="calBusBuscar()">🔎 Buscar</button>
+      <button class="btn btn-outline btn-xs" onclick="calBusLimpiar()">✕ Limpiar</button>
     </div>
-    <div id="calG_cnt" style="font-size:12px;color:#888;margin-top:8px;"></div></div>`;
+    <div id="calB_res" style="margin-top:12px;"></div></div>`;
 }
-function calGlobalCambio() {
-  window._calGlobal = { q: document.getElementById('calG_q').value, j: document.getElementById('calG_j').value, e: document.getElementById('calG_e').value };
-  _calAplicarTodo();
+function calBusTexto() {
+  window._calBus.q = document.getElementById('calB_q').value;
+  document.getElementById('calB_chips').innerHTML = _calBusChips();
 }
-function calGlobalLimpiar() {
-  window._calGlobal = { q: '', j: '', e: '' };
-  ['calG_q', 'calG_j', 'calG_e'].forEach(id => { const x = document.getElementById(id); if (x) x.value = ''; });
-  _calAplicarTodo();
+function calBusToggle(id) {
+  const off = window._calBus.off, i = off.indexOf(id);
+  if (i >= 0) off.splice(i, 1); else off.push(id);
 }
-function _calAplicarTodo() {
-  const ids = [...document.querySelectorAll('[id^="calBloque_"]')].map(b => b.id.slice('calBloque_'.length));
-  let total = 0, comps = 0;
-  ids.forEach(id => { const n = calFiltrar(id, false); if (n) { total += n; comps++; } });
-  const g = window._calGlobal, activo = !!(g.q.trim() || g.j || g.e);
-  const cnt = document.getElementById('calG_cnt');
-  if (cnt) cnt.textContent = activo ? `${total} partido${total === 1 ? '' : 's'} en ${comps} ${comps === 1 ? 'competición' : 'competiciones'}` : '';
-  if (!activo) aplicarEstadoAcordeones();
+function calBusLimpiar() {
+  window._calBus = { q: '', off: [], j: '', e: '', hecho: false };
+  ['calB_q', 'calB_j', 'calB_e'].forEach(id => { const x = document.getElementById(id); if (x) x.value = ''; });
+  document.getElementById('calB_chips').innerHTML = _calBusChips();
+  document.getElementById('calB_res').innerHTML = '';
 }
+function _calBusDatos() {
+  const g = window._calBus, vis = new Set(_calBusEquipos().filter(e => !g.off.includes(e.id)).map(e => e.id));
+  return (DB.partidos || []).filter(p => {
+    if (!vis.has(p.localId) && !vis.has(p.visitanteId)) return false;
+    if (g.j && String(p.jornada) !== String(g.j)) return false;
+    if (g.e === 'aviso') return _avisoActivo(p);
+    if (g.e && (p.estado || 'pendiente') !== g.e) return false;
+    return true;
+  }).sort((a, b) => _ordenarJornadas(String(a.jornada), String(b.jornada)) || String(a.fecha || '').localeCompare(String(b.fecha || '')) || String(a.hora || '').localeCompare(String(b.hora || '')));
+}
+function _calBusTexto(ps) {
+  const nom = id => (DB.equipos.find(e => e.id === id) || {}).nombre || '—';
+  const out = []; let jAct = null;
+  ps.forEach(p => {
+    if (p.jornada !== jAct) { jAct = p.jornada; out.push((out.length ? '\n' : '') + '📅 ' + (/^\d+$/.test(String(jAct)) ? 'JORNADA ' + jAct : String(jAct).toUpperCase())); }
+    const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
+    let l = '⚽ ' + nom(p.localId) + ' vs ' + nom(p.visitanteId);
+    if (p.estado === 'jugado') l += '  (' + (p.golesLocal ?? '') + '-' + (p.golesVisitante ?? '') + ')';
+    l += '\n   🕒 ' + (_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim() + '  📍 ' + (p.campo || 'Lugar por confirmar');
+    if (comp) l += '\n   🏆 ' + _etiquetaCompeticion(comp);
+    if (_avisoActivo(p)) l += '\n   ⚠️ ' + _avisoTexto(p);
+    out.push(l);
+  });
+  return out.join('\n');
+}
+function calBusBuscar() {
+  const g = window._calBus; g.j = document.getElementById('calB_j').value; g.e = document.getElementById('calB_e').value; g.hecho = true;
+  const ps = _calBusDatos(), res = document.getElementById('calB_res');
+  if (!ps.length) { res.innerHTML = '<div class="empty-state"><p>Ningún partido con esos criterios.</p></div>'; return; }
+  const nSusp = ps.filter(_avisoActivo).length;
+  const txt = _calBusTexto(ps);
+  window._calBusTxt = txt;
+  let jAct = null;
+  const filas = ps.map(p => {
+    const l = DB.equipos.find(e => e.id === p.localId), v = DB.equipos.find(e => e.id === p.visitanteId);
+    const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
+    let cab = '';
+    if (p.jornada !== jAct) { jAct = p.jornada; cab = `<tr><td colspan="4" style="background:var(--rojo-suave);color:var(--rojo);font-weight:800;font-size:12px;padding:6px 8px;">${/^\d+$/.test(String(jAct)) ? 'JORNADA ' + _escHtml(jAct) : _escHtml(jAct)}</td></tr>`; }
+    const av = _avisoActivo(p);
+    return cab + `<tr style="${av ? 'background:#fff4e5;' : ''}border-bottom:1px solid #eee;">
+      <td style="padding:6px 8px;"><b>${_escHtml(l ? l.nombre : '—')}</b> vs <b>${_escHtml(v ? v.nombre : '—')}</b>${p.estado === 'jugado' ? ` <span style="color:#555;">(${p.golesLocal ?? ''}-${p.golesVisitante ?? ''})</span>` : ''}
+        ${comp ? `<div style="font-size:11px;color:#888;">${_escHtml(_etiquetaCompeticion(comp))}</div>` : ''}${av ? `<div style="font-size:11px;color:#b45309;">⚠️ ${_escHtml(_avisoTexto(p))}</div>` : ''}</td>
+      <td style="padding:6px 8px;white-space:nowrap;">${_escHtml((_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim())}</td>
+      <td style="padding:6px 8px;">📍 ${_escHtml(p.campo || 'Por confirmar')}</td></tr>`;
+  }).join('');
+  res.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <div style="font-size:13px;font-weight:700;">${ps.length} partido${ps.length === 1 ? '' : 's'}${nSusp ? ` · <span style="color:#b45309;">⚠️ ${nSusp} suspendido${nSusp === 1 ? '' : 's'}</span>` : ''}</div>
+      <div style="display:flex;gap:6px;"><button class="btn btn-outline btn-xs" onclick="calBusCopiar()">📋 Copiar</button><button class="btn btn-outline btn-xs" onclick="calBusWhatsApp()">💬 WhatsApp</button></div></div>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${filas}</tbody></table></div>`;
+}
+function calBusCopiar() {
+  const t = window._calBusTxt || '';
+  const ok = () => toast('📋 Copiado');
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, () => calBusCopiarAlt(t));
+  else calBusCopiarAlt(t);
+}
+function calBusCopiarAlt(t) {
+  const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado'); } catch (e) { toast('No se pudo copiar'); } ta.remove();
+}
+function calBusWhatsApp() { window.open('https://wa.me/?text=' + encodeURIComponent(window._calBusTxt || ''), '_blank'); }
+function _calAplicarTodo() { if (window._calBus.hecho) calBusBuscar(); }
+
+// Filtro por jornada y equipo dentro de cada competición del calendario
+window._calFiltro = window._calFiltro || {};
 function calFiltrar(compId, guardar) {
   const sj = document.getElementById('calJor_' + compId), se = document.getElementById('calEq_' + compId);
   const lista = document.getElementById('calLista_' + compId);
   if (!sj || !se || !lista) return 0;
   if (guardar) window._calFiltro[compId] = { j: sj.value, e: se.value };
   const j = sj.value, e = se.value;
-  const g = window._calGlobal, q = _calNorm(g.q).trim(), gActivo = !!(q || g.j || g.e);
   let visibles = 0;
   lista.querySelectorAll('.jornada-section').forEach(sec => {
     let n = 0;
-    const jornadaOk = (!j || String(sec.dataset.jornada) === String(j)) && (!g.j || String(sec.dataset.jornada) === String(g.j));
+    const jornadaOk = !j || String(sec.dataset.jornada) === String(j);
     sec.querySelectorAll('.partido-card').forEach(c => {
-      const ok = jornadaOk && (!e || c.dataset.local === e || c.dataset.visit === e)
-        && (!q || (c.dataset.nombres || '').includes(q))
-        && (!g.e || (g.e === 'aviso' ? c.dataset.aviso === '1' : c.dataset.estado === g.e));
+      const ok = jornadaOk && (!e || c.dataset.local === e || c.dataset.visit === e);
       c.style.display = ok ? '' : 'none'; if (ok) n++;
     });
     sec.style.display = n ? '' : 'none'; visibles += n;
   });
   const cnt = document.getElementById('calCnt_' + compId); if (cnt) cnt.textContent = (j || e) ? visibles + ' partido' + (visibles === 1 ? '' : 's') : '';
-  const vac = document.getElementById('calVacio_' + compId); if (vac) vac.style.display = (visibles || gActivo) ? 'none' : '';
-  const bloque = document.getElementById('calBloque_' + compId), cont = document.getElementById('calComp_' + compId);
-  if (bloque) bloque.style.display = (gActivo && !visibles) ? 'none' : '';
-  if (gActivo && visibles && cont) { cont.style.display = ''; const ic = document.getElementById('calComp_' + compId + '_icon'); if (ic) ic.textContent = '▼'; }
+  const vac = document.getElementById('calVacio_' + compId); if (vac) vac.style.display = visibles ? 'none' : '';
   return visibles;
 }
 function calLimpiar(compId) {
