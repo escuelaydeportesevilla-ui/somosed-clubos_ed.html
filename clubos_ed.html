@@ -173,6 +173,51 @@ body{font-family:'Barlow',sans-serif;background:var(--azul-marino);color:var(--g
 ═══════════════════════════════ */
 #app{display:none;}
 
+
+/* ═══ ESCRITORIO: barra lateral (v2.5) ═══ */
+#sideNav{display:none;}
+.cal-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:14px;}
+.cal-stat{background:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 1px 3px rgba(60,20,30,.08);border-left:4px solid var(--rojo);}
+.cal-stat b{display:block;font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:900;color:var(--rojo);line-height:1;}
+.cal-stat span{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);}
+.cal-stat.warn{border-left-color:#D97706;}.cal-stat.warn b{color:#B45309;}
+.cal-stat.ok{border-left-color:var(--verde);}.cal-stat.ok b{color:var(--verde);}
+@media (min-width:769px){
+  body.side{background:#F2EFF0;}
+  body.side .nav-wrap{display:none;}
+  body.side #sideNav{
+    display:block;position:fixed;left:0;top:0;bottom:0;width:232px;z-index:190;
+    background:linear-gradient(180deg,#5C1429 0%,#3E0D1C 100%);
+    padding:74px 12px 20px;overflow-y:auto;box-shadow:2px 0 14px rgba(0,0,0,.18);
+  }
+  body.side .topbar{margin-left:232px;}
+  body.side .topbar-left{
+    position:fixed;left:0;top:0;width:232px;height:58px;z-index:201;padding:0 20px;
+    background:#3E0D1C;border-bottom:3px solid var(--dorado);
+  }
+  body.side .tb-logo-text .tb-club{color:#fff;font-size:1.6rem;}
+  body.side .tb-logo-text .tb-club span{color:#F0C9D4;}
+  body.side .tb-logo-text .tb-sub{color:rgba(255,255,255,.65);white-space:nowrap;font-size:8px;letter-spacing:1px;}
+  body.side .topbar-left{gap:8px;}
+  body.side #tbVersion{padding-left:8px;font-size:9px;}
+  body.side #tbVersion{color:rgba(255,255,255,.65);border-left-color:rgba(255,255,255,.25);}
+  body.side #tbVersion.desfase{color:#FBBF24;}
+  body.side .main{margin:22px 24px 40px 256px;max-width:none;background:#fff;box-shadow:0 2px 18px rgba(60,20,30,.08);}
+  #sideNav .sn-grupo{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.45);padding:14px 12px 6px;}
+  #sideNav .sn-btn{
+    display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:none;border:none;border-left:3px solid transparent;border-radius:0 10px 10px 0;
+    color:rgba(255,255,255,.82);font:600 14px 'Barlow',sans-serif;padding:10px 12px;cursor:pointer;
+  }
+  #sideNav .sn-btn .sn-ic{font-size:17px;width:22px;text-align:center;}
+  #sideNav .sn-btn:hover{background:rgba(255,255,255,.08);color:#fff;}
+  #sideNav .sn-btn.active{background:rgba(255,255,255,.15);border-left-color:var(--dorado);color:#fff;font-weight:700;}
+  /* Calendario en cuadrícula */
+  body.side .jornada-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:10px;align-items:start;}
+  body.side .jornada-section .jornada-title{grid-column:1/-1;justify-self:start;margin-bottom:2px;}
+  body.side .jornada-section .partido-card{margin-bottom:0;}
+}
+
 /* ── TOPBAR ── */
 .topbar{
   background:var(--blanco);
@@ -887,6 +932,7 @@ tbody td.center{text-align:center;}
   </div>
   <div id="menuTopFondo" onclick="cerrarMenuTop()"></div>
   <div id="menuTop"></div>
+  <aside id="sideNav"></aside>
   <nav id="bottomNav"></nav>
   <div id="masSheet"><div class="ms-fondo" onclick="cerrarMasSheet()"></div><div class="ms-panel"><div class="ms-asa"></div><div class="ms-grid" id="masGrid"></div></div></div>
 
@@ -1860,7 +1906,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.4.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.5.0';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.2.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2181,7 +2227,7 @@ function getDefaultTab() {
 }
 
 function buildNav() {
-  if (sesion.esFamilia) { document.getElementById('navBar').innerHTML = ''; _buildBottomNav(); return; }
+  if (sesion.esFamilia) { document.getElementById('navBar').innerHTML = ''; _buildBottomNav(); _buildSideNav(); return; }
   let tabs = TABS_POR_ROL[sesion.rol] || [];
   if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones' && t !== 'alineaciones');
   const nav = document.getElementById('navBar');
@@ -2230,6 +2276,26 @@ function _tabsVisibles() {
   if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones' && t !== 'alineaciones');
   return tabs;
 }
+const _SN_GRUPOS = [
+  ['Competición', ['misjornadas','calendario','clasificacion','goleadores','actas','competicion']],
+  ['Equipos y personas', ['equipos','jugadores','escuelas','personal','clubes']],
+  ['Gestión', ['convocatorias','alineaciones','evaluaciones','pagos']],
+  ['Comunicación', ['noticias','patrocinadores','sugerencias']]
+];
+function _buildSideNav() {
+  const sn = document.getElementById('sideNav'); if (!sn) return;
+  if (!sesion || sesion.esFamilia) { sn.innerHTML = ''; document.body.classList.remove('side'); return; }
+  const tabs = _tabsVisibles(), usados = new Set();
+  let h = '';
+  _SN_GRUPOS.forEach(([nom, lista]) => {
+    const ts = lista.filter(t => tabs.includes(t)); ts.forEach(t => usados.add(t));
+    if (ts.length) h += `<div class="sn-grupo">${nom}</div>` + ts.map(t => `<button class="sn-btn" data-st="${t}" onclick="activarTab('${t}')"><span class="sn-ic">${_tabIcono(t)}</span><span>${_tabTexto(t)}</span></button>`).join('');
+  });
+  const otros = tabs.filter(t => !usados.has(t));
+  if (otros.length) h += `<div class="sn-grupo">Otros</div>` + otros.map(t => `<button class="sn-btn" data-st="${t}" onclick="activarTab('${t}')"><span class="sn-ic">${_tabIcono(t)}</span><span>${_tabTexto(t)}</span></button>`).join('');
+  sn.innerHTML = h;
+  document.body.classList.add('side');
+}
 function _tabIcono(t) { return (TAB_LABELS[t] || '').split(' ')[0]; }
 function _tabTexto(t) { return (TAB_LABELS[t] || t).split(' ').slice(1).join(' '); }
 function _buildBottomNav() {
@@ -2244,6 +2310,7 @@ function _buildBottomNav() {
     + (resto.length ? `<button data-bt="__mas" onclick="abrirMasSheet()"><span class="bn-ic">☰</span><span>Más</span></button>` : '');
   const g = document.getElementById('masGrid');
   if (g) g.innerHTML = resto.map(t => `<button data-bt="${t}" onclick="activarTab('${t}')"><span class="bn-ic">${_tabIcono(t)}</span><span>${_tabTexto(t)}</span></button>`).join('');
+  _buildSideNav();
   _bottomNavActivar(window._tabActiva);
 }
 function _bottomNavActivar(tab) {
@@ -2254,6 +2321,7 @@ function _bottomNavActivar(tab) {
     b.classList.toggle('active', t === tab || (t === '__mas' && tab && !fijas.includes(tab)));
   });
   document.querySelectorAll('#masGrid [data-bt]').forEach(b => b.classList.toggle('active', b.dataset.bt === tab));
+  document.querySelectorAll('#sideNav [data-st]').forEach(b => b.classList.toggle('active', b.dataset.st === tab));
   cerrarMasSheet();
 }
 function abrirMasSheet() { document.getElementById('masSheet').classList.add('abierto'); }
@@ -4991,10 +5059,18 @@ function _calBusChips() {
       <input type="checkbox" ${on ? 'checked' : ''} onchange="calBusToggle('${e.id}')" style="width:auto;margin:0;"> ${_escHtml(e.nombre)}</label>`;
   }).join('');
 }
+function _calStats() {
+  const ps = DB.partidos || [], hoy = new Date(); hoy.setHours(0, 0, 0, 0);
+  const fin = new Date(hoy); fin.setDate(fin.getDate() + 7);
+  const semana = ps.filter(p => { const m = String(_limpiarFecha(p.fecha) || '').match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m || p.estado === 'jugado') return false; const d = new Date(+m[1], +m[2] - 1, +m[3]); return d >= hoy && d < fin; }).length;
+  const susp = ps.filter(_avisoActivo).length, jug = ps.filter(p => p.estado === 'jugado').length, pend = ps.length - jug;
+  const t = (n, l, c) => `<div class="cal-stat ${c || ''}"><b>${n}</b><span>${l}</span></div>`;
+  return `<div class="cal-stats">${t(semana, 'Próx. 7 días')}${t(pend, 'Pendientes')}${t(jug, 'Jugados', 'ok')}${t(susp, 'Con aviso', susp ? 'warn' : '')}</div>`;
+}
 function _calBarraGlobal() {
   const g = window._calBus;
   const js = [...new Set((DB.partidos || []).map(p => String(p.jornada)))].sort(_ordenarJornadas);
-  return `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+  return _calStats() + `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
     <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar partidos (todas las competiciones)</div>
     <input id="calB_q" type="text" placeholder="Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;margin-bottom:8px;box-sizing:border-box;">
     <div id="calB_chips" style="margin-bottom:4px;">${_calBusChips()}</div>
@@ -5061,7 +5137,8 @@ function calBusBuscar() {
     let cab = '';
     if (p.jornada !== jAct) { jAct = p.jornada; cab = `<tr><td colspan="4" style="background:var(--rojo-suave);color:var(--rojo);font-weight:800;font-size:12px;padding:6px 8px;">${/^\d+$/.test(String(jAct)) ? 'JORNADA ' + _escHtml(jAct) : _escHtml(jAct)}</td></tr>`; }
     const av = _avisoActivo(p);
-    return cab + `<tr style="${av ? 'background:#fff4e5;' : ''}border-bottom:1px solid #eee;">
+    const admin = sesion && sesion.rol === 'admin';
+    return cab + `<tr ${admin ? `onclick="editarPartido('${p.id}')" title="Pulsa para editar"` : ''} style="${av ? 'background:#fff4e5;' : ''}border-bottom:1px solid #eee;${admin ? 'cursor:pointer;' : ''}">
       <td style="padding:6px 8px;"><b>${_escHtml(l ? l.nombre : '—')}</b> vs <b>${_escHtml(v ? v.nombre : '—')}</b>${p.estado === 'jugado' ? ` <span style="color:#555;">(${p.golesLocal ?? ''}-${p.golesVisitante ?? ''})</span>` : ''}
         ${comp ? `<div style="font-size:11px;color:#888;">${_escHtml(_etiquetaCompeticion(comp))}</div>` : ''}${av ? `<div style="font-size:11px;color:#b45309;">⚠️ ${_escHtml(_avisoTexto(p))}</div>` : ''}</td>
       <td style="padding:6px 8px;white-space:nowrap;">${_escHtml((_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim())}</td>
@@ -5070,6 +5147,7 @@ function calBusBuscar() {
   res.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
       <div style="font-size:13px;font-weight:700;">${ps.length} partido${ps.length === 1 ? '' : 's'}${nSusp ? ` · <span style="color:#b45309;">⚠️ ${nSusp} suspendido${nSusp === 1 ? '' : 's'}</span>` : ''}</div>
       <div style="display:flex;gap:6px;"><button class="btn btn-outline btn-xs" onclick="calBusCopiar()">📋 Copiar</button><button class="btn btn-outline btn-xs" onclick="calBusWhatsApp()">💬 WhatsApp</button></div></div>
+    ${sesion && sesion.rol === 'admin' ? '<div style="font-size:11px;color:#888;margin-bottom:4px;">Pulsa un partido para editarlo</div>' : ''}
     <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:13px;"><tbody>${filas}</tbody></table></div>`;
 }
 function calBusCopiar() {
