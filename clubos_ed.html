@@ -893,6 +893,8 @@ tbody td.center{text-align:center;}
   .pat-logo{height:104px!important;}
 }
 @media (max-width:600px) and (max-height:700px){ .pat-logo{height:62px!important;} }
+
+.pat-logo.procesado{filter:none!important;mix-blend-mode:normal!important;}
 </style>
 </head>
 <body>
@@ -2014,7 +2016,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.2';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.3';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2049,9 +2051,45 @@ let DB = JSON.parse(localStorage.getItem('clubos_ed') || JSON.stringify({
 const REMAX_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/remax.jpg';
 const DENTAL_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/dental.jpg';
 
+// Logo del patrocinador sobre fondo oscuro: fondo transparente, texto en blanco y el globo con sus colores originales.
+// Si el navegador no permite procesar la imagen, se mantiene el efecto CSS (filtro invertido).
+function _patLogoProcesar() {
+  const img = document.getElementById('img-pat-remax'); if (!img) return;
+  const im = new Image(); im.crossOrigin = 'anonymous';
+  im.onload = () => {
+    try {
+      const w = im.naturalWidth, h = im.naturalHeight, N = w * h;
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
+      const d = x.getImageData(0, 0, w, h), p = d.data;
+      const nb = new Uint8Array(N), bal = new Uint8Array(N), st = [];
+      for (let i = 0; i < N; i++) {
+        const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2];
+        nb[i] = Math.min(r, g, b) < 225 ? 1 : 0;
+        if (r > 150 && g < 100 && b < 100 && r - g > 80) { bal[i] = 1; st.push(i); }
+      }
+      if (!st.length) return;
+      while (st.length) { // el globo = zona conectada a los píxeles rojos
+        const i = st.pop(), xx = i % w, yy = (i / w) | 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          const nx = xx + dx, ny = yy + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+          const j = ny * w + nx; if (!bal[j] && nb[j]) { bal[j] = 1; st.push(j); }
+        }
+      }
+      for (let i = 0; i < N; i++) {
+        const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2], mn = Math.min(r, g, b);
+        if (bal[i]) { p[i * 4 + 3] = Math.max(0, Math.min(255, (245 - mn) / 60 * 255)); }
+        else { const l = 0.3 * r + 0.59 * g + 0.11 * b; p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = 255; p[i * 4 + 3] = Math.max(0, Math.min(255, (255 - l) * 1.4)); }
+      }
+      x.putImageData(d, 0, 0);
+      img.src = c.toDataURL('image/png'); img.classList.add('procesado');
+    } catch (e) { /* se queda el efecto CSS */ }
+  };
+  im.src = REMAX_IMG;
+}
 function _initStaticImages(){
   var el;
-  if((el=document.getElementById('img-pat-remax'))) el.src=REMAX_IMG;
+  if((el=document.getElementById('img-pat-remax'))) { el.src=REMAX_IMG; _patLogoProcesar(); }
 }
 document.addEventListener('DOMContentLoaded',_initStaticImages);
 
