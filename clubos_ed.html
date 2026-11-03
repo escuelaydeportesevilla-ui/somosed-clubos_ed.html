@@ -1153,6 +1153,14 @@ tbody td.center{text-align:center;}
       <div id="pagosContent"></div>
     </div>
 
+    <!-- ══ PANEL: MI EQUIPO (familias) ══ -->
+    <div class="tab-panel" id="panel-miequipo">
+      <div class="section-header">
+        <h2>⭐ Mi equipo</h2><div class="section-line"></div>
+      </div>
+      <div id="miequipoContent"></div>
+    </div>
+
     <!-- ══ PANEL: MI JORNADA ══ -->
     <div class="tab-panel" id="panel-misjornadas">
       <div class="section-header">
@@ -1957,7 +1965,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.6.2';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.0';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2248,11 +2256,11 @@ function pedirSyncAntesDeLogout() {
 const TABS_POR_ROL = {
   admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
   club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
-  familias: ['competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
+  familias: ['miequipo','competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
-  competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
+  miequipo:'⭐ Mi equipo', competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
   escuelas:'🏫 Escuelas', personal:'🧑‍🏫 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias', pagos:'💶 Pagos', misjornadas:'🗓️ Mi jornada',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
@@ -2320,7 +2328,7 @@ const _BN_PRIORIDAD = {
   admin:['misjornadas','calendario','equipos','jugadores'],
   club:['misjornadas','calendario','equipos','jugadores'],
   arbitro:['calendario','equipos','jugadores','actas'],
-  familias:['calendario','clasificacion','equipos','noticias']
+  familias:['miequipo','calendario','clasificacion','noticias']
 };
 function _tabsVisibles() {
   let tabs = TABS_POR_ROL[sesion.rol] || [];
@@ -2328,7 +2336,7 @@ function _tabsVisibles() {
   return tabs;
 }
 const _SN_GRUPOS = [
-  ['Competición', ['misjornadas','calendario','clasificacion','goleadores','actas','competicion']],
+  ['Competición', ['miequipo','misjornadas','calendario','clasificacion','goleadores','actas','competicion']],
   ['Equipos y personas', ['equipos','jugadores','escuelas','personal','clubes']],
   ['Gestión', ['convocatorias','alineaciones','evaluaciones','pagos']],
   ['Comunicación', ['noticias','patrocinadores','sugerencias']]
@@ -2347,6 +2355,120 @@ function _buildSideNav() {
   sn.innerHTML = h;
   document.body.classList.add('side');
 }
+
+// ══════════════════════════════════════════════════════
+//  MI EQUIPO (familias) + enlace directo por equipo
+// ══════════════════════════════════════════════════════
+function _miEqId() { try { return localStorage.getItem('clubos_ed_miequipo') || ''; } catch (e) { return ''; } }
+function _miEqSet(id) { try { if (id) localStorage.setItem('clubos_ed_miequipo', id); else localStorage.removeItem('clubos_ed_miequipo'); } catch (e) {} }
+function _miEqEnlace(id) { return location.href.split('#')[0].split('?')[0] + '?equipo=' + encodeURIComponent(id); }
+function miEquipoElegir(id) { _miEqSet(id); renderMiEquipo(); window.scrollTo(0, 0); }
+function miEquipoCambiar() { _miEqSet(''); renderMiEquipo(); }
+function _miEqItems(id) {
+  const todos = DB.partidos || [];
+  const items = todos.filter(p => p.localId === id || p.visitanteId === id);
+  new Set(items.map(p => p.competicionId || '__none__')).forEach(c => {
+    new Set(todos.filter(p => (p.competicionId || '__none__') === c).map(p => String(p.jornada))).forEach(j => {
+      if (_calDescansan(c, j).includes(id)) items.push({ _rest: true, id: 'r_' + c + '_' + j, jornada: j, competicionId: c === '__none__' ? '' : c, equipoId: id, fecha: '9999' });
+    });
+  });
+  return items.sort((a, b) => _ordenarJornadas(String(a.jornada), String(b.jornada)) || String(a.fecha || '').localeCompare(String(b.fecha || '')) || String(a.hora || '').localeCompare(String(b.hora || '')));
+}
+function _miEqPendiente(p) {
+  if (!p._rest) return p.estado !== 'jugado';
+  return (DB.partidos || []).some(x => (x.competicionId || '') === (p.competicionId || '') && String(x.jornada) === String(p.jornada) && x.estado !== 'jugado');
+}
+function _miEqCard(p, id) {
+  const nom = i => { const e = DB.equipos.find(x => x.id === i); return e ? e.nombre : '—'; };
+  if (p._rest) return `<div style="background:#F3F4F6;border:1px dashed #b8bcc4;border-left:4px solid #9CA3AF;border-radius:12px;padding:12px 14px;">
+      <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--rojo);">${/^\d+$/.test(String(p.jornada)) ? 'JORNADA ' + _escHtml(p.jornada) : _escHtml(p.jornada)}</div>
+      <div style="font-size:14px;margin-top:4px;">😴 <b>Descansas esta jornada</b></div></div>`;
+  const av = _avisoActivo(p), jug = p.estado === 'jugado';
+  const n = i => i === id ? `<b style="color:var(--rojo);">${_escHtml(nom(i))}</b>` : _escHtml(nom(i));
+  return `<div style="background:${av ? '#fff4e5' : '#fff'};border:1px solid ${av ? '#F5C27A' : '#e5e5e0'};border-left:4px solid ${av ? '#D97706' : 'var(--rojo)'};border-radius:12px;padding:12px 14px;box-shadow:0 1px 3px rgba(60,20,30,.06);">
+    <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:var(--rojo);">${/^\d+$/.test(String(p.jornada)) ? 'JORNADA ' + _escHtml(p.jornada) : _escHtml(p.jornada)}</div>
+    <div style="font-size:15px;margin-top:4px;line-height:1.3;">${n(p.localId)} <span style="color:#999;">${jug ? '<b style="color:var(--rojo);">' + (p.golesLocal ?? '') + ' - ' + (p.golesVisitante ?? '') + '</b>' : 'vs'}</span> ${n(p.visitanteId)}</div>
+    <div style="font-size:13px;color:#333;margin-top:6px;">🕒 ${_escHtml((_calBusFecha(p.fecha) + ' ' + _limpiarHora(p.hora)).trim() || 'Por confirmar')}</div>
+    <div style="font-size:13px;color:#333;margin-top:2px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
+    ${av ? `<div style="font-size:13px;font-weight:700;color:#B45309;margin-top:6px;">⚠️ ${_escHtml(_avisoTexto(p))}</div>` : ''}</div>`;
+}
+function renderMiEquipo() {
+  const el = document.getElementById('miequipoContent'); if (!el) return;
+  const id = _miEqId(), eq = (DB.equipos || []).find(e => e.id === id);
+  if (!eq) {
+    if (id && !(DB.equipos || []).length) { el.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><p>Cargando datos…</p></div>'; return; }
+    el.innerHTML = `<div style="background:#fff;border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
+      <div style="font-size:15px;font-weight:800;margin-bottom:4px;">Elige tu equipo</div>
+      <div style="font-size:12px;color:var(--gris-suave);margin-bottom:10px;">Solo la primera vez: la app lo recordará en este móvil.</div>
+      <input id="miEqFiltro" type="text" placeholder="🔎 Escribe el nombre del equipo…" oninput="_miEqListaSel()" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;box-sizing:border-box;font-size:15px;margin-bottom:10px;">
+      <div id="miEqLista"></div></div>`;
+    _miEqListaSel(); return;
+  }
+  const items = _miEqItems(id), comp = (DB.competiciones || []).find(c => c.id === eq.competicionId);
+  const prox = items.filter(_miEqPendiente), jug = items.filter(p => !_miEqPendiente(p));
+  const nSusp = prox.filter(_avisoActivo).length;
+  el.innerHTML = `<div style="background:linear-gradient(135deg,#5C1429,#7B1E3A);color:#fff;border-radius:16px;padding:16px 18px;margin-bottom:12px;">
+      <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;line-height:1.1;">${_escHtml(eq.nombre)}</div>
+      <div style="font-size:12px;opacity:.85;margin-top:4px;">${comp ? '🏆 ' + _escHtml(_etiquetaCompeticion(comp)) : ''}</div>
+      ${nSusp ? `<div style="margin-top:8px;background:rgba(255,255,255,.15);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:700;">⚠️ ${nSusp} partido${nSusp === 1 ? '' : 's'} con aviso</div>` : ''}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button class="btn btn-outline btn-xs" onclick="miEquipoCopiar()">📋 Copiar calendario</button>
+      <button class="btn btn-outline btn-xs" onclick="miEquipoWhatsApp()">💬 WhatsApp</button>
+      <button class="btn btn-outline btn-xs" onclick="activarTab('clasificacion')">📊 Clasificación</button>
+      <button class="btn btn-outline btn-xs" onclick="miEquipoCambiar()">🔄 Cambiar equipo</button></div>
+    <div style="font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">Próximos</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;margin-bottom:16px;">${prox.length ? prox.map(p => _miEqCard(p, id)).join('') : '<div class="empty-state"><p>No hay partidos pendientes.</p></div>'}</div>
+    ${jug.length ? `<details><summary style="cursor:pointer;font-size:12px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin-bottom:8px;">Jugados (${jug.length})</summary>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px;margin-top:8px;">${jug.map(p => _miEqCard(p, id)).join('')}</div></details>` : ''}`;
+}
+function _miEqListaSel() {
+  const box = document.getElementById('miEqLista'); if (!box) return;
+  const q = _calNorm((document.getElementById('miEqFiltro') || {}).value || '').trim();
+  const ids = new Set(); (DB.partidos || []).forEach(p => { ids.add(p.localId); ids.add(p.visitanteId); });
+  const eqs = (DB.equipos || []).filter(e => ids.has(e.id) && (!q || _calNorm(e.nombre).includes(q)));
+  if (!eqs.length) { box.innerHTML = '<div style="font-size:13px;color:#888;">Ningún equipo coincide.</div>'; return; }
+  const grupos = {};
+  eqs.forEach(e => { (grupos[e.competicionId || '__none__'] = grupos[e.competicionId || '__none__'] || []).push(e); });
+  box.innerHTML = Object.entries(grupos).map(([c, lista]) => {
+    const comp = (DB.competiciones || []).find(x => x.id === c);
+    return `<div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin:10px 0 6px;">${comp ? _escHtml(_etiquetaCompeticion(comp)) : 'Otros'}</div>` +
+      lista.sort((a, b) => a.nombre.localeCompare(b.nombre)).map(e => `<button onclick="miEquipoElegir('${e.id}')" style="display:block;width:100%;text-align:left;padding:13px 14px;margin-bottom:6px;border:1px solid #e5e5e0;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;">${_escHtml(e.nombre)}</button>`).join('');
+  }).join('');
+}
+function _miEqTexto() {
+  const id = _miEqId(), eq = (DB.equipos || []).find(e => e.id === id); if (!eq) return '';
+  return '⭐ ' + eq.nombre.toUpperCase() + '\n\n' + _calBusTexto(_miEqItems(id).filter(_miEqPendiente)) + '\n\n🔗 ' + _miEqEnlace(id);
+}
+function miEquipoCopiar() { const t = _miEqTexto(); window._calBusTxt = t; calBusCopiar(); }
+function miEquipoWhatsApp() { window.open('https://wa.me/?text=' + encodeURIComponent(_miEqTexto()), '_blank'); }
+
+// Enlace directo (admin/club): modal con enlace, copiar, WhatsApp y QR
+function compartirEnlaceEquipo(id) {
+  const eq = (DB.equipos || []).find(e => e.id === id); if (!eq) return;
+  const url = _miEqEnlace(id);
+  let m = document.getElementById('modalEnlaceEquipo');
+  if (!m) { m = document.createElement('div'); m.className = 'modal'; m.id = 'modalEnlaceEquipo'; document.body.appendChild(m); }
+  m.innerHTML = `<div class="modal-box" style="max-width:460px;">
+    <div class="modal-header"><h3>🔗 Enlace para familias</h3><button class="modal-close" onclick="cerrarModal('modalEnlaceEquipo')">✕</button></div>
+    <div style="font-weight:700;margin-bottom:6px;">${_escHtml(eq.nombre)}</div>
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:8px;">Al abrirlo, las familias ven directamente el calendario de este equipo.</div>
+    <input id="enlEqUrl" readonly value="${_escHtml(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:12px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
+      <button class="btn btn-rojo btn-xs" onclick="enlaceEquipoCopiar()">📋 Copiar enlace</button>
+      <button class="btn btn-outline btn-xs" onclick="window.open('https://wa.me/?text='+encodeURIComponent('📅 Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")}: '+document.getElementById('enlEqUrl').value),'_blank')">💬 Enviar por WhatsApp</button></div>
+    <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div></div>`;
+  abrirModal('modalEnlaceEquipo');
+}
+function enlaceEquipoCopiar() {
+  const t = document.getElementById('enlEqUrl').value;
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('🔗 Enlace copiado'), () => calBusCopiarAlt(t));
+  else calBusCopiarAlt(t);
+}
+// Entrada directa con ?equipo=ID
+document.addEventListener('DOMContentLoaded', () => {
+  try { const q = new URLSearchParams(location.search).get('equipo'); if (q) { _miEqSet(q); entrarDirecto('familias'); } } catch (e) {}
+});
+
 function _tabIcono(t) { return (TAB_LABELS[t] || '').split(' ')[0]; }
 function _tabTexto(t) { return (TAB_LABELS[t] || t).split(' ').slice(1).join(' '); }
 function _buildBottomNav() {
@@ -2440,7 +2562,7 @@ function renderTab(tab) {
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
     escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
-    alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos, misjornadas: renderMisJornadas
+    miequipo: renderMiEquipo, alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos, misjornadas: renderMisJornadas
   };
   if (fn[tab]) fn[tab]();
   _reaplicarEscala();
@@ -2973,6 +3095,7 @@ function renderEquipos() {
         </div>
         <div class="ceq-actions">
           <button class="btn-xs btn-outline" onclick="abrirFichaEquipo('${e.id}')">📋</button>
+          ${(isAdmin||isClub)?`<button class="btn-xs btn-outline" title="Enlace para familias" onclick="compartirEnlaceEquipo('${e.id}')">🔗</button>`:''}
           ${(isAdmin||isClub)?`<button class="btn-xs btn-outline" onclick="editarEquipo('${e.id}')">✏️</button>`:''}
           ${(isAdmin||puedeEvaluar())?`<button class="btn-xs" style="background:#FADBD8;color:var(--rojo);border:none;border-radius:6px;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
         </div>
@@ -3010,6 +3133,7 @@ function renderEquipos() {
         ${(isAdmin||isClub||isArbitro)?delCell:''}
         <td>
           <button class="btn btn-outline btn-sm" onclick="abrirFichaEquipo('${e.id}')">📋</button>
+          ${(isAdmin||isClub)?`<button class="btn btn-outline btn-sm" title="Enlace para familias" onclick="compartirEnlaceEquipo('${e.id}')">🔗</button>`:''}
           ${(isAdmin||isClub)?`<button class="btn btn-outline btn-sm" onclick="editarEquipo('${e.id}')">✏️</button>`:''}
           ${(isAdmin||puedeEvaluar())?`<button class="btn btn-sm" style="background:var(--rojo);color:white;border:none;" onclick="eliminarEquipo('${e.id}')">🗑</button>`:''}
         </td>
