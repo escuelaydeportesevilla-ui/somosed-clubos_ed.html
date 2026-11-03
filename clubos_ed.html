@@ -895,6 +895,22 @@ tbody td.center{text-align:center;}
 @media (max-width:600px) and (max-height:700px){ .pat-logo{height:62px!important;} }
 
 .pat-logo.procesado{filter:none!important;mix-blend-mode:normal!important;}
+
+/* ═══ PORTADA v2.10: altura real de pantalla + modo compacto ═══ */
+#portada,.portada-hero{min-height:calc(var(--vh,1vh)*100)!important;}
+#portada.compacta .hero-badge{display:none;}
+#portada.compacta .login-cards{max-width:250px;gap:8px;}
+#portada.compacta .login-card .lc-icon{width:38px;height:38px;font-size:1.2rem;margin-bottom:4px;}
+#portada.compacta .login-card:last-child{height:52px;}
+#portada.compacta .hero-sub{font-size:12px;}
+#portada.compacta .lc-role{font-size:.78rem;letter-spacing:0;}
+#portada.compacta .pat-logo{height:64px!important;}
+#portada.compacta2 .hero-title{font-size:2rem;}
+#portada.compacta2 .login-cards{max-width:210px;}
+#portada.compacta2 .login-card .lc-icon{width:30px;height:30px;font-size:1rem;margin-bottom:2px;}
+#portada.compacta2 .lc-role{font-size:.72rem;}
+#portada.compacta2 .login-card:last-child{height:44px;}
+#portada.compacta2 .pat-logo{height:52px!important;}
 </style>
 </head>
 <body>
@@ -2016,7 +2032,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.3';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.4';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2056,6 +2072,7 @@ const DENTAL_IMG = 'https://escuelaydeportesevilla-ui.github.io/escuelaydeporte/
 function _patLogoProcesar() {
   const img = document.getElementById('img-pat-remax'); if (!img) return;
   const im = new Image(); im.crossOrigin = 'anonymous';
+  im.onerror = () => { try { console.warn('Logo patrocinador: no se pudo cargar para procesar'); } catch (e) {} };
   im.onload = () => {
     try {
       const w = im.naturalWidth, h = im.naturalHeight, N = w * h;
@@ -2063,30 +2080,51 @@ function _patLogoProcesar() {
       const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0);
       const d = x.getImageData(0, 0, w, h), p = d.data;
       const nb = new Uint8Array(N), bal = new Uint8Array(N), st = [];
+      let minx = w, maxx = -1, miny = h, maxy = -1;
       for (let i = 0; i < N; i++) {
         const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2];
         nb[i] = Math.min(r, g, b) < 225 ? 1 : 0;
-        if (r > 150 && g < 100 && b < 100 && r - g > 80) { bal[i] = 1; st.push(i); }
+        if (r > 110 && r - g > 70 && r - b > 50) { bal[i] = 1; st.push(i); }
       }
-      if (!st.length) return;
-      while (st.length) { // el globo = zona conectada a los píxeles rojos
+      if (!st.length) { console.warn('Logo patrocinador: no se encontró el rojo del globo'); return; }
+      while (st.length) { // zona roja del globo (conectada)
         const i = st.pop(), xx = i % w, yy = (i / w) | 0;
+        if (xx < minx) minx = xx; if (xx > maxx) maxx = xx; if (yy < miny) miny = yy; if (yy > maxy) maxy = yy;
         for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
           const nx = xx + dx, ny = yy + dy; if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
           const j = ny * w + nx; if (!bal[j] && nb[j]) { bal[j] = 1; st.push(j); }
         }
       }
+      // el globo completo = zona roja + parte azul de debajo (separadas por una franja blanca)
+      const rh = maxy - miny + 1, mx = Math.round((maxx - minx + 1) * 0.06);
+      const x0 = Math.max(0, minx - mx), x1 = Math.min(w - 1, maxx + mx), y0 = Math.max(0, miny - 2), y1 = Math.min(h - 1, miny + Math.round(rh * 2.2));
+      const fill = new Uint8Array(N);
+      for (let xx = x0; xx <= x1; xx++) {
+        let top = -1, bot = -1;
+        for (let yy = y0; yy <= y1; yy++) if (nb[yy * w + xx]) { if (top < 0) top = yy; bot = yy; }
+        if (top >= 0) for (let yy = top; yy <= bot; yy++) { bal[yy * w + xx] = 1; fill[yy * w + xx] = 1; }
+      }
       for (let i = 0; i < N; i++) {
         const r = p[i * 4], g = p[i * 4 + 1], b = p[i * 4 + 2], mn = Math.min(r, g, b);
-        if (bal[i]) { p[i * 4 + 3] = Math.max(0, Math.min(255, (245 - mn) / 60 * 255)); }
+        if (bal[i]) { p[i * 4 + 3] = (fill[i] && !nb[i]) ? 255 : Math.max(0, Math.min(255, (245 - mn) / 60 * 255)); }
         else { const l = 0.3 * r + 0.59 * g + 0.11 * b; p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = 255; p[i * 4 + 3] = Math.max(0, Math.min(255, (255 - l) * 1.4)); }
       }
       x.putImageData(d, 0, 0);
       img.src = c.toDataURL('image/png'); img.classList.add('procesado');
-    } catch (e) { /* se queda el efecto CSS */ }
+    } catch (e) { try { console.warn('Logo patrocinador:', e); } catch (_) {} }
   };
-  im.src = REMAX_IMG;
+  im.src = REMAX_IMG + (REMAX_IMG.indexOf('?') < 0 ? '?cors=1' : '&cors=1');
 }
+// Portada: que todo quepa en la pantalla visible (sin desplazar)
+function _portadaAjustar() {
+  const p = document.getElementById('portada'); if (!p || getComputedStyle(p).display === 'none') return;
+  const H = window.innerHeight; document.documentElement.style.setProperty('--vh', (H / 100) + 'px');
+  p.classList.remove('compacta', 'compacta2');
+  const sobra = () => document.documentElement.scrollHeight > H + 1;
+  if (sobra()) { p.classList.add('compacta'); if (sobra()) p.classList.add('compacta2'); }
+}
+['resize', 'orientationchange', 'load'].forEach(ev => window.addEventListener(ev, () => { _portadaAjustar(); setTimeout(_portadaAjustar, 250); }));
+document.addEventListener('DOMContentLoaded', () => { _portadaAjustar(); setTimeout(_portadaAjustar, 300); if (document.fonts && document.fonts.ready) document.fonts.ready.then(_portadaAjustar); });
 function _initStaticImages(){
   var el;
   if((el=document.getElementById('img-pat-remax'))) { el.src=REMAX_IMG; _patLogoProcesar(); }
@@ -2327,6 +2365,7 @@ function logout() {
   document.getElementById('portada').style.display = 'flex';
   document.getElementById('portada').style.flexDirection = 'column';
   ocultarOverlay();
+  _portadaAjustar();
 }
 
 function pedirSyncAntesDeLogout() {
