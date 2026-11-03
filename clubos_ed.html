@@ -844,6 +844,42 @@ tbody td.center{text-align:center;}
   .login-card:last-child{grid-column:1/-1;aspect-ratio:auto;height:90px;flex-direction:row;gap:14px;}
   .login-card:last-child .lc-icon{margin:0;width:48px;height:48px;}
 }
+
+/* ═══ PORTADA v2.8: todo en una pantalla + patrocinador estilo "partner oficial" ═══ */
+#portada{min-height:100vh;min-height:100dvh;}
+.portada-hero{min-height:100vh;min-height:100dvh;box-sizing:border-box;padding:20px 16px 0;}
+.hero-badge{margin-bottom:12px;}
+.hero-title{margin-bottom:4px;font-size:clamp(2.6rem,12vw,4.6rem);}
+.hero-sub{margin-bottom:0!important;font-size:13px;}
+.login-cards{order:2;margin:auto 0!important;}
+.patrocinadores-portada{order:3;margin:0 -16px;width:calc(100% + 32px);max-width:none;border-radius:18px 18px 0 0;
+  background:#fff;border:none;padding:10px 16px 14px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  box-shadow:0 -6px 24px rgba(0,0,0,.25);box-sizing:border-box;}
+.pat-label{color:#7a7a7a;font-size:9px;letter-spacing:4px;display:flex;align-items:center;gap:10px;width:100%;justify-content:center;}
+.pat-label::before,.pat-label::after{content:'';height:1px;width:34px;background:linear-gradient(90deg,transparent,#D4A017);}
+.pat-label::after{background:linear-gradient(270deg,transparent,#D4A017);}
+.pat-logo{background:none!important;box-shadow:none!important;padding:0!important;height:64px;width:auto;max-width:78%;object-fit:contain;}
+@media (min-width:601px){
+  .patrocinadores-portada{margin:36px auto 0;width:100%;max-width:640px;border-radius:16px;padding:12px 24px 16px;}
+  .pat-logo{height:84px;}
+  .login-cards{margin:28px 0 0!important;}
+  .portada-hero{padding-bottom:32px;}
+}
+@media (max-width:600px){
+  .login-cards{max-width:290px;gap:10px;}
+  .login-card{padding:8px;}
+  .login-card .lc-icon{width:46px;height:46px;font-size:1.5rem;margin-bottom:8px;}
+  .lc-role{font-size:.85rem;letter-spacing:.5px;margin-bottom:0;}
+  .login-card:last-child{height:64px;}
+  .login-card:last-child .lc-icon{width:40px;height:40px;margin:0;}
+}
+@media (max-width:600px) and (max-height:700px){
+  .hero-badge{display:none;}
+  .hero-title{font-size:2.4rem;}
+  .login-cards{max-width:250px;}
+  .login-card .lc-icon{width:38px;height:38px;font-size:1.2rem;margin-bottom:4px;}
+  .pat-logo{height:50px;}
+}
 </style>
 </head>
 <body>
@@ -1965,7 +2001,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.1';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
