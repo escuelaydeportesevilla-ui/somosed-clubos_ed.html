@@ -2046,7 +2046,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.13';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.14';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2622,9 +2622,9 @@ function compartirEnlaceEquipo(id) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
       <button class="btn btn-rojo btn-xs" onclick="enlaceEquipoCopiar()">📋 Copiar enlace</button>
       ${_waMovil()
-        ? `<a class="btn btn-outline btn-xs" id="enlEqWa" href="${_escHtml(_waUrl('Calendario de ' + eq.nombre.replace(/'/g, '') + ' 📅\n' + url))}" target="_blank" rel="noopener" style="text-decoration:none;">💬 Enviar por WhatsApp</a>`
-        : `<button class="btn btn-outline btn-xs" id="enlEqWa" onclick="_waAbrir('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\\n'+document.getElementById('enlEqUrl').value)">💬 Enviar por WhatsApp</button>`}
-      <button class="btn btn-outline btn-xs" onclick="_compartirNativo('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\\n'+document.getElementById('enlEqUrl').value)">📤 Compartir…</button></div>
+        ? `<a class="btn btn-outline btn-xs" id="enlEqWa" href="${_escHtml(_waUrl('Calendario de ' + eq.nombre.replace(/'/g, '') + ' 🗓️\n' + url))}" target="_blank" rel="noopener" style="text-decoration:none;">💬 Enviar por WhatsApp</a>`
+        : `<button class="btn btn-outline btn-xs" id="enlEqWa" onclick="_waAbrir('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 🗓️\\n'+document.getElementById('enlEqUrl').value)">💬 Enviar por WhatsApp</button>`}
+      <button class="btn btn-outline btn-xs" onclick="_compartirNativo('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 🗓️\\n'+document.getElementById('enlEqUrl').value)">📤 Compartir…</button></div>
     <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div>
     <div><button class="btn btn-outline" onclick="cerrarModal('modalEnlaceEquipo')">Cerrar</button></div></div>`;
   abrirModal('modalEnlaceEquipo');
@@ -5480,7 +5480,7 @@ function _calBusTexto(ps) {
   const nom = id => (DB.equipos.find(e => e.id === id) || {}).nombre || '—';
   const out = []; let jAct = null;
   ps.forEach(p => {
-    if (p.jornada !== jAct) { jAct = p.jornada; out.push((out.length ? '\n' : '') + '📅 ' + (/^\d+$/.test(String(jAct)) ? 'JORNADA ' + jAct : String(jAct).toUpperCase())); }
+    if (p.jornada !== jAct) { jAct = p.jornada; out.push((out.length ? '\n' : '') + '🗓️ ' + (/^\d+$/.test(String(jAct)) ? 'JORNADA ' + jAct : String(jAct).toUpperCase())); }
     const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
     if (p._rest) { out.push('😴 DESCANSA: ' + nom(p.equipoId) + (comp ? '  (' + _etiquetaCompeticion(comp) + ')' : '')); return; }
     let l = '⚽ ' + nom(p.localId) + ' vs ' + nom(p.visitanteId);
@@ -8617,7 +8617,7 @@ async function eliminarConvocatoria(id) {
 
 function _convTexto(c) {
   const js = _convJugadoresDe(c);
-  let t = `📣 *${c.nombre}*\n${c.tipo||''}\n📅 ${_convFmtFecha(c.fecha)}${c.hora?' ⏰ '+c.hora:''}\n`;
+  let t = `📣 *${c.nombre}*\n${c.tipo||''}\n🗓️ ${_convFmtFecha(c.fecha)}${c.hora?' ⏰ '+c.hora:''}\n`;
   if (c.lugar) t += `📍 ${c.lugar}\n`;
   if (c.motivo) t += `\n${c.motivo}\n`;
   t += `\n*Convocados (${js.length}):*\n`;
@@ -9363,7 +9363,7 @@ function _mjTextoJornada() {
     .sort((a, b) => (_limpiarFecha(a.fecha) + (a.hora || '')).localeCompare(_limpiarFecha(b.fecha) + (b.hora || '')));
   return `📋 *Jornada ${jor}*\n` + l.map(p => {
     const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId], rival = mE[esLocal ? p.visitanteId : p.localId];
-    return `\n⚽ ${mio?.nombre || ''} ${esLocal ? 'vs' : '@'} ${rival?.nombre || ''}\n📅 ${_mjFechaTxt(p.fecha)} ${_limpiarHora(p.hora)}\n📍 ${p.campo || 'Lugar por confirmar'}${_avisoActivo(p) ? '\n⚠️ ' + _avisoTexto(p) : ''}`;
+    return `\n⚽ ${mio?.nombre || ''} ${esLocal ? 'vs' : '@'} ${rival?.nombre || ''}\n🗓️ ${_mjFechaTxt(p.fecha)} ${_limpiarHora(p.hora)}\n📍 ${p.campo || 'Lugar por confirmar'}${_avisoActivo(p) ? '\n⚠️ ' + _avisoTexto(p) : ''}`;
   }).join('\n');
 }
 async function _mjCompartir(modo) {
