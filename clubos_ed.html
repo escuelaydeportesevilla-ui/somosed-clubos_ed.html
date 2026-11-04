@@ -1649,6 +1649,7 @@ tbody td.center{text-align:center;}
     <input type="hidden" id="eq1PantaloonColor" value="#111111">
 
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px;">
+      <button class="btn btn-outline" id="btnEqEnlace" style="display:none;margin-right:auto;" title="Enlace para familias" onclick="compartirEnlaceEquipo(editEquipoId)">🔗 Enlace familias</button>
       <button class="btn btn-outline" onclick="cerrarModal('modalEquipo')">Cancelar</button>
       <button class="btn btn-rojo" onclick="guardarEquipo()">Guardar equipo</button>
     </div>
@@ -2037,7 +2038,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.8';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.9';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3597,6 +3598,7 @@ function abrirModalEquipo() {
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
     comps.map(c=>`<option value="${c.id}">${_etiquetaCompeticion(c)}${c.activa===false?' (inactiva)':''}</option>`).join('');
   document.getElementById('wrapReasignarClub').style.display = 'none';
+  { const b=document.getElementById('btnEqEnlace'); if(b) b.style.display='none'; }
   abrirModal('modalEquipo');
 }
 
@@ -3637,6 +3639,7 @@ function editarEquipo(id) {
   } else {
     wrapReasig.style.display = 'none';
   }
+  { const b=document.getElementById('btnEqEnlace'); if(b) b.style.display=''; }
   abrirModal('modalEquipo');
 }
 
