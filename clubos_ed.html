@@ -2046,7 +2046,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.15';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.16';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2328,6 +2328,7 @@ function entrarDirecto(rol) {
 
 function iniciarSesion(cred) {
   if (cred.rol === 'admin') cred.user = 'cbedadmin';
+  cred.ts = Date.now();
   sesion = cred;
   localStorage.setItem('clubos_ed_sesion', JSON.stringify(cred));
   document.getElementById('portada').style.display = 'none';
@@ -2636,7 +2637,16 @@ function enlaceEquipoCopiar() {
 }
 // Entrada directa con ?equipo=ID
 document.addEventListener('DOMContentLoaded', () => {
-  try { const q = new URLSearchParams(location.search).get('equipo'); if (q) { _miEqSet(q); entrarDirecto('familias'); } } catch (e) {}
+  try {
+    const q = new URLSearchParams(location.search).get('equipo');
+    if (q) _miEqSet(q);
+    // Sesión recordada: se mantiene hasta 30 días sin abrir la app (se renueva en cada apertura)
+    const SESION_DIAS = 30;
+    let rec = null; try { rec = JSON.parse(localStorage.getItem('clubos_ed_sesion') || 'null'); } catch (e) {}
+    const vigente = rec && rec.rol && (!rec.ts || (Date.now() - rec.ts) < SESION_DIAS * 864e5);
+    if (vigente) iniciarSesion(rec);
+    else { if (rec) localStorage.removeItem('clubos_ed_sesion'); if (q) entrarDirecto('familias'); }
+  } catch (e) {}
 });
 
 function _tabIcono(t) { return (TAB_LABELS[t] || '').split(' ')[0]; }
