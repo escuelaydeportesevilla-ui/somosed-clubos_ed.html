@@ -1988,6 +1988,7 @@ tbody td.center{text-align:center;}
     </div>
     <div id="fichaEquipoContent"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+      <button class="btn btn-outline" id="btnFichaEnlace" style="display:none;" title="Enlace para familias" onclick="compartirEnlaceEquipo(fichaEquipoId)">🔗 Enlace familias</button>
       <button class="btn btn-outline" onclick="imprimirFichaEquipo()">🖨️ Imprimir</button>
       <button class="btn btn-rojo" onclick="guardarFichaEquipo()">💾 Guardar</button>
     </div>
@@ -2036,7 +2037,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.7';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.8';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2567,7 +2568,17 @@ function _miEqTexto() {
   return '⭐ ' + eq.nombre.toUpperCase() + '\n\n' + _calBusTexto(_miEqItems(id).filter(_miEqPendiente)) + '\n\n🔗 ' + _miEqEnlace(id);
 }
 function miEquipoCopiar() { const t = _miEqTexto(); window._calBusTxt = t; calBusCopiar(); }
-function miEquipoWhatsApp() { window.open('https://wa.me/?text=' + encodeURIComponent(_miEqTexto()), '_blank'); }
+// WhatsApp: en escritorio reutiliza una única pestaña de WhatsApp Web; en móvil abre la app
+function _waAbrir(txt, tel) {
+  txt = String(txt || '').replace(/^[\s\u200B-\u200F\uFEFF]+/, '');
+  const movil = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 900);
+  const t = tel ? String(tel).replace(/\D/g, '') : '';
+  const url = movil
+    ? 'https://wa.me/' + t + '?text=' + encodeURIComponent(txt)
+    : 'https://web.whatsapp.com/send?' + (t ? 'phone=' + t + '&' : '') + 'text=' + encodeURIComponent(txt);
+  window.open(url, movil ? '_blank' : 'clubos_whatsapp');
+}
+function miEquipoWhatsApp() { _waAbrir(_miEqTexto()); }
 
 // Enlace directo (admin/club): modal con enlace, copiar, WhatsApp y QR
 function compartirEnlaceEquipo(id) {
@@ -2582,7 +2593,7 @@ function compartirEnlaceEquipo(id) {
     <input id="enlEqUrl" readonly value="${_escHtml(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:12px;">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
       <button class="btn btn-rojo btn-xs" onclick="enlaceEquipoCopiar()">📋 Copiar enlace</button>
-      <button class="btn btn-outline btn-xs" onclick="window.open('https://wa.me/?text='+encodeURIComponent('📅 Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")}: '+document.getElementById('enlEqUrl').value),'_blank')">💬 Enviar por WhatsApp</button></div>
+      <button class="btn btn-outline btn-xs" onclick="_waAbrir('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\n'+document.getElementById('enlEqUrl').value)">💬 Enviar por WhatsApp</button></div>
     <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div></div>`;
   abrirModal('modalEnlaceEquipo');
 }
@@ -3781,6 +3792,7 @@ function abrirFichaEquipo(equipoId) {
   fichaEquipoId = equipoId;
   document.getElementById('fichaEquipoTitle').textContent = '📋 ' + eq.nombre;
   renderFichaEquipoContent();
+  { const b = document.getElementById('btnFichaEnlace'); if (b) b.style.display = (sesion && !sesion.esFamilia && (sesion.rol === 'admin' || sesion.rol === 'club')) ? '' : 'none'; }
   abrirModal('modalFichaEquipo');
 }
 
@@ -5492,7 +5504,7 @@ function calBusCopiarAlt(t) {
   const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0';
   document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado'); } catch (e) { toast('No se pudo copiar'); } ta.remove();
 }
-function calBusWhatsApp() { window.open('https://wa.me/?text=' + encodeURIComponent(window._calBusTxt || ''), '_blank'); }
+function calBusWhatsApp() { _waAbrir(window._calBusTxt || ''); }
 function _calAplicarTodo() { if (window._calBus.hecho) calBusBuscar(); }
 
 // Filtro por jornada y equipo dentro de cada competición del calendario
@@ -8586,7 +8598,7 @@ function _convTexto(c) {
 }
 function compartirConvocatoriaWhatsApp(id) {
   const c = (DB.convocatorias||[]).find(x => x.id === id); if (!c) return;
-  window.open('https://wa.me/?text=' + encodeURIComponent(_convTexto(c)), '_blank');
+  _waAbrir(_convTexto(c));
 }
 async function copiarConvocatoria(id) {
   const c = (DB.convocatorias||[]).find(x => x.id === id); if (!c) return;
@@ -8779,7 +8791,7 @@ async function _pagRecordatorio(jid, modo) {
   if (modo === 'copiar') { try { await navigator.clipboard.writeText(txt); toast('Texto copiado'); } catch (e) { prompt('Copia el texto:', txt); } return; }
   let tel = String(x.j?.tutorTelefono || x.j?.telefono || '').replace(/\D/g, '');
   if (tel.length === 9) tel = '34' + tel;
-  window.open('https://wa.me/' + tel + '?text=' + encodeURIComponent(txt), '_blank');
+  _waAbrir(txt, tel);
 }
 
 // ── Detalle de un cobro ──
@@ -9323,7 +9335,7 @@ function _mjTextoJornada() {
 async function _mjCompartir(modo) {
   const t = _mjTextoJornada();
   if (modo === 'copiar') { try { await navigator.clipboard.writeText(t); toast('Texto copiado'); } catch (e) { prompt('Copia el texto:', t); } return; }
-  window.open('https://wa.me/?text=' + encodeURIComponent(t), '_blank');
+  _waAbrir(t);
 }
 
 function exportarFichaJugadorPDF(jugadorId) {
