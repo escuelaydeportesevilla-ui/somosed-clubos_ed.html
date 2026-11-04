@@ -930,6 +930,8 @@ tbody td.center{text-align:center;}
 <!-- ═══════════════════════════════════
      PORTADA
 ════════════════════════════════════ -->
+<div id="convPublica" style="display:none;position:fixed;inset:0;z-index:99999;background:#F4F1F2;overflow:auto;-webkit-overflow-scrolling:touch;"></div>
+
 <div id="portada">
   <div class="portada-hero">
     <div class="hero-badge">⚽ Temporada 2026/2027</div>
@@ -2046,8 +2048,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.16';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '2.8.0';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2635,10 +2637,139 @@ function enlaceEquipoCopiar() {
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('🔗 Enlace copiado'), () => calBusCopiarAlt(t));
   else calBusCopiarAlt(t);
 }
+
+// ══════════════════════════════════════════════════════
+//  CONVOCATORIA POR PARTIDO · enlace para familias (?conv=ID)
+// ══════════════════════════════════════════════════════
+function _convpId(pid, eid) { return ('cv_' + pid + '_' + eid).replace(/[^A-Za-z0-9_\-]/g, ''); }
+function _convpUrl(id) { return location.href.split('#')[0].split('?')[0] + '?conv=' + encodeURIComponent(id); }
+function _convpNom(j) { const n = (j.nombre || '').trim(), a = (j.apellidos || '').trim(); return n + (a ? ' ' + a.charAt(0).toUpperCase() + '.' : ''); }
+function _convpCuenta(d) { let si = 0, no = 0; (d.jugadores || []).forEach(j => { const r = (d.resp || {})[j.id]; if (r === 'si') si++; else if (r === 'no') no++; }); return { si, no, pend: (d.jugadores || []).length - si - no }; }
+function _convpPwd() { return encodeURIComponent(sesion.rol === 'admin' ? 'cbed2627' : (sesion.rol === 'club' ? sesion.user : '')); }
+function _convpResumen(d) { const c = _convpCuenta(d); return `<span style="color:#17803D;font-weight:800;">✅ ${c.si} van</span> · <span style="color:#B3261E;font-weight:800;">❌ ${c.no} no van</span> · <span style="color:#777;font-weight:700;">⏳ ${c.pend} sin responder</span>`; }
+
+// ── Admin / club: crear la convocatoria de un partido y sacar el enlace ──
+function convPartidoAbrir(pid, eid) {
+  const p = (DB.partidos || []).find(x => x.id === pid), eq = (DB.equipos || []).find(x => x.id === eid); if (!p || !eq) return;
+  const rival = (DB.equipos || []).find(x => x.id === (p.localId === eid ? p.visitanteId : p.localId));
+  const js = (DB.jugadores || []).filter(j => j.equipoId === eid && !(j.activo === false || j.activo === 'false'))
+    .sort((a, b) => _convpNom(a).localeCompare(_convpNom(b)));
+  window._convp = { pid, eid, id: _convpId(pid, eid) };
+  let m = document.getElementById('modalConvPartido');
+  if (!m) { m = document.createElement('div'); m.className = 'modal'; m.id = 'modalConvPartido'; document.body.appendChild(m); }
+  const marcados = js.filter(j => j.convocado === true || j.convocado === 'true').length;
+  m.innerHTML = `<div class="modal-box" style="max-width:520px;">
+    <div class="modal-header"><h3>📣 Convocatoria del partido</h3><button class="modal-close" onclick="cerrarModal('modalConvPartido')">✕</button></div>
+    <div style="font-weight:800;">${_escHtml(eq.nombre)} <span style="color:#999;">${p.localId === eid ? 'vs' : '@'}</span> ${_escHtml(rival ? rival.nombre : '—')}</div>
+    <div style="font-size:12px;color:var(--gris-suave);margin:2px 0 10px;">Jornada ${_escHtml(p.jornada)} · ${_escHtml(_mjFechaTxt(p.fecha))} ${_escHtml(_limpiarHora(p.hora))} · ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
+    <div style="font-size:12px;font-weight:700;margin-bottom:4px;">Jugadores convocados <span style="font-weight:400;color:#888;">(solo los marcados aparecerán a las familias${marcados ? '' : ' · aún no hay ninguno marcado como convocado'})</span></div>
+    <div id="convpLista" style="max-height:34vh;overflow:auto;border:1px solid #eee;border-radius:10px;padding:6px 10px;">
+      ${js.length ? js.map(j => `<label style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;"><input type="checkbox" data-j="${j.id}" ${(j.convocado === true || j.convocado === 'true') ? 'checked' : ''} style="width:18px;height:18px;"> ${_escHtml(_convpNom(j))}</label>`).join('') : '<div style="padding:10px;color:#888;font-size:13px;">Este equipo no tiene jugadores.</div>'}
+    </div>
+    <input id="convpNota" placeholder="Nota opcional (ej. Concentración 30 min antes)" style="width:100%;margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:14px;">
+    <div id="convpRes" style="margin-top:12px;"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;"><button class="btn btn-outline" onclick="cerrarModal('modalConvPartido')">Cerrar</button><button class="btn btn-rojo" id="convpBtn" onclick="convPartidoGenerar()">🔗 Generar enlace</button></div></div>`;
+  abrirModal('modalConvPartido');
+}
+async function convPartidoGenerar() {
+  const c = window._convp; if (!c) return;
+  const ids = [...document.querySelectorAll('#convpLista input:checked')].map(i => i.dataset.j);
+  if (!ids.length) { toast('Marca al menos un jugador convocado'); return; }
+  const p = (DB.partidos || []).find(x => x.id === c.pid), eq = (DB.equipos || []).find(x => x.id === c.eid);
+  const rival = (DB.equipos || []).find(x => x.id === (p.localId === c.eid ? p.visitanteId : p.localId));
+  const datos = { id: c.id, partidoId: c.pid, equipoId: c.eid, equipo: eq.nombre, rival: rival ? rival.nombre : '', esLocal: p.localId === c.eid,
+    fecha: _limpiarFecha(p.fecha), hora: _limpiarHora(p.hora), campo: p.campo || '', nota: document.getElementById('convpNota').value.trim(),
+    jugadores: ids.map(id => ({ id, n: _convpNom((DB.jugadores || []).find(x => x.id === id) || {}) })) };
+  const b = document.getElementById('convpBtn'); b.disabled = true; b.textContent = 'Generando…';
+  try {
+    const r = await jsonpFetch(SCRIPT_URL + '?action=convCrear&pwd=' + _convpPwd() + '&datos=' + encodeURIComponent(JSON.stringify(datos)), 20000);
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Error');
+    window._convp.datos = datos; await convPartidoRefrescar(true);
+  } catch (e) { toast('No se pudo crear. ¿Está subido el backend 2.4.0?'); }
+  b.disabled = false; b.textContent = '🔄 Actualizar convocados';
+}
+async function convPartidoRefrescar(primera) {
+  const c = window._convp; if (!c) return;
+  let d = null; try { d = await jsonpFetch(SCRIPT_URL + '?action=convGet&id=' + encodeURIComponent(c.id), 15000); } catch (e) {}
+  const el = document.getElementById('convpRes'); if (!el) return;
+  if (!d || !d.ok) { el.innerHTML = '<div style="color:#B3261E;font-size:13px;">No se pudo leer el estado.</div>'; return; }
+  const url = _convpUrl(c.id); window._convp.url = url; window._convp.d = d;
+  const ic = r => r === 'si' ? '✅' : (r === 'no' ? '❌' : '⏳');
+  el.innerHTML = `<div style="background:#F6F3F4;border-radius:12px;padding:12px;">
+    <div style="font-weight:800;font-size:13px;margin-bottom:6px;">Enlace para las familias</div>
+    <input readonly value="${_escHtml(url)}" onclick="this.select()" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:12px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;"><button class="btn btn-rojo btn-xs" onclick="convPartidoCopiar()">📋 Copiar enlace</button><button class="btn btn-outline btn-xs" onclick="convPartidoWhatsApp()">💬 Enviar por WhatsApp</button></div>
+    <div style="font-size:13px;margin:6px 0;">${_convpResumen(d)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 10px;font-size:13px;">${d.jugadores.map(j => `<div>${ic((d.resp || {})[j.id])} ${_escHtml(j.n)}</div>`).join('')}</div></div>`;
+  if (!primera) toast('Actualizado');
+}
+function _convpTexto() {
+  const c = window._convp, p = (DB.partidos || []).find(x => x.id === c.pid), eq = (DB.equipos || []).find(x => x.id === c.eid);
+  const rival = (DB.equipos || []).find(x => x.id === (p.localId === c.eid ? p.visitanteId : p.localId));
+  const nota = (c.datos && c.datos.nota) || (c.d && c.d.nota) || '';
+  return 'Convocatoria ' + eq.nombre + ' ' + (p.localId === c.eid ? 'vs' : '@') + ' ' + (rival ? rival.nombre : '') + ' 🗓️\n' +
+    _mjFechaTxt(p.fecha) + ' ' + _limpiarHora(p.hora) + '\n📍 ' + (p.campo || 'Lugar por confirmar') + (nota ? '\n' + nota : '') +
+    '\n\nPulsa tu hijo/a y marca si va o no va. Así vemos quién viene:\n' + c.url;
+}
+function convPartidoWhatsApp() { if (window._convp && window._convp.url) _waAbrir(_convpTexto()); }
+function convPartidoCopiar() { if (!window._convp || !window._convp.url) return; window._calBusTxt = _convpTexto(); calBusCopiar(); }
+
+// ── Página pública para familias (?conv=ID): sin login, solo convocados ──
+let _convpPub = { id: '', d: null, timer: null };
+function convPublicaIniciar(id) {
+  _convpPub.id = id;
+  const ov = document.getElementById('convPublica'); ov.style.display = 'block';
+  ov.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#777;">Cargando convocatoria…</div>';
+  convPublicaCargar();
+  clearInterval(_convpPub.timer); _convpPub.timer = setInterval(() => { if (!document.hidden) convPublicaCargar(); }, 25000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) convPublicaCargar(); });
+}
+async function convPublicaCargar() {
+  let d = null; try { d = await jsonpFetch(SCRIPT_URL + '?action=convGet&id=' + encodeURIComponent(_convpPub.id), 15000); } catch (e) {}
+  const ov = document.getElementById('convPublica');
+  if (!d || !d.ok) { if (!_convpPub.d) ov.innerHTML = '<div style="padding:40px 20px;text-align:center;color:#B3261E;font-weight:700;">No se encontró esta convocatoria.<br><span style="font-weight:400;color:#777;font-size:13px;">Pide el enlace de nuevo al entrenador.</span></div>'; return; }
+  _convpPub.d = d; convPublicaPintar();
+}
+function convPublicaPintar() {
+  const d = _convpPub.d, ov = document.getElementById('convPublica'); if (!d) return;
+  const fecha = d.fecha ? _mjFechaTxt(d.fecha) : '';
+  const fila = j => {
+    const r = (d.resp || {})[j.id] || '';
+    const bt = (v, txt, col, bg) => `<button onclick="convPublicaResp('${j.id}','${v}')" style="flex:1;padding:12px 6px;border-radius:10px;border:2px solid ${r === v ? col : '#ddd'};background:${r === v ? bg : '#fff'};color:${r === v ? col : '#666'};font-weight:800;font-size:14px;font-family:inherit;">${txt}</button>`;
+    return `<div style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.08);border-left:5px solid ${r === 'si' ? '#17803D' : (r === 'no' ? '#B3261E' : '#ccc')};">
+      <div style="font-size:17px;font-weight:800;margin-bottom:8px;">${_escHtml(j.n)}</div>
+      <div style="display:flex;gap:8px;">${bt('si', '✅ Va', '#17803D', '#E4F5EA')}${bt('no', '❌ No va', '#B3261E', '#FCE8E6')}</div></div>`;
+  };
+  ov.innerHTML = `<div style="max-width:520px;margin:0 auto;padding:16px 14px 40px;font-family:inherit;">
+    <div style="background:#7B1E3A;color:#fff;border-radius:16px;padding:16px;margin-bottom:12px;">
+      <div style="font-size:11px;letter-spacing:2px;font-weight:800;opacity:.8;">CONVOCATORIA</div>
+      <div style="font-size:19px;font-weight:800;margin-top:4px;line-height:1.25;">${_escHtml(d.equipo)} ${d.esLocal ? 'vs' : '@'} ${_escHtml(d.rival)}</div>
+      <div style="font-size:14px;margin-top:8px;">🗓️ ${_escHtml(fecha)}${d.hora ? ' · ⏰ ' + _escHtml(d.hora) : ''}</div>
+      <div style="font-size:14px;margin-top:3px;">📍 ${_escHtml(d.campo || 'Lugar por confirmar')}</div>
+      <div style="display:inline-block;margin-top:8px;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${d.esLocal ? '#E4F5EA' : '#E5EFFB'};color:${d.esLocal ? '#17803D' : '#1D5FB0'};">${d.esLocal ? '🏠 LOCAL' : '🚌 VISITANTE'}</div>
+      ${d.nota ? `<div style="margin-top:10px;font-size:13px;background:rgba(255,255,255,.15);padding:8px 10px;border-radius:10px;">${_escHtml(d.nota)}</div>` : ''}</div>
+    <div style="background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px;text-align:center;">${_convpResumen(d)}</div>
+    <div style="font-size:13px;color:#666;margin:0 2px 8px;">Pulsa a tu hijo/a y marca si <b>va</b> o <b>no va</b>. Puedes cambiarlo cuando quieras.</div>
+    ${d.jugadores.map(fila).join('')}
+    <div style="text-align:center;font-size:11px;color:#999;margin-top:14px;">ClubOS ED · Escuela &amp; Deporte</div></div>`;
+}
+async function convPublicaResp(jid, v) {
+  const d = _convpPub.d; if (!d) return;
+  d.resp = d.resp || {}; const nuevo = d.resp[jid] === v ? '' : v;   // pulsar otra vez la misma opción la quita
+  if (nuevo) d.resp[jid] = nuevo; else delete d.resp[jid];
+  convPublicaPintar();
+  try {
+    const r = await jsonpFetch(SCRIPT_URL + '?action=convResp&id=' + encodeURIComponent(_convpPub.id) + '&j=' + encodeURIComponent(jid) + '&r=' + nuevo, 15000);
+    if (r && r.ok) { d.resp = r.resp; convPublicaPintar(); } else toast('No se pudo guardar. Inténtalo de nuevo');
+  } catch (e) { toast('Sin conexión. Inténtalo de nuevo'); convPublicaCargar(); }
+}
+
 // Entrada directa con ?equipo=ID
 document.addEventListener('DOMContentLoaded', () => {
   try {
     const q = new URLSearchParams(location.search).get('equipo');
+    const cv = new URLSearchParams(location.search).get('conv');
+    if (cv) { convPublicaIniciar(cv); return; }
     if (q) _miEqSet(q);
     // Sesión recordada: se mantiene hasta 30 días sin abrir la app (se renueva en cada apertura)
     const SESION_DIAS = 30;
@@ -9337,7 +9468,8 @@ function _mjPartidoCard(p, sel) {
       <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:8px;white-space:nowrap;background:${esLocal ? '#D5F5E3' : '#EEE'};color:${esLocal ? '#1E8449' : '#555'};">${esLocal ? 'LOCAL' : 'VISITANTE'}</span></div>
     <div style="font-size:13px;margin-top:8px;">📅 <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
     <div style="font-size:13px;margin-top:3px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
-    ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}</div>`;
+    ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}
+    ${(sesion.rol === 'admin' || sesion.rol === 'club') && mio ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">📣 Convocatoria</button>` : ''}</div>`;
 }
 function _mjProximaJornada(parts) {
   const hoy = new Date().toISOString().slice(0, 10);
