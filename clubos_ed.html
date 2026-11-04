@@ -915,6 +915,14 @@ tbody td.center{text-align:center;}
 #portada .login-card:last-child{height:44px;}
 #portada .pat-logo{height:52px!important;}
 }
+
+/* ═══ EQUIPOS móvil: acciones dentro de la tarjeta (v2.7.11) ═══ */
+@media (max-width:768px){
+  .card-equipo{flex-wrap:wrap!important;overflow:hidden;box-sizing:border-box;max-width:100%;}
+  .card-equipo .ceq-info{flex:1 1 0!important;min-width:0!important;word-break:break-word;overflow-wrap:anywhere;}
+  .card-equipo .ceq-actions{flex:1 1 100%!important;width:100%;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:10px;border-top:1px solid #eee;}
+  .card-equipo .ceq-actions .btn-xs{flex:1 1 0;max-width:72px;}
+}
 </style>
 </head>
 <body>
@@ -2038,7 +2046,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.9';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.11';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2574,10 +2582,17 @@ function _waAbrir(txt, tel) {
   txt = String(txt || '').replace(/^[\s\u200B-\u200F\uFEFF]+/, '');
   const movil = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 900);
   const t = tel ? String(tel).replace(/\D/g, '') : '';
-  const url = movil
-    ? 'https://wa.me/' + t + '?text=' + encodeURIComponent(txt)
-    : 'https://web.whatsapp.com/send?' + (t ? 'phone=' + t + '&' : '') + 'text=' + encodeURIComponent(txt);
-  window.open(url, movil ? '_blank' : 'clubos_whatsapp');
+  const q = (t ? 'phone=' + t + '&' : '') + 'text=' + encodeURIComponent(txt);
+  if (movil) {
+    // abre la app directamente; si no reacciona, respaldo con wa.me
+    const wa = 'https://wa.me/' + t + '?text=' + encodeURIComponent(txt);
+    let fuera = false; const h = () => { if (document.hidden) fuera = true; };
+    document.addEventListener('visibilitychange', h);
+    window.location.href = 'whatsapp://send?' + q;
+    setTimeout(() => { document.removeEventListener('visibilitychange', h); if (!fuera && !document.hidden) window.location.href = wa; }, 1500);
+    return;
+  }
+  window.open('https://web.whatsapp.com/send?' + q, 'clubos_whatsapp');
 }
 function miEquipoWhatsApp() { _waAbrir(_miEqTexto()); }
 
@@ -2595,7 +2610,8 @@ function compartirEnlaceEquipo(id) {
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
       <button class="btn btn-rojo btn-xs" onclick="enlaceEquipoCopiar()">📋 Copiar enlace</button>
       <button class="btn btn-outline btn-xs" onclick="_waAbrir('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\n'+document.getElementById('enlEqUrl').value)">💬 Enviar por WhatsApp</button></div>
-    <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div></div>`;
+    <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div>
+    <div><button class="btn btn-outline" onclick="cerrarModal('modalEnlaceEquipo')">Cerrar</button></div></div>`;
   abrirModal('modalEnlaceEquipo');
 }
 function enlaceEquipoCopiar() {
