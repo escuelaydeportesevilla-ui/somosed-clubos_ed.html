@@ -2046,7 +2046,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.7.11';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.7.12';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.3.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2578,21 +2578,25 @@ function _miEqTexto() {
 }
 function miEquipoCopiar() { const t = _miEqTexto(); window._calBusTxt = t; calBusCopiar(); }
 // WhatsApp: en escritorio reutiliza una única pestaña de WhatsApp Web; en móvil abre la app
-function _waAbrir(txt, tel) {
-  txt = String(txt || '').replace(/^[\s\u200B-\u200F\uFEFF]+/, '');
-  const movil = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 900);
+function _waMovil() { return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 900); }
+function _waUrl(txt, tel) {
+  txt = String(txt || '').replace(/^[\s​-‏﻿]+/, '');
   const t = tel ? String(tel).replace(/\D/g, '') : '';
-  const q = (t ? 'phone=' + t + '&' : '') + 'text=' + encodeURIComponent(txt);
-  if (movil) {
-    // abre la app directamente; si no reacciona, respaldo con wa.me
-    const wa = 'https://wa.me/' + t + '?text=' + encodeURIComponent(txt);
-    let fuera = false; const h = () => { if (document.hidden) fuera = true; };
-    document.addEventListener('visibilitychange', h);
-    window.location.href = 'whatsapp://send?' + q;
-    setTimeout(() => { document.removeEventListener('visibilitychange', h); if (!fuera && !document.hidden) window.location.href = wa; }, 1500);
-    return;
-  }
-  window.open('https://web.whatsapp.com/send?' + q, 'clubos_whatsapp');
+  return _waMovil()
+    ? 'https://wa.me/' + t + '?text=' + encodeURIComponent(txt)
+    : 'https://web.whatsapp.com/send?' + (t ? 'phone=' + t + '&' : '') + 'text=' + encodeURIComponent(txt);
+}
+function _waAbrir(txt, tel) {
+  // enlace real pulsado por código dentro del toque del usuario (lo más fiable en móvil/PWA)
+  const a = document.createElement('a');
+  a.href = _waUrl(txt, tel); a.rel = 'noopener';
+  a.target = _waMovil() ? '_blank' : 'clubos_whatsapp';
+  a.style.display = 'none'; document.body.appendChild(a); a.click();
+  setTimeout(() => a.remove(), 500);
+}
+function _compartirNativo(txt, titulo) {
+  if (navigator.share) navigator.share({ title: titulo || 'ClubOS ED', text: String(txt || '') }).catch(() => {});
+  else _waAbrir(txt);
 }
 function miEquipoWhatsApp() { _waAbrir(_miEqTexto()); }
 
@@ -2609,7 +2613,8 @@ function compartirEnlaceEquipo(id) {
     <input id="enlEqUrl" readonly value="${_escHtml(url)}" onclick="this.select()" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:12px;">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
       <button class="btn btn-rojo btn-xs" onclick="enlaceEquipoCopiar()">📋 Copiar enlace</button>
-      <button class="btn btn-outline btn-xs" onclick="_waAbrir('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\n'+document.getElementById('enlEqUrl').value)">💬 Enviar por WhatsApp</button></div>
+      <a class="btn btn-outline btn-xs" id="enlEqWa" href="${_escHtml(_waUrl('Calendario de ' + eq.nombre.replace(/'/g, '') + ' 📅\n' + url))}" target="${_waMovil() ? '_blank' : 'clubos_whatsapp'}" rel="noopener" style="text-decoration:none;">💬 Enviar por WhatsApp</a>
+      <button class="btn btn-outline btn-xs" onclick="_compartirNativo('Calendario de ${_escHtml(eq.nombre).replace(/'/g, "")} 📅\n'+document.getElementById('enlEqUrl').value)">📤 Compartir…</button></div>
     <div style="text-align:center;"><img alt="QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(url)}" onerror="this.style.display='none'" style="width:220px;height:220px;border:1px solid #eee;border-radius:10px;"><div style="font-size:11px;color:#888;margin-top:4px;">QR para imprimir o enseñar en el campo</div></div>
     <div><button class="btn btn-outline" onclick="cerrarModal('modalEnlaceEquipo')">Cerrar</button></div></div>`;
   abrirModal('modalEnlaceEquipo');
