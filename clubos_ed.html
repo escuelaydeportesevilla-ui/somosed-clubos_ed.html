@@ -2049,7 +2049,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.8.7';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.8.8';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -5147,12 +5147,13 @@ function _normalizarAutorizacionImagen(v) {
 }
 
 // Selector de equipo en ficha de jugador: orden alfabético + buscador (sin acentos/mayúsculas)
-let _jEqLista = [];
+let _jEqLista = [], _jEqOrig = '';
 function _jNorm(s) { return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function _jEquipoPreparar(equipos, selId, isAdmin) {
   const cnt = {}; (DB.jugadores||[]).forEach(x => { cnt[x.equipoId] = (cnt[x.equipoId]||0) + 1; });
   _jEqLista = equipos.map(e => ({ id: e.id, txt: `${e.nombre} (${cnt[e.id]||0})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}` }))
     .sort((a,b) => a.txt.localeCompare(b.txt, 'es', { sensitivity:'base', numeric:true }));
+  _jEqOrig = selId || '';
   const b = document.getElementById('jEquipoBuscar'); if (b) b.value = '';
   _jEquipoFiltrar(selId);
 }
@@ -5160,12 +5161,14 @@ function _jEquipoFiltrar(selId) {
   const sel = document.getElementById('jEquipo'); if (!sel) return;
   const actual = selId !== undefined ? selId : sel.value;
   const q = _jNorm((document.getElementById('jEquipoBuscar')||{}).value).trim();
-  const vis = _jEqLista.filter(e => !q || e.id === actual || _jNorm(e.txt).includes(q));
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-  sel.innerHTML = '<option value="">— Sin equipo —</option>' + vis.map(e => `<option value="${esc(e.id)}">${esc(e.txt)}</option>`).join('');
-  sel.value = actual || '';
-  // Al buscar, si hay una sola coincidencia (y no había equipo), se selecciona sola
-  if (q && !actual) { const m = vis.filter(e => _jNorm(e.txt).includes(q)); if (m.length === 1) sel.value = m[0].id; }
+  const pintar = (lista, sinEquipo) => { sel.innerHTML = (sinEquipo ? '<option value="">— Sin equipo —</option>' : '') + lista.map(e => `<option value="${esc(e.id)}">${esc(e.txt)}</option>`).join(''); };
+  if (!q) { pintar(_jEqLista, true); sel.value = (selId !== undefined ? actual : _jEqOrig) || ''; return; }
+  // Con búsqueda: solo coincidencias y se selecciona la primera (o la ya elegida si coincide)
+  const m = _jEqLista.filter(e => _jNorm(e.txt).includes(q));
+  if (!m.length) { const o = _jEqLista.filter(e => e.id === _jEqOrig); pintar(o, !o.length); sel.value = _jEqOrig; return; }
+  pintar(m, false);
+  sel.value = m.some(e => e.id === actual) ? actual : m[0].id;
 }
 
 function editarJugador(id) {
