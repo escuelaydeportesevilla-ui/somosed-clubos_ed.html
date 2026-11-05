@@ -1874,7 +1874,7 @@ tbody td.center{text-align:center;}
       <div class="form-field"><label>Fecha de nacimiento</label><input type="date" id="jFechaNac"></div>
       <div class="form-field"><label>Posición</label><select id="jPosicion"><option value="">— Sin especificar —</option><option>Portero</option><option>Defensa</option><option>Centrocampista</option><option>Delantero</option></select></div>
       <div class="form-field"><label>Dorsal</label><input type="number" id="jDorsal" placeholder="Sin especificar" min="1" max="99"></div>
-      <div class="form-field"><label>Equipo</label><select id="jEquipo"></select></div>
+      <div class="form-field"><label>Equipo</label><input id="jEquipoBuscar" type="search" placeholder="🔍 Buscar equipo…" autocomplete="off" oninput="_jEquipoFiltrar()" style="margin-bottom:6px;"><select id="jEquipo"></select></div>
       <div class="form-field form-full">
         <details style="border:1px solid var(--gris-linea);border-radius:6px;">
           <summary style="padding:8px 10px;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;">Escuelas deportivas</summary>
@@ -2049,7 +2049,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.8.6';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.8.7';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -5110,11 +5110,7 @@ function abrirModalJugador() {
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
 
-  const sel = document.getElementById('jEquipo');
-  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>{
-    const n = (DB.jugadores||[]).filter(j=>j.equipoId===e.id).length;
-    return `<option value="${e.id}">${e.nombre} (${n})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}</option>`;
-  }).join('');
+  _jEquipoPreparar(misEquipos, '', isAdmin);
 
   _pintarCheckboxEscuelas(misEscuelas, []);
 
@@ -5150,6 +5146,28 @@ function _normalizarAutorizacionImagen(v) {
   return '';
 }
 
+// Selector de equipo en ficha de jugador: orden alfabético + buscador (sin acentos/mayúsculas)
+let _jEqLista = [];
+function _jNorm(s) { return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function _jEquipoPreparar(equipos, selId, isAdmin) {
+  const cnt = {}; (DB.jugadores||[]).forEach(x => { cnt[x.equipoId] = (cnt[x.equipoId]||0) + 1; });
+  _jEqLista = equipos.map(e => ({ id: e.id, txt: `${e.nombre} (${cnt[e.id]||0})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}` }))
+    .sort((a,b) => a.txt.localeCompare(b.txt, 'es', { sensitivity:'base', numeric:true }));
+  const b = document.getElementById('jEquipoBuscar'); if (b) b.value = '';
+  _jEquipoFiltrar(selId);
+}
+function _jEquipoFiltrar(selId) {
+  const sel = document.getElementById('jEquipo'); if (!sel) return;
+  const actual = selId !== undefined ? selId : sel.value;
+  const q = _jNorm((document.getElementById('jEquipoBuscar')||{}).value).trim();
+  const vis = _jEqLista.filter(e => !q || e.id === actual || _jNorm(e.txt).includes(q));
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  sel.innerHTML = '<option value="">— Sin equipo —</option>' + vis.map(e => `<option value="${esc(e.id)}">${esc(e.txt)}</option>`).join('');
+  sel.value = actual || '';
+  // Al buscar, si hay una sola coincidencia (y no había equipo), se selecciona sola
+  if (q && !actual) { const m = vis.filter(e => _jNorm(e.txt).includes(q)); if (m.length === 1) sel.value = m[0].id; }
+}
+
 function editarJugador(id) {
   const j = (DB.jugadores||[]).find(x=>x.id===id); if(!j) return;
   const isAdmin = sesion.rol === 'admin';
@@ -5157,11 +5175,7 @@ function editarJugador(id) {
 
   // Equipos
   const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
-  const sel = document.getElementById('jEquipo');
-  sel.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>{
-    const n = (DB.jugadores||[]).filter(x=>x.equipoId===e.id).length;
-    return `<option value="${e.id}"${e.id===j.equipoId?' selected':''}>${e.nombre} (${n})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}</option>`;
-  }).join('');
+  _jEquipoPreparar(misEquipos, j.equipoId || '', isAdmin);
 
   // Escuelas (checkboxes, "Sin escuela" excluyente con el resto)
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
