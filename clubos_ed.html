@@ -924,6 +924,99 @@ tbody td.center{text-align:center;}
   .card-equipo .ceq-actions{flex:1 1 100%!important;width:100%;justify-content:flex-end;gap:8px;margin-top:8px;padding-top:10px;border-top:1px solid #eee;}
   .card-equipo .ceq-actions .btn-xs{flex:1 1 0;max-width:72px;}
 }
+/* Buscador global del calendario */
+.calb-q{position:relative;margin-bottom:8px;}
+.calb-q input{width:100%;box-sizing:border-box;padding:11px 38px 11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;}
+.calb-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;background:#eee;border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:12px;color:#555;}
+.calb-sel{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;color:#444;padding:2px 2px 8px;}
+.calb-link{border:0;background:none;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer;padding:4px 0;}
+.calb-acc{display:flex;gap:16px;margin-bottom:6px;}
+.calb-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px;max-height:300px;overflow-y:auto;padding:2px;margin-bottom:8px;border-top:1px solid #f0e6e9;border-bottom:1px solid #f0e6e9;}
+.calb-eq{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #e3e3e3;border-radius:10px;background:#fff;cursor:pointer;font-size:13px;line-height:1.2;min-height:40px;box-sizing:border-box;}
+.calb-eq.on{border-color:var(--rojo);background:var(--rojo-suave);}
+.calb-eq input{width:18px;height:18px;margin:0;flex:none;accent-color:var(--rojo);}
+.calb-n{flex:1;min-width:0;font-weight:600;}
+.calb-c{flex:none;font-size:11px;color:#777;background:#f3f3f3;border-radius:20px;padding:2px 8px;}
+.calb-vacio{font-size:13px;color:#888;padding:6px 2px;}
+.calb-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:4px;}
+.calb-filtros select{padding:10px;border:1px solid #ddd;border-radius:10px;}
+@media (max-width:768px){
+  .calb-lista{grid-template-columns:1fr;max-height:45vh;}
+  .calb-filtros{display:grid;grid-template-columns:1fr 1fr;}
+  .calb-filtros select{width:100%;min-width:0;}
+  .calb-filtros .btn{width:100%;justify-content:center;padding:10px;}
+}
+.mj-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;margin-top:6px;}
+.mj-eq{display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid #e3e3e3;border-radius:10px;background:#fff;cursor:pointer;font-size:14px;min-height:42px;box-sizing:border-box;}
+.mj-eq.on{border-color:var(--rojo);background:var(--rojo-suave);font-weight:700;}
+.mj-eq input{width:18px;height:18px;min-height:auto;margin:0;flex:none;accent-color:var(--rojo);}
+.mj-scroll{max-height:340px;overflow-y:auto;padding-right:2px;}
+.mj-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;}
+.mj-nav select{padding:10px;border:1px solid var(--gris-linea);border-radius:12px;min-width:150px;font-weight:700;}
+.mj-nav .btn[disabled]{opacity:.35;pointer-events:none;}
+.mj-marcador{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin-top:8px;font-weight:800;font-size:15px;line-height:1.25;}
+.mj-goles{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:900;color:var(--rojo);white-space:nowrap;}
+.mj-goles.vs{font-size:14px;color:var(--gris-suave);font-weight:600;font-family:inherit;}
+@media (max-width:768px){.mj-lista{grid-template-columns:1fr;}.mj-scroll{max-height:50vh;}.mj-nav select{flex:1;min-width:0;}.mj-marcador{font-size:14px;}}
+.golx-fondo{position:fixed;inset:0;background:rgba(20,10,15,.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;}
+.golx-caja{background:#fff;border-radius:16px;padding:18px;width:100%;max-width:420px;box-shadow:0 10px 40px rgba(0,0,0,.25);}
+.golx-lbl{display:block;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--gris-suave);margin:10px 0 4px;}
+.golx-sel{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;font-size:15px;}
+.golx-bts{display:grid;gap:8px;margin-top:16px;}
+.golx-bts .btn{width:100%;justify-content:center;padding:12px;}
+.jb{background:#fff;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);}
+.jb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;}
+.jb-st{display:flex;flex-direction:column;align-items:flex-start;border:1px solid #eee;border-radius:12px;padding:8px 12px;background:#fafafa;font:inherit;text-align:left;}
+.jb-st b{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;line-height:1;color:var(--rojo);}
+.jb-st span{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);}
+.jb-st.ins{cursor:pointer;border-color:#BFE6CC;background:#F1FAF4;} .jb-st.ins b{color:#1E8449;}
+.jb-st.ins.on{background:#1E8449;border-color:#1E8449;} .jb-st.ins.on b,.jb-st.ins.on span{color:#fff;}
+.jb-st.warn{background:#FFF8E1;border-color:#F0D98A;} .jb-st.warn b{color:#8A6D00;}
+.jb-nota{font-size:12px;color:var(--gris-suave);margin-top:8px;}
+.jb-seg{display:inline-flex;background:#f1eef0;border-radius:12px;padding:3px;margin-top:10px;gap:2px;}
+.jb-seg button{border:0;background:none;padding:8px 14px;border-radius:9px;font-weight:700;font-size:13px;cursor:pointer;color:#555;}
+.jb-seg button.on{background:#fff;color:var(--rojo);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.jb-fil{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px;align-items:center;}
+.jb-grp{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+.jb-grp>span{font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);margin-right:2px;}
+.jb-chip{border:1px solid #ddd;background:#fff;border-radius:20px;padding:6px 12px;font-size:13px;cursor:pointer;}
+.jb-chip.on{background:var(--rojo);border-color:var(--rojo);color:#fff;font-weight:700;}
+.jb-acc{margin-left:auto;gap:14px;}
+.jb-link{border:0;background:none;color:var(--rojo);font-weight:700;font-size:13px;cursor:pointer;padding:4px 0;}
+.ins-chk{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:#F2F3F4;color:#888;cursor:pointer;white-space:nowrap;}
+.ins-chk.on{background:#D5F5E3;color:#1E8449;}
+.ins-chk input{width:14px;height:14px;min-height:auto;margin:0;accent-color:#1E8449;}
+.jlf{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.jlf-top{display:flex;gap:8px;align-items:flex-start;}
+.jlf-top input{flex:1;min-width:0;padding:10px 12px;border:1px solid #ddd;border-radius:10px;font-size:14px;}
+.jlf-exp{position:relative;} .jlf-exp summary{list-style:none;white-space:nowrap;} .jlf-exp summary::-webkit-details-marker{display:none;}
+.jlf-menu{position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #eee;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);padding:6px;z-index:50;min-width:230px;}
+.jlf-menu button{display:block;width:100%;text-align:left;border:0;background:none;padding:10px 12px;border-radius:8px;font-size:14px;cursor:pointer;}
+.jlf-menu button:hover{background:var(--rojo-suave);}
+.jlf-menu-nota{font-size:11px;color:var(--gris-suave);padding:4px 12px 6px;}
+.jlf-eqs{margin-top:10px;border:1px solid #eee;border-radius:10px;padding:8px 10px;}
+.jlf-eqs summary{cursor:pointer;font-size:13px;color:var(--rojo);}
+.jlf-eqq{width:100%;box-sizing:border-box;margin:8px 0 6px;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:13px;}
+.jlf-eqlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:2px 10px;max-height:220px;overflow-y:auto;}
+.jlf-eq{display:flex;align-items:center;gap:6px;font-size:13px;padding:5px 2px;cursor:pointer;}
+.jlf-eq input{width:16px;height:16px;min-height:auto;margin:0;}
+.jlf-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:10px;}
+.jlf-f{display:flex!important;flex-direction:column;gap:3px;margin:0;opacity:1;}
+.jlf-ag{text-transform:none!important;letter-spacing:0!important;opacity:1!important;}
+.jlf-f span{font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);}
+.jlf-f select{padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;}
+.jlf-bot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.jlf-ag{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;}
+.jlf-ag input{width:16px;height:16px;min-height:auto;margin:0;}
+@media (max-width:768px){
+  .jb-stats{grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;}
+  .jb-st{padding:8px 10px;} .jb-st b{font-size:1.5rem;} .jb-st span{font-size:10px;}
+  .jb-seg{display:flex;} .jb-seg button{flex:1;padding:9px 6px;}
+  .jb-acc{margin-left:0;}
+  .jlf-grid{grid-template-columns:1fr 1fr;}
+  .jlf-eqlist{grid-template-columns:1fr;}
+  #wrapBuscadorJugadores input{width:100%!important;box-sizing:border-box;}
+}
 </style>
 </head>
 <body>
@@ -1112,6 +1205,7 @@ tbody td.center{text-align:center;}
     <div class="tab-panel" id="panel-goleadores">
       <div class="section-header">
         <h2>⚽ Goleadores</h2><div class="section-line"></div>
+        <button class="btn btn-outline" onclick="golExportarAbrir()" style="margin-right:6px;">📤 Exportar</button>
         <button class="btn btn-outline" id="btnRecalcularGoleadores" onclick="recalcularGoleadoresDesdeActas()" style="display:none">🔄 Recalcular desde actas</button>
       </div>
       <div id="goleadoresContent"></div>
@@ -1177,6 +1271,7 @@ tbody td.center{text-align:center;}
         <button class="btn btn-outline" id="btnToggleNotas" onclick="toggleVistaNotas()" style="display:none;">📝 Notas</button>
         <button class="btn btn-rojo" id="btnAddJugador" onclick="abrirModalJugador()">+ Añadir jugador</button>
       </div>
+      <div id="jugBarra"></div>
       <div id="jugadoresContent"></div>
       <div id="listadoJugadoresContent" style="display:none;"></div>
       <div id="listadoNotasContent" style="display:none;"></div>
@@ -1893,6 +1988,10 @@ tbody td.center{text-align:center;}
         <input type="checkbox" id="jConvocado" style="width:16px;height:16px;cursor:pointer;">
         <span>📋 Convocado</span>
       </label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:600;">
+        <input type="checkbox" id="jInscrito2627" style="width:16px;height:16px;cursor:pointer;">
+        <span>🎟️ Inscrito 26/27</span>
+      </label>
     </div>
 
     <!-- ── DATOS PERSONALES (admin/club) ── -->
@@ -2049,8 +2148,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.8.8';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.0';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '2.9.2';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2397,7 +2496,7 @@ function pedirSyncAntesDeLogout() {
 const TABS_POR_ROL = {
   admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
   club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
-  familias: ['miequipo','competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
+  familias: ['miequipo','misjornadas','competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
@@ -2469,7 +2568,7 @@ const _BN_PRIORIDAD = {
   admin:['misjornadas','calendario','equipos','jugadores'],
   club:['misjornadas','calendario','equipos','jugadores'],
   arbitro:['calendario','equipos','jugadores','actas'],
-  familias:['miequipo','calendario','clasificacion','noticias']
+  familias:['miequipo','misjornadas','calendario','clasificacion']
 };
 function _tabsVisibles() {
   let tabs = TABS_POR_ROL[sesion.rol] || [];
@@ -4105,7 +4204,116 @@ function _toggleEscuelaCheck(chk) {
   }
 }
 
+// ══════════════════════════════════════════════════════
+//  JUGADORES: inscritos 26/27, únicos (sin contar duplicados) y barra de vista/filtros
+// ══════════════════════════════════════════════════════
+window._jugF = window._jugF || { ins: 'todos', est: 'todos' };
+function _jugInscrito(j) { return j && (j.inscrito2627 === true || String(j.inscrito2627).toLowerCase() === 'true'); }
+function _jugNomClave(j) { return _calNorm((j.nombre || '') + ' ' + (j.apellidos || '')).replace(/\s+/g, ' ').trim(); }
+// Misma persona: mismo nombre y apellidos, y misma fecha de nacimiento (o alguna vacía). "Duplicar jugador" crea estos registros.
+function _jugMismaPersona(a, b) {
+  if (_jugNomClave(a) !== _jugNomClave(b)) return false;
+  const fa = _limpiarFecha(a.fechaNac || ''), fb = _limpiarFecha(b.fechaNac || '');
+  return !fa || !fb || fa === fb;
+}
+// Agrupa registros en personas; devuelve array de grupos
+function _jugPersonas(lista) {
+  const porNom = {};
+  lista.forEach(j => { const k = _jugNomClave(j); (porNom[k] = porNom[k] || []).push(j); });
+  const out = [];
+  Object.values(porNom).forEach(regs => {
+    const fechas = [...new Set(regs.map(j => _limpiarFecha(j.fechaNac || '')).filter(Boolean))];
+    if (fechas.length <= 1) { out.push(regs); return; }
+    fechas.forEach(f => out.push(regs.filter(j => _limpiarFecha(j.fechaNac || '') === f)));
+    const sinF = regs.filter(j => !_limpiarFecha(j.fechaNac || '')); if (sinF.length) out[out.length - 1] = out[out.length - 1].concat(sinF);
+  });
+  return out;
+}
+function _jugResumen(lista) {
+  const pers = _jugPersonas(lista);
+  return {
+    registros: lista.length, unicos: pers.length,
+    inscritos: pers.filter(g => g.some(_jugInscrito)).length,
+    activos: pers.filter(g => g.some(j => j.activo !== false && j.activo !== 'false')).length,
+    duplicados: lista.length - pers.length
+  };
+}
+function _jugVisiblesRol() {
+  const isAdmin = sesion.rol === 'admin', isArb = sesion.rol === 'arbitro';
+  if (isAdmin || isArb) return DB.jugadores || [];
+  const misEq = (DB.equipos || []).filter(e => e.clubId === sesion.user), misEsc = (DB.escuelas || []).filter(e => e.clubId === sesion.user);
+  return (DB.jugadores || []).filter(j => misEq.some(e => e.id === j.equipoId) || misEsc.some(e => (j.escuelaIds || []).includes(e.id)) ||
+    (!j.equipoId && !(j.escuelaIds && j.escuelaIds.length) && j.clubId === sesion.user));
+}
+function _jugPasaFiltro(j) {
+  const f = window._jugF, act = j.activo !== false && j.activo !== 'false';
+  if (f.ins === 'si' && !_jugInscrito(j)) return false;
+  if (f.ins === 'no' && _jugInscrito(j)) return false;
+  if (f.est === 'activos' && !act) return false;
+  if (f.est === 'inactivos' && act) return false;
+  return true;
+}
+function _jugVistaActual() {
+  if (document.getElementById('listadoNotasContent')?.style.display !== 'none') return 'notas';
+  if (document.getElementById('listadoJugadoresContent')?.style.display !== 'none') return 'listado';
+  return 'tarjetas';
+}
+function _jugVista(v) {
+  const t = document.getElementById('jugadoresContent'), l = document.getElementById('listadoJugadoresContent'), n = document.getElementById('listadoNotasContent');
+  t.style.display = v === 'tarjetas' ? '' : 'none'; l.style.display = v === 'listado' ? '' : 'none'; n.style.display = v === 'notas' ? '' : 'none';
+  const b = document.getElementById('btnToggleListado'); if (b) b.textContent = v === 'listado' ? '🗂️ Ver tarjetas' : '📋 Ver listado';
+  if (v === 'listado') renderListadoJugadores(); if (v === 'notas') renderListadoNotas();
+  _jugBarraRender();
+}
+function _jugSetF(k, v) { window._jugF[k] = v; if (k === 'ins') window._listadoFiltroIns = v; renderJugadores(); if (_jugVistaActual() === 'listado') renderListadoJugadores(); }
+function _jugAcordeonTodos(abrir) {
+  document.querySelectorAll('#jugadoresContent [id^="jugEq_"],#jugadoresContent [id^="jugEsc_"],#jugadoresContent #jugSinAsignar').forEach(c => {
+    if (c.id.endsWith('_icon')) return;
+    c.style.display = abrir ? '' : 'none'; const i = document.getElementById(c.id + '_icon'); if (i) i.textContent = abrir ? '▼' : '▶';
+    abrir ? acordeonesAbiertos.add(c.id) : acordeonesAbiertos.delete(c.id);
+  });
+}
+function _jugBarraRender() {
+  const el = document.getElementById('jugBarra'); if (!el) return;
+  const isAdmin = sesion.rol === 'admin', vista = _jugVistaActual(), r = _jugResumen(_jugVisiblesRol()), f = window._jugF;
+  const nSol = _jugVisiblesRol().filter(j => j.origen && (j.activo === false || j.activo === 'false')).length;
+  const vistas = [['tarjetas', '🗂️ Tarjetas']];
+  if (isAdmin) vistas.push(['listado', '📋 Listado']);
+  if (isAdmin || puedeEvaluar()) vistas.push(['notas', '📝 Notas']);
+  const chip = (k, v, l) => `<button class="jb-chip${f[k] === v ? ' on' : ''}" onclick="_jugSetF('${k}','${v}')">${l}</button>`;
+  el.innerHTML = `<div class="jb">
+    <div class="jb-stats">
+      <div class="jb-st"><b>${r.unicos}</b><span>Jugadores</span></div>
+      <button class="jb-st ins${f.ins === 'si' ? ' on' : ''}" onclick="_jugSetF('ins','${f.ins === 'si' ? 'todos' : 'si'}')" title="Filtrar inscritos 26/27"><b>${r.inscritos}</b><span>Inscritos 26/27</span></button>
+      <div class="jb-st"><b>${r.activos}</b><span>Activos</span></div>
+      ${nSol ? `<div class="jb-st warn"><b>${nSol}</b><span>Solicitudes</span></div>` : ''}
+    </div>
+    ${r.duplicados ? `<div class="jb-nota">ℹ️ ${r.registros} fichas · ${r.duplicados} son el mismo jugador en otro equipo: se cuentan una sola vez.</div>` : ''}
+    ${vistas.length > 1 ? `<div class="jb-seg">${vistas.map(([v, l]) => `<button class="${vista === v ? 'on' : ''}" onclick="_jugVista('${v}')">${l}</button>`).join('')}</div>` : ''}
+    ${vista === 'tarjetas' ? `<div class="jb-fil">
+      <div class="jb-grp"><span>Temporada 26/27</span>${chip('ins', 'todos', 'Todos')}${chip('ins', 'si', '✅ Inscritos')}${chip('ins', 'no', '⬜ No inscritos')}</div>
+      <div class="jb-grp"><span>Estado</span>${chip('est', 'todos', 'Todos')}${chip('est', 'activos', 'Activos')}${chip('est', 'inactivos', 'Inactivos')}</div>
+      ${isAdmin || sesion.rol === 'arbitro' ? `<div class="jb-grp jb-acc"><button class="jb-link" onclick="_jugAcordeonTodos(true)">▼ Abrir todos</button><button class="jb-link" onclick="_jugAcordeonTodos(false)">▶ Plegar todos</button></div>` : ''}
+    </div>` : ''}</div>`;
+}
+// Marca/desmarca "Inscrito 26/27" en el jugador y en sus duplicados (misma persona en otros equipos)
+async function toggleInscrito(jugadorId) {
+  const j = (DB.jugadores || []).find(x => x.id === jugadorId); if (!j) return;
+  const nuevo = !_jugInscrito(j);
+  (DB.jugadores || []).filter(x => _jugMismaPersona(x, j)).forEach(x => { x.inscrito2627 = nuevo; });
+  await saveCol('jugadores');
+  renderJugadores(); if (_jugVistaActual() === 'listado') renderListadoJugadores();
+  toast(nuevo ? '✅ Inscrito en 26/27' : 'Quitado de inscritos 26/27');
+}
+function _jugInsCasilla(j, editable) {
+  const on = _jugInscrito(j);
+  return editable
+    ? `<label class="ins-chk${on ? ' on' : ''}" title="Inscrito temporada 26/27"><input type="checkbox" ${on ? 'checked' : ''} onchange="toggleInscrito('${j.id}')"> 26/27</label>`
+    : `<span class="ins-chk${on ? ' on' : ''}">${on ? '✅' : '⬜'} 26/27</span>`;
+}
+
 function renderJugadores() {
+  _jugBarraRender();
   const el = document.getElementById('jugadoresContent');
   const isAdmin   = sesion.rol==='admin';
   const isClub    = sesion.rol==='club';
@@ -4122,18 +4330,20 @@ function renderJugadores() {
   const btnAdd = document.getElementById('btnAddJugador');
   if (btnAdd) btnAdd.style.display=(isAdmin||isClub)?'':'none';
   const btnListado = document.getElementById('btnToggleListado');
-  if (btnListado) btnListado.style.display = isAdmin ? '' : 'none';
+  if (btnListado) btnListado.style.display = 'none'; // sustituidos por el selector de vista de la barra
   const btnNotas = document.getElementById('btnToggleNotas');
-  if (btnNotas) btnNotas.style.display = (isAdmin || puedeEvaluar()) ? '' : 'none';
+  if (btnNotas) btnNotas.style.display = 'none';
   const buscador = document.getElementById('buscadorJugadoresGlobal');
   if (buscador) buscador.style.display = (isAdmin||isClub||isArbitro) ? '' : 'none';
 
   if (!lista.length) {
     el.innerHTML='<div class="empty-state"><div class="ei">👤</div><p>'+(isClub?'Añade tu primer jugador.':'No hay jugadores.')+'</p></div>'; return;
   }
+  const listaF = lista.filter(_jugPasaFiltro);
+  if (!listaF.length) { el.innerHTML = '<div class="empty-state"><div class="ei">🔎</div><p>Ningún jugador con estos filtros.</p></div>'; return; }
 
   const byEq={};
-  lista.forEach(j=>{ const k=j.equipoId||'__none__'; if(!byEq[k])byEq[k]=[]; byEq[k].push(j); });
+  listaF.forEach(j=>{ const k=j.equipoId||'__none__'; if(!byEq[k])byEq[k]=[]; byEq[k].push(j); });
 
   // Separar jugadores sin equipo: por escuela y sin asignar
   const sinEquipo = byEq['__none__'] || [];
@@ -4170,6 +4380,7 @@ function renderJugadores() {
           }</div>
           ${j.origen ? `<div style="margin-top:2px;"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;background:#FEF3CD;color:#8A6D00;">📥 Solicitud ${j.categoriaOrientativa?'· '+j.categoriaOrientativa:''}</span></div>` : ''}
           <div class="cj-badges">
+            ${_jugInsCasilla(j, puedeEditar)}
             ${puedeEditar
               ?`<button class="btn-xs" style="background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};border:none;border-radius:6px;" onclick="toggleActivo('${j.id}')">${activo?'Activo':'Inactivo'}</button>
                 <button class="btn-xs" style="background:${convocado?'#D6EAF8':'#F2F3F4'};color:${convocado?'#1A5276':'#888'};border:none;border-radius:6px;" onclick="toggleConvocado('${j.id}')">${convocado?'✓Conv.':'Conv.'}</button>`
@@ -4187,7 +4398,7 @@ function renderJugadores() {
     h += `</div>`;
 
     h += `<div class="tabla-jugadores-desktop"><div style="overflow-x:auto;"><table class="tabla-base"><thead><tr>
-        <th>#</th><th>Jugador</th><th>Pos.</th><th>Estado</th><th>Conv.</th><th></th>
+        <th>#</th><th>Jugador</th><th>Pos.</th><th>26/27</th><th>Estado</th><th>Conv.</th><th></th>
       </tr></thead><tbody>`;
     jugs.forEach(j=>{
       const activo    = j.activo!==false&&j.activo!=='false';
@@ -4208,6 +4419,7 @@ function renderJugadores() {
             </select>`
           : (j.posicion||'—')
         }</td>
+        <td>${_jugInsCasilla(j, puedeEditar)}</td>
         <td>${puedeEditar
           ?`<button class="btn-xs" style="background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};border:none;" onclick="toggleActivo('${j.id}')">${activo?'Activo':'Inactivo'}</button>`
           :`<span style="font-size:11px;padding:2px 7px;border-radius:8px;background:${activo?'#D5F5E3':'#FADBD8'};color:${activo?'#1E8449':'#C0392B'};">${activo?'Activo':'Inactivo'}</span>`
@@ -4329,6 +4541,7 @@ function renderJugadores() {
 
   el.innerHTML=out;
   aplicarEstadoAcordeones();
+  const qb = document.getElementById('buscadorJugadoresGlobal'); if (qb && qb.value) filtrarJugadoresGlobal(qb.value);
 }
 
 // ══════════════════════════════════════════════════════
@@ -4369,6 +4582,7 @@ function irAListadoFiltrado(equipoId) {
   document.getElementById('listadoNotasContent').style.display = 'none';
   if (btn) btn.textContent = '🗂️ Ver tarjetas';
   renderListadoJugadores();
+  _jugBarraRender();
 }
 
 function toggleVistaJugadores() {
@@ -4496,58 +4710,36 @@ function renderListadoJugadores() {
     .map(j => _anioNac(j) || 'sin'))]
     .sort((a,b) => a==='sin' ? 1 : b==='sin' ? -1 : a.localeCompare(b));
 
-  // ── Barra de filtros ──
-  let html = `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
-      <details style="flex:1;min-width:220px;">
-        <summary style="cursor:pointer;font-size:12px;font-weight:700;color:var(--rojo);">🏟️ Filtrar por equipo ${window._listadoFiltroEquipos?`(${window._listadoFiltroEquipos.size} seleccionados)`:'(todos)'}</summary>
-        <div style="max-height:180px;overflow-y:auto;margin-top:8px;border:1px solid var(--gris-linea);border-radius:6px;padding:8px;">
-          <label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;font-weight:700;">
-            <input type="checkbox" id="listChkTodosEquipos" ${!window._listadoFiltroEquipos?'checked':''} onchange="_listadoToggleTodosEquipos(this)" style="margin-right:8px;">Todos los equipos
-          </label>
-          ${equipos.map(e=>`<label style="display:block;padding:3px 0;font-size:13px;cursor:pointer;">
-            <input type="checkbox" data-eq="${e.id}" ${window._listadoFiltroEquipos&&window._listadoFiltroEquipos.has(e.id)?'checked':''} onchange="_listadoToggleEquipo(this)" style="margin-right:8px;">${e.nombre}
-          </label>`).join('')}
-        </div>
-      </details>
-      <button class="btn btn-outline btn-sm" onclick="exportarListadoJugadores()">📄 Exportar listado</button>
-      <button class="btn btn-outline btn-sm" onclick="exportarListadoPadres()">👨‍👩‍👧 Exportar padres</button>
-      <button class="btn btn-outline btn-sm" onclick="exportarListadoPorPosicion()">⚽ Exportar por posición</button>
+  // ── Barra de filtros (compacta) ──
+  const nFil = (window._listadoFiltroEquipos?1:0) + ['_listadoFiltroSocio','_listadoFiltroAutoriza','_listadoFiltroJornada','_listadoFiltroAnio','_listadoFiltroIns'].filter(k=>window[k]&&window[k]!=='todos').length + (window._listadoQ?1:0);
+  let html = `<div class="jlf">
+    <div class="jlf-top">
+      <input id="listadoQ" type="search" autocomplete="off" placeholder="🔎 Buscar por nombre, tutor o teléfono…" value="${_escHtml(window._listadoQ||'')}" oninput="_listadoBuscar(this.value)">
+      <details class="jlf-exp"><summary class="btn btn-outline btn-sm">📤 Exportar ▾</summary><div class="jlf-menu">
+        <button onclick="exportarListadoJugadores()">📄 Listado de jugadores</button>
+        <button onclick="exportarListadoPadres()">👨‍👩‍👧 Contactos de padres</button>
+        <button onclick="exportarListadoPorPosicion()">⚽ Por posición</button>
+        <div class="jlf-menu-nota">Se exporta lo que ves con los filtros.</div></div></details>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Socio:</span>
-        ${[['todos','Todos'],['si','Socios'],['no','No socios']].map(([v,l])=>
-          `<button class="btn ${window._listadoFiltroSocio===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetFiltro('socio','${v}')">${l}</button>`
-        ).join('')}
+    <details class="jlf-eqs" ${window._listadoEqAbierto?'open':''} ontoggle="window._listadoEqAbierto=this.open">
+      <summary>🏟️ Equipos: <b>${window._listadoFiltroEquipos?window._listadoFiltroEquipos.size+' seleccionado'+(window._listadoFiltroEquipos.size===1?'':'s'):'todos'}</b></summary>
+      <input type="search" placeholder="Buscar equipo…" oninput="_listadoFiltrarEqLista(this.value)" class="jlf-eqq">
+      <div class="jlf-eqlist">
+        <label class="jlf-eq on-todos"><input type="checkbox" id="listChkTodosEquipos" ${!window._listadoFiltroEquipos?'checked':''} onchange="_listadoToggleTodosEquipos(this)"> <b>Todos los equipos</b></label>
+        ${equipos.map(e=>`<label class="jlf-eq" data-n="${_escHtml(_calNorm(e.nombre))}"><input type="checkbox" data-eq="${e.id}" ${window._listadoFiltroEquipos&&window._listadoFiltroEquipos.has(e.id)?'checked':''} onchange="_listadoToggleEquipo(this)"> ${_escHtml(e.nombre)}</label>`).join('')}
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Imagen:</span>
-        ${[['todos','Todos'],['si','Autoriza'],['no','No autoriza']].map(([v,l])=>
-          `<button class="btn ${window._listadoFiltroAutoriza===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetFiltro('autoriza','${v}')">${l}</button>`
-        ).join('')}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Jornada:</span>
-        ${[['todos','Todos'],['completa','Completa'],['media','Media']].map(([v,l])=>
-          `<button class="btn ${window._listadoFiltroJornada===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetFiltro('jornada','${v}')">${l}</button>`
-        ).join('')}
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Año nac.:</span>
-        ${[['todos','Todos'], ...aniosDisp.map(a => [a, a==='sin' ? 'Sin fecha' : a])].map(([v,l])=>
-          `<button class="btn ${window._listadoFiltroAnio===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetAnio('${v}')">${l}</button>`
-        ).join('')}
-        <label style="font-size:12px;font-weight:700;cursor:pointer;margin-left:6px;white-space:nowrap;">
-          <input type="checkbox" ${window._listadoAgruparAnio?'checked':''} onchange="_listadoToggleAgrupar(this.checked)" style="vertical-align:middle;margin-right:4px;">Agrupar por año
-        </label>
-      </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-        <span style="font-size:11px;font-weight:700;color:var(--gris-suave);min-width:50px;">Ordenar:</span>
-        ${[['nombre','Nombre'],['apellidos','Apellido']].map(([v,l])=>
-          `<button class="btn ${window._listadoOrden===v?'btn-rojo':'btn-outline'} btn-sm" onclick="_listadoSetOrden('${v}')">${l}</button>`
-        ).join('')}
-      </div>
+    </details>
+    <div class="jlf-grid">
+      <label class="jlf-f"><span>Temporada 26/27</span><select onchange="_listadoSetFiltro('ins',this.value)">${[['todos','Todos'],['si','✅ Inscritos'],['no','⬜ No inscritos']].map(([v,l])=>`<option value="${v}" ${window._listadoFiltroIns===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="jlf-f"><span>Socio</span><select onchange="_listadoSetFiltro('socio',this.value)">${[['todos','Todos'],['si','Socios'],['no','No socios']].map(([v,l])=>`<option value="${v}" ${window._listadoFiltroSocio===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="jlf-f"><span>Imagen</span><select onchange="_listadoSetFiltro('autoriza',this.value)">${[['todos','Todos'],['si','Autoriza'],['no','No autoriza']].map(([v,l])=>`<option value="${v}" ${window._listadoFiltroAutoriza===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="jlf-f"><span>Jornada</span><select onchange="_listadoSetFiltro('jornada',this.value)">${[['todos','Todos'],['completa','Completa'],['media','Media']].map(([v,l])=>`<option value="${v}" ${window._listadoFiltroJornada===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="jlf-f"><span>Año nac.</span><select onchange="_listadoSetAnio(this.value)">${[['todos','Todos'], ...aniosDisp.map(a => [a, a==='sin' ? 'Sin fecha' : a])].map(([v,l])=>`<option value="${v}" ${window._listadoFiltroAnio===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="jlf-f"><span>Ordenar</span><select onchange="_listadoSetOrden(this.value)">${[['nombre','Nombre'],['apellidos','Apellido']].map(([v,l])=>`<option value="${v}" ${window._listadoOrden===v?'selected':''}>${l}</option>`).join('')}</select></label>
+    </div>
+    <div class="jlf-bot">
+      <label class="jlf-ag"><input type="checkbox" ${window._listadoAgruparAnio?'checked':''} onchange="_listadoToggleAgrupar(this.checked)"> Agrupar por año</label>
+      ${nFil?`<button class="jb-link" onclick="_listadoLimpiar()">↺ Quitar filtros (${nFil})</button>`:''}
     </div>
   </div>`;
 
@@ -4559,15 +4751,15 @@ function renderListadoJugadores() {
     ? [...window._listadoFiltroEquipos].map(id => equipos.find(e=>e.id===id)?.nombre).filter(Boolean).join(', ')
     : 'Todos los equipos';
   html += `<div style="font-size:13px;color:var(--gris-suave);margin-bottom:10px;padding:0 2px;">
-    <strong style="color:var(--negro);">${nombresEquiposFiltro}</strong> · ${filas.length} jugador${filas.length===1?'':'es'}
+    <strong style="color:var(--negro);">${nombresEquiposFiltro}</strong> · ${(()=>{ const r=_jugResumen(filas); return `<b>${r.unicos}</b> jugador${r.unicos===1?'':'es'}${r.duplicados?` (${r.registros} fichas)`:''} · <b>${r.inscritos}</b> inscritos 26/27`; })()}
   </div>`;
   html += `<div style="overflow-x:auto;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
     <table class="tabla-base" style="min-width:560px;">
       <thead><tr>
-        <th style="width:70px;"></th><th>Jugador</th><th>Tutor</th><th>Contacto</th><th>Socio</th><th>Autoriza imagen</th><th>Jornada</th>
+        <th style="width:70px;"></th><th>26/27</th><th>Jugador</th><th>Tutor</th><th>Contacto</th><th>Socio</th><th>Autoriza imagen</th><th>Jornada</th>
       </tr></thead>
       <tbody>
-        ${!filas.length ? `<tr><td colspan="7" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
+        ${!filas.length ? `<tr><td colspan="8" style="text-align:center;color:var(--gris-suave);padding:20px;">No hay jugadores con este filtro.</td></tr>` :
           filas.map(j => {
             const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
             const activo = j.activo!==false && j.activo!=='false';
@@ -4576,13 +4768,14 @@ function renderListadoJugadores() {
             let cabAnio = '';
             if (window._listadoAgruparAnio && anioJ !== anioPrev) {
               anioPrev = anioJ;
-              cabAnio = `<tr><td colspan="7" style="background:#F3F4F6;font-weight:800;font-size:12px;color:var(--negro);padding:8px 14px;border-top:2px solid var(--gris-linea);">🎂 ${anioJ==='sin' ? 'Sin fecha de nacimiento' : 'Nacidos en ' + anioJ} · ${cuentaAnio[anioJ]} jugador${cuentaAnio[anioJ]===1?'':'es'}</td></tr>`;
+              cabAnio = `<tr><td colspan="8" style="background:#F3F4F6;font-weight:800;font-size:12px;color:var(--negro);padding:8px 14px;border-top:2px solid var(--gris-linea);">🎂 ${anioJ==='sin' ? 'Sin fecha de nacimiento' : 'Nacidos en ' + anioJ} · ${cuentaAnio[anioJ]} jugador${cuentaAnio[anioJ]===1?'':'es'}</td></tr>`;
             }
             return cabAnio + `<tr>
               <td style="text-align:center;white-space:nowrap;">
                 <button class="btn btn-outline btn-xs" title="Ficha completa" onclick="editarJugador('${j.id}')" style="padding:5px 8px;">✏️</button>
                 <input type="checkbox" title="Activo" ${activo?'checked':''} onchange="toggleActivo('${j.id}')" style="width:16px;height:16px;vertical-align:middle;cursor:pointer;margin-left:4px;">
               </td>
+              <td>${_jugInsCasilla(j, true)}</td>
               <td style="font-weight:600;">${window._listadoOrden==='apellidos' ? `${j.apellidos||''}, ${j.nombre}` : `${j.nombre} ${j.apellidos||''}`}<br><span style="font-weight:400;font-size:11px;color:var(--gris-suave);">${eq?eq.nombre:'—'}${eq&&eq.categoria?' · '+eq.categoria:''}</span><br><span style="font-weight:400;font-size:10px;color:var(--gris-suave);">🎂 ${_fechaNacTxt(j)}</span></td>
               <td style="font-size:12px;">${j.tutorNombre||'—'}</td>
               <td style="font-size:11px;line-height:1.5;white-space:nowrap;">
@@ -4628,7 +4821,23 @@ function _listadoToggleEquipo(chk) {
   renderListadoJugadores();
 }
 
+window._listadoFiltroIns = window._listadoFiltroIns || 'todos';
+window._listadoQ = window._listadoQ || '';
+function _listadoBuscar(v) {
+  window._listadoQ = v; renderListadoJugadores();
+  const i = document.getElementById('listadoQ'); if (i) { i.focus(); i.setSelectionRange(v.length, v.length); }
+}
+function _listadoFiltrarEqLista(v) {
+  const q = _calNorm(v).trim();
+  document.querySelectorAll('.jlf-eqlist .jlf-eq[data-n]').forEach(l => { l.style.display = !q || l.dataset.n.includes(q) ? '' : 'none'; });
+}
+function _listadoLimpiar() {
+  window._listadoFiltroEquipos = null; window._listadoFiltroSocio = 'todos'; window._listadoFiltroAutoriza = 'todos';
+  window._listadoFiltroJornada = 'todos'; window._listadoFiltroAnio = 'todos'; window._listadoFiltroIns = 'todos'; window._listadoQ = '';
+  window._jugF.ins = 'todos'; renderListadoJugadores(); _jugBarraRender();
+}
 function _listadoSetFiltro(categoria, valor) {
+  if (categoria === 'ins') { window._listadoFiltroIns = valor; window._jugF.ins = valor; _jugBarraRender(); }
   if (categoria === 'socio') window._listadoFiltroSocio = valor;
   else if (categoria === 'autoriza') window._listadoFiltroAutoriza = valor;
   else if (categoria === 'jornada') window._listadoFiltroJornada = valor;
@@ -4662,6 +4871,10 @@ function _listadoJugadoresFiltrados() {
   if (window._listadoFiltroJornada === 'completa') lista = lista.filter(j => j.jornada === 'completa');
   else if (window._listadoFiltroJornada === 'media') lista = lista.filter(j => j.jornada === 'media');
   if (window._listadoFiltroAnio !== 'todos') lista = lista.filter(j => (_anioNac(j) || 'sin') === window._listadoFiltroAnio);
+  if (window._listadoFiltroIns === 'si') lista = lista.filter(_jugInscrito);
+  else if (window._listadoFiltroIns === 'no') lista = lista.filter(j => !_jugInscrito(j));
+  const q = _calNorm(window._listadoQ || '').trim();
+  if (q) lista = lista.filter(j => _calNorm([j.nombre, j.apellidos, j.tutorNombre, j.tutorTelefono, j.tutorEmail, j.telefono].join(' ')).includes(q));
   const porNombre = window._listadoOrden === 'apellidos'
     ? (a,b)=>(a.apellidos||'').localeCompare(b.apellidos||'') || (a.nombre||'').localeCompare(b.nombre||'')
     : (a,b)=>(a.nombre||'').localeCompare(b.nombre||'');
@@ -5127,6 +5340,7 @@ function abrirModalJugador() {
   document.getElementById('jEditId').value = '';
   document.getElementById('jActivo').checked    = true;
   document.getElementById('jConvocado').checked = false;
+  document.getElementById('jInscrito2627').checked = true; // alta nueva = inscrito en la temporada actual
 
   // Secciones sensibles: solo admin y club
   const verPrivado = isAdmin || isClub;
@@ -5196,6 +5410,7 @@ function editarJugador(id) {
   document.getElementById('jEditId').value    = j.id;
   document.getElementById('jActivo').checked    = j.activo !== false;
   document.getElementById('jConvocado').checked = !!j.convocado;
+  document.getElementById('jInscrito2627').checked = _jugInscrito(j);
 
   // Secciones y campos privados: club siempre; admin solo si el club del jugador tiene permiso
   const verPrivado = isClub || (isAdmin && clubTienePermisoEvaluar(j.clubId));
@@ -5354,6 +5569,7 @@ async function guardarJugador() {
     peso:      document.getElementById('jPeso').value,
     activo:    document.getElementById('jActivo').checked,
     convocado: document.getElementById('jConvocado').checked,
+    inscrito2627: document.getElementById('jInscrito2627').checked,
     notas:     jugadorExistente ? (jugadorExistente.notas || []) : [],
     clubId:    jugadorExistente ? (jugadorExistente.clubId || sesion.user) : sesion.user,
     equipoNombre: '',
@@ -5581,7 +5797,7 @@ function renderCalendario() {
 // Filtro por jornada y equipo dentro de cada competición + filtro global de todas las competiciones
 window._calFiltro = window._calFiltro || {};
 // ===== Buscador de partidos (resumen copiable) =====
-window._calBus = window._calBus || { q: '', off: [], j: '', e: '', hecho: false };
+window._calBus = window._calBus || { q: '', off: [], j: '', e: '', hecho: false, abierto: false };
 function _calNorm(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
 function _calBusFecha(f) { const m = String(_limpiarFecha(f) || '').match(/^(\d{4})-(\d{2})-(\d{2})/); if (!m) return _limpiarFecha(f) || ''; const d = new Date(+m[1], +m[2] - 1, +m[3]); return ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()] + ' ' + m[3] + '/' + m[2] + '/' + m[1]; }
 function _calBusEquipos() {
@@ -5589,14 +5805,50 @@ function _calBusEquipos() {
   const q = _calNorm(window._calBus.q).trim();
   return (DB.equipos || []).filter(e => ids.has(e.id) && (!q || _calNorm(e.nombre).includes(q))).sort((x, y) => x.nombre.localeCompare(y.nombre));
 }
+// Categoría corta del equipo (para distinguir nombres repetidos): "(BENJAMÍN - 2627)" → "Benjamín"
+function _calEqCat(e) {
+  const c = (DB.competiciones || []).find(x => x.id === e.competicionId); if (!c) return e.categoria || '';
+  const m = String(c.nombre || '').match(/\(([^)]+)\)/), t = m ? m[1].split(/\s+-\s+/)[0] : (c.categoria || e.categoria || '');
+  return String(t).toLowerCase().replace(/(^|\s)\S/g, s => s.toUpperCase());
+}
+function _calBusResumen() {
+  const g = window._calBus, eqs = _calBusEquipos(), on = eqs.filter(e => !g.off.includes(e.id)).length;
+  const txt = g.q.trim()
+    ? `<b>${on}</b> de ${eqs.length} equipos con «${_escHtml(g.q.trim())}»`
+    : (on === eqs.length ? `<b>Todos los equipos</b> (${eqs.length})` : `<b>${on}</b> de ${eqs.length} equipos marcados`);
+  return `<span class="calb-res-txt">${txt}</span><button type="button" class="calb-link" onclick="calBusPanel()">${g.abierto ? 'Ocultar lista ▴' : 'Elegir equipos ▾'}</button>`;
+}
 function _calBusChips() {
-  const off = window._calBus.off, eqs = _calBusEquipos();
-  if (!eqs.length) return '<span style="font-size:12px;color:#888;">Ningún equipo coincide.</span>';
-  return eqs.map(e => {
-    const on = !off.includes(e.id);
-    return `<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;margin:0 6px 6px 0;border-radius:20px;border:1px solid ${on ? 'var(--rojo)' : '#ddd'};background:${on ? 'var(--rojo-suave)' : '#fff'};font-size:12px;cursor:pointer;">
-      <input type="checkbox" ${on ? 'checked' : ''} onchange="calBusToggle('${e.id}')" style="width:auto;margin:0;"> ${_escHtml(e.nombre)}</label>`;
-  }).join('');
+  const g = window._calBus, off = g.off, eqs = _calBusEquipos();
+  if (!g.abierto) return '';
+  if (!eqs.length) return '<div class="calb-vacio">Ningún equipo coincide.</div>';
+  return `<div class="calb-acc"><button type="button" class="calb-link" onclick="calBusMarcar(true)">✓ Marcar todos</button><button type="button" class="calb-link" onclick="calBusMarcar(false)">✕ Desmarcar todos</button></div>
+    <div class="calb-lista">` + eqs.map(e => {
+    const on = !off.includes(e.id), cat = _calEqCat(e);
+    return `<label class="calb-eq${on ? ' on' : ''}"><input type="checkbox" ${on ? 'checked' : ''} onchange="calBusToggle('${e.id}')"><span class="calb-n">${_escHtml(e.nombre)}</span>${cat ? `<span class="calb-c">${_escHtml(cat)}</span>` : ''}</label>`;
+  }).join('') + '</div>';
+}
+function _calBusPintar() {
+  const s = document.getElementById('calB_sel'); if (s) s.innerHTML = _calBusResumen();
+  const c = document.getElementById('calB_chips'); if (c) c.innerHTML = _calBusChips();
+  const x = document.getElementById('calB_x'); if (x) x.style.display = window._calBus.q ? '' : 'none';
+}
+function calBusPanel() { window._calBus.abierto = !window._calBus.abierto; _calBusPintar(); }
+function calBusMarcar(on) {
+  const g = window._calBus, ids = _calBusEquipos().map(e => e.id);
+  g.off = on ? g.off.filter(id => !ids.includes(id)) : [...new Set(g.off.concat(ids))];
+  _calBusPintar(); _calBusAuto();
+}
+// Búsqueda automática: solo si hay algún criterio (evita listar todos los partidos sin querer)
+let _calBusTimer = null;
+function _calBusAuto(ms) {
+  clearTimeout(_calBusTimer);
+  _calBusTimer = setTimeout(() => {
+    const g = window._calBus, j = document.getElementById('calB_j'), e = document.getElementById('calB_e'), res = document.getElementById('calB_res');
+    if (!res) return;
+    if (g.q.trim().length >= 2 || g.off.length || (j && j.value) || (e && e.value)) calBusBuscar();
+    else if (!g.q.trim()) { g.hecho = false; res.innerHTML = ''; }
+  }, ms || 0);
 }
 function _calStats() {
   const ps = DB.partidos || [], hoy = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -5611,30 +5863,36 @@ function _calBarraGlobal() {
   const js = [...new Set((DB.partidos || []).map(p => String(p.jornada)))].sort(_ordenarJornadas);
   return _calStats() + `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
     <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar partidos (todas las competiciones)</div>
-    <input id="calB_q" type="text" placeholder="Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()" style="width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:10px;margin-bottom:8px;box-sizing:border-box;">
-    <div id="calB_chips" style="margin-bottom:4px;">${_calBusChips()}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;">
-      <select id="calB_j" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+    <div class="calb-q"><input id="calB_q" type="search" autocomplete="off" placeholder="🔎 Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()"><button type="button" id="calB_x" class="calb-x" style="${g.q ? '' : 'display:none'}" onclick="calBusLimpiarTexto()" aria-label="Borrar">✕</button></div>
+    <div id="calB_sel" class="calb-sel">${_calBusResumen()}</div>
+    <div id="calB_chips">${_calBusChips()}</div>
+    <div class="calb-filtros">
+      <select id="calB_j" onchange="_calBusAuto()">
         <option value="">Todas las jornadas</option>${js.map(j => `<option value="${_escHtml(j)}" ${String(g.j) === j ? 'selected' : ''}>${/^\d+$/.test(j) ? 'Jornada ' + j : _escHtml(j)}</option>`).join('')}</select>
-      <select id="calB_e" style="padding:10px;border:1px solid #ddd;border-radius:10px;">
+      <select id="calB_e" onchange="_calBusAuto()">
         ${[['', 'Todos los estados'], ['pendiente', 'Pendientes'], ['jugado', 'Jugados'], ['aviso', '⚠️ Suspendidos / con aviso']].map(o => `<option value="${o[0]}" ${g.e === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <button class="btn btn-rojo btn-xs" onclick="calBusBuscar()">🔎 Buscar</button>
+      <button class="btn btn-rojo btn-xs" onclick="calBusBuscar()">🔎 Ver partidos</button>
       <button class="btn btn-outline btn-xs" onclick="calBusLimpiar()">✕ Limpiar</button>
     </div>
     <div id="calB_res" style="margin-top:12px;"></div></div>`;
 }
 function calBusTexto() {
-  window._calBus.q = document.getElementById('calB_q').value;
-  document.getElementById('calB_chips').innerHTML = _calBusChips();
+  const g = window._calBus; g.q = document.getElementById('calB_q').value;
+  g.abierto = !!g.q.trim(); // al escribir se muestran las coincidencias; sin texto, lista plegada
+  _calBusPintar(); _calBusAuto(400);
 }
+function calBusLimpiarTexto() { const i = document.getElementById('calB_q'); if (i) { i.value = ''; i.focus(); } calBusTexto(); }
 function calBusToggle(id) {
   const off = window._calBus.off, i = off.indexOf(id);
   if (i >= 0) off.splice(i, 1); else off.push(id);
+  const s = document.getElementById('calB_sel'); if (s) s.innerHTML = _calBusResumen();
+  document.querySelectorAll('#calB_chips .calb-eq').forEach(l => { const c = l.querySelector('input'); l.classList.toggle('on', c.checked); });
+  _calBusAuto(250);
 }
 function calBusLimpiar() {
-  window._calBus = { q: '', off: [], j: '', e: '', hecho: false };
+  window._calBus = { q: '', off: [], j: '', e: '', hecho: false, abierto: false };
   ['calB_q', 'calB_j', 'calB_e'].forEach(id => { const x = document.getElementById(id); if (x) x.value = ''; });
-  document.getElementById('calB_chips').innerHTML = _calBusChips();
+  _calBusPintar();
   document.getElementById('calB_res').innerHTML = '';
 }
 function _calDescansan(compId, jornada) { // equipos de la competición que no juegan esa jornada
@@ -6146,6 +6404,167 @@ function renderGoleadores() {
         ${isAdmin?`<button class="btn btn-xs btn-outline" onclick="eliminarGol('${g.id}')">🗑️</button>`:''}
       </div>`;
     }).join('') + '</div>';
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPORTAR GOLEADORES: imagen (WhatsApp / redes) y PDF
+// ══════════════════════════════════════════════════════
+// Nombre público: nombre + primer apellido (nunca el nombre completo de un menor en una imagen)
+function _golNombre(n) { const p = String(n || '').trim().split(/\s+/); return p.length > 1 ? p[0] + ' ' + p[1] : (p[0] || ''); }
+function _golCompDe(g) { const e = (DB.equipos || []).find(x => x.id === g.equipoId); return e ? (e.competicionId || '__none__') : '__none__'; }
+function _golComps() {
+  const ids = [...new Set((DB.goleadores || []).filter(g => Number(g.goles) > 0).map(_golCompDe))];
+  return ids.map(id => ({ id, nombre: id === '__none__' ? 'Sin competición' : ((DB.competiciones || []).find(c => c.id === id) || {}).nombre || 'Competición' }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+}
+function _golRanking(compId, max) {
+  const l = (DB.goleadores || []).filter(g => Number(g.goles) > 0 && (!compId || _golCompDe(g) === compId))
+    .map(g => ({ nombre: _golNombre(g.jugador), equipo: ((DB.equipos || []).find(e => e.id === g.equipoId) || {}).nombre || '', goles: Number(g.goles) || 0 }))
+    .sort((a, b) => b.goles - a.goles || a.nombre.localeCompare(b.nombre, 'es'));
+  l.forEach((g, i) => { g.pos = i && l[i - 1].goles === g.goles ? l[i - 1].pos : i + 1; }); // empates comparten puesto
+  return max ? l.slice(0, max) : l;
+}
+function _golTitulo(compId) {
+  if (!compId) return { t: 'Todas las competiciones', s: '' };
+  const c = (DB.competiciones || []).find(x => x.id === compId); if (!c) return { t: 'Sin competición', s: '' };
+  const m = String(c.nombre || '').match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+  return m ? { t: m[2].toUpperCase(), s: m[1] } : { t: c.nombre, s: c.temporada || '' };
+}
+function golExportarAbrir() {
+  const comps = _golComps();
+  if (!comps.length) { toast('No hay goles registrados'); return; }
+  document.getElementById('golExpModal')?.remove();
+  const d = document.createElement('div'); d.id = 'golExpModal'; d.className = 'golx-fondo';
+  d.onclick = e => { if (e.target === d) d.remove(); };
+  d.innerHTML = `<div class="golx-caja">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><b style="font-size:17px;">📤 Exportar goleadores</b><button class="btn btn-outline btn-xs" onclick="document.getElementById('golExpModal').remove()">✕</button></div>
+    <label class="golx-lbl">Competición</label>
+    <select id="golExpComp" class="golx-sel">${comps.length > 1 ? '<option value="">Todas las competiciones</option>' : ''}${comps.map(c => `<option value="${_escHtml(c.id)}">${_escHtml(c.nombre)}</option>`).join('')}</select>
+    <label class="golx-lbl">Jugadores en la imagen</label>
+    <select id="golExpTop" class="golx-sel"><option value="10">Top 10</option><option value="15" selected>Top 15</option><option value="20">Top 20</option><option value="25">Top 25</option></select>
+    <div class="golx-bts">
+      <button class="btn btn-rojo" onclick="golExportarImagen()">🖼️ Imagen (WhatsApp / redes)</button>
+      <button class="btn btn-outline" onclick="golExportarPDF()">📄 PDF / imprimir (completo)</button>
+    </div>
+    <div style="font-size:11px;color:var(--gris-suave);margin-top:10px;">Por privacidad, se muestra nombre y primer apellido.</div></div>`;
+  document.body.appendChild(d);
+}
+function _golRoundRect(x, cx, cy, w, hh, r) { x.beginPath(); x.moveTo(cx + r, cy); x.arcTo(cx + w, cy, cx + w, cy + hh, r); x.arcTo(cx + w, cy + hh, cx, cy + hh, r); x.arcTo(cx, cy + hh, cx, cy, r); x.arcTo(cx, cy, cx + w, cy, r); x.closePath(); }
+function _golFit(x, txt, maxW) { txt = String(txt || ''); if (x.measureText(txt).width <= maxW) return txt; while (txt.length > 1 && x.measureText(txt + '…').width > maxW) txt = txt.slice(0, -1); return txt + '…'; }
+async function _golCanvas(compId, top) {
+  try { await Promise.all(['900 60px "Barlow Condensed"', '700 30px "Barlow Condensed"', '600 26px Barlow'].map(f => document.fonts.load(f))); } catch (e) {}
+  const C = '"Barlow Condensed", "Arial Narrow", Arial, sans-serif', B = 'Barlow, Arial, sans-serif';
+  const lista = _golRanking(compId, top), tit = _golTitulo(compId);
+  const W = 1080, HEAD = 330, ROW = 74, PODIO = 3, FOOT = 110;
+  const nPod = Math.min(5, lista.filter(p => p.pos <= PODIO).length), resto = lista.slice(nPod); // empatados en el podio, también dentro
+  const H = HEAD + nPod * 112 + (resto.length ? 24 + resto.length * ROW : 0) + FOOT;
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
+  // Fondo
+  const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#5C1429'); g.addColorStop(.55, '#7B1E3A'); g.addColorStop(1, '#3E0D1C');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.globalAlpha = .06; x.fillStyle = '#fff'; x.beginPath(); x.arc(W - 90, 120, 260, 0, Math.PI * 2); x.fill(); x.beginPath(); x.arc(60, H - 60, 200, 0, Math.PI * 2); x.fill(); x.globalAlpha = 1;
+  // Cabecera
+  x.fillStyle = '#E8C66A'; x.font = `700 28px ${C}`; x.fillText('ESCUELA & DEPORTE', 64, 92);
+  x.fillStyle = '#fff'; let fs = 92; do { x.font = `900 ${fs}px ${C}`; fs -= 2; } while (fs > 40 && x.measureText('MÁXIMOS GOLEADORES').width > W - 124); x.fillText('MÁXIMOS GOLEADORES', 60, 186);
+  x.fillStyle = '#E8C66A'; x.fillRect(64, 208, 120, 6);
+  x.fillStyle = '#fff'; x.font = `800 40px ${C}`; x.fillText(_golFit(x, tit.t, W - 128), 64, 262);
+  if (tit.s) { x.globalAlpha = .75; x.font = `600 24px ${B}`; x.fillText(_golFit(x, tit.s, W - 128), 64, 298); x.globalAlpha = 1; }
+  let y = HEAD;
+  // Podio (top 3)
+  const med = [['#F4D06F', '#B8860B'], ['#E3E6EA', '#8A9099'], ['#E6B48A', '#A0522D']];
+  lista.slice(0, nPod).forEach((p, i) => {
+    const m = med[Math.min(p.pos - 1, 2)] || med[2];
+    x.fillStyle = '#fff'; _golRoundRect(x, 48, y, W - 96, 96, 22); x.fill();
+    x.fillStyle = m[0]; x.beginPath(); x.arc(112, y + 48, 34, 0, Math.PI * 2); x.fill();
+    x.fillStyle = m[1]; x.font = `900 40px ${C}`; x.textAlign = 'center'; x.fillText(String(p.pos), 112, y + 62); x.textAlign = 'left';
+    x.fillStyle = '#1F1A1C'; x.font = `800 40px ${C}`; x.fillText(_golFit(x, p.nombre.toUpperCase(), W - 420), 170, y + 50);
+    x.fillStyle = '#7A6F73'; x.font = `600 22px ${B}`; x.fillText(_golFit(x, p.equipo, W - 420), 170, y + 80);
+    x.fillStyle = '#7B1E3A'; _golRoundRect(x, W - 220, y + 18, 150, 60, 30); x.fill();
+    x.fillStyle = '#fff'; x.font = `900 40px ${C}`; x.textAlign = 'center'; x.fillText(p.goles + ' ⚽', W - 145, y + 62); x.textAlign = 'left';
+    y += 112;
+  });
+  // Resto
+  if (resto.length) {
+    y += 24; const maxG = lista[0].goles || 1;
+    resto.forEach((p, i) => {
+      x.fillStyle = i % 2 ? 'rgba(255,255,255,.06)' : 'rgba(255,255,255,.11)'; _golRoundRect(x, 48, y, W - 96, ROW - 10, 14); x.fill();
+      x.fillStyle = '#E8C66A'; x.font = `800 34px ${C}`; x.textAlign = 'center'; x.fillText(p.pos + 'º', 104, y + 44); x.textAlign = 'left';
+      x.fillStyle = '#fff'; x.font = `700 32px ${C}`; x.fillText(_golFit(x, p.nombre.toUpperCase(), 430), 160, y + 34);
+      x.globalAlpha = .7; x.font = `500 19px ${B}`; x.fillText(_golFit(x, p.equipo, 430), 160, y + 56); x.globalAlpha = 1;
+      const bx = 620, bw = 260, bh = 14;
+      x.fillStyle = 'rgba(255,255,255,.15)'; _golRoundRect(x, bx, y + 26, bw, bh, 7); x.fill();
+      x.fillStyle = '#E8C66A'; _golRoundRect(x, bx, y + 26, Math.max(bh, bw * p.goles / maxG), bh, 7); x.fill();
+      x.fillStyle = '#fff'; x.font = `900 36px ${C}`; x.textAlign = 'right'; x.fillText(String(p.goles), W - 72, y + 46); x.textAlign = 'left';
+      y += ROW;
+    });
+  }
+  // Pie
+  x.fillStyle = 'rgba(255,255,255,.18)'; x.fillRect(64, H - 86, W - 128, 2);
+  x.fillStyle = '#fff'; x.globalAlpha = .8; x.font = `600 22px ${B}`;
+  x.fillText('Actualizado el ' + new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }), 64, H - 44);
+  x.textAlign = 'right'; x.fillText('ClubOS ED', W - 64, H - 44); x.textAlign = 'left'; x.globalAlpha = 1;
+  return cv;
+}
+async function golExportarImagen() {
+  const compId = document.getElementById('golExpComp').value, top = +document.getElementById('golExpTop').value || 15;
+  const cv = await _golCanvas(compId, top);
+  const nombre = 'goleadores_' + (_golTitulo(compId).t || 'todas').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') + '.png';
+  cv.toBlob(async blob => {
+    if (!blob) { toast('No se pudo generar la imagen'); return; }
+    const f = new File([blob], nombre, { type: 'image/png' });
+    if (_waMovil() && navigator.canShare && navigator.canShare({ files: [f] })) {
+      try { await navigator.share({ files: [f], title: 'Máximos goleadores' }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    toast('🖼️ Imagen descargada');
+  }, 'image/png');
+}
+function golExportarPDF() {
+  const compId = document.getElementById('golExpComp').value;
+  const comps = compId ? _golComps().filter(c => c.id === compId) : _golComps();
+  const fecha = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+  const secc = comps.map(c => {
+    const t = _golTitulo(c.id), l = _golRanking(c.id), max = (l[0] || {}).goles || 1;
+    return `<section><div class="cab"><div class="k">${_escHtml(t.s || 'Competición')}</div><h2>${_escHtml(t.t)}</h2></div>
+      <table><thead><tr><th>#</th><th>Jugador/a</th><th>Equipo</th><th class="n">Goles</th></tr></thead><tbody>
+      ${l.map(p => `<tr class="${p.pos <= 3 ? 'p' + p.pos : ''}"><td class="pos">${p.pos <= 3 ? ['🥇', '🥈', '🥉'][p.pos - 1] : p.pos + 'º'}</td><td class="nom">${_escHtml(p.nombre)}</td><td class="eq">${_escHtml(p.equipo)}</td>
+        <td class="n"><span class="bar"><i style="width:${Math.round(100 * p.goles / max)}%"></i></span><b>${p.goles}</b></td></tr>`).join('')}
+      </tbody></table></section>`;
+  }).join('');
+  const v = window.open('', '_blank'); if (!v) { toast('Permite las ventanas emergentes para exportar'); return; }
+  v.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Máximos goleadores · ClubOS ED</title>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    @page{size:A4;margin:14mm;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box;}
+    body{font-family:Barlow,Arial,sans-serif;color:#222;margin:0;padding:24px;}
+    header{background:linear-gradient(135deg,#5C1429,#7B1E3A);color:#fff;border-radius:14px;padding:22px 26px;margin-bottom:22px;}
+    header .k{color:#E8C66A;font:800 13px 'Barlow Condensed',sans-serif;letter-spacing:2px;}
+    header h1{font:900 44px/1 'Barlow Condensed',sans-serif;margin:6px 0 4px;}
+    header .f{font-size:12px;opacity:.8;}
+    section{margin-bottom:26px;page-break-inside:avoid;}
+    .cab{border-left:6px solid #7B1E3A;padding:2px 0 2px 12px;margin-bottom:10px;}
+    .cab .k{font-size:11px;color:#888;text-transform:uppercase;letter-spacing:1px;}
+    .cab h2{font:900 26px 'Barlow Condensed',sans-serif;margin:0;color:#7B1E3A;}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    th{text-align:left;font:800 11px 'Barlow Condensed',sans-serif;letter-spacing:1px;text-transform:uppercase;color:#fff;background:#7B1E3A;padding:7px 10px;}
+    td{padding:7px 10px;border-bottom:1px solid #eee;}
+    tbody tr:nth-child(even){background:#faf7f8;}
+    tr.p1{background:#FFF6D6!important;} tr.p2{background:#F1F3F5!important;} tr.p3{background:#FBEDE2!important;}
+    .pos{width:46px;font:800 16px 'Barlow Condensed',sans-serif;text-align:center;}
+    .nom{font-weight:600;text-transform:uppercase;} .eq{color:#666;font-size:12px;}
+    .n{text-align:right;white-space:nowrap;width:190px;}
+    .n b{display:inline-block;min-width:28px;font:900 18px 'Barlow Condensed',sans-serif;color:#7B1E3A;}
+    .bar{display:inline-block;width:120px;height:8px;background:#eee;border-radius:4px;margin-right:10px;vertical-align:middle;overflow:hidden;}
+    .bar i{display:block;height:100%;background:#D4A017;border-radius:4px;}
+    footer{font-size:11px;color:#999;text-align:right;margin-top:10px;}
+    @media print{body{padding:0;}}
+  </style></head><body>
+  <header><div class="k">ESCUELA &amp; DEPORTE</div><h1>MÁXIMOS GOLEADORES</h1><div class="f">Actualizado el ${fecha}</div></header>
+  ${secc}<footer>ClubOS ED · nombre y primer apellido</footer>
+  <script>window.onload=function(){setTimeout(function(){window.print();},400);}<\/script></body></html>`);
+  v.document.close();
 }
 
 // Reconstruye la tabla de Goleadores únicamente a partir de lo asignado en actas de partidos
@@ -9479,19 +9898,55 @@ window._mjSel = null; window._mjJornada = null; window._mjAbierto = false;
 function _mjKey() { return 'clubos_ed_misequipos_' + (sesion?.user || ''); }
 function _mjEquiposDisp() {
   const l = (DB.equipos || []).filter(e => e.competicionId);
-  return sesion.rol === 'admin' ? l : l.filter(e => e.clubId === sesion.user);
+  if (sesion.rol === 'admin') return l;
+  if (sesion.rol === 'club' && !sesion.esFamilia) return l.filter(e => e.clubId === sesion.user);
+  // Familias: cualquier equipo con partidos en el calendario
+  const conP = new Set(); (DB.partidos || []).forEach(p => { conP.add(p.localId); conP.add(p.visitanteId); });
+  return l.filter(e => conP.has(e.id));
 }
+function _mjEsGestor() { return (sesion.rol === 'admin' || sesion.rol === 'club') && !sesion.esFamilia; }
 function _mjSeleccion() {
   if (window._mjSel) return window._mjSel;
   let s = null; try { s = JSON.parse(localStorage.getItem(_mjKey()) || 'null'); } catch (e) {}
-  if (!Array.isArray(s)) { const conJug = new Set((DB.jugadores || []).map(j => j.equipoId)); s = _mjEquiposDisp().filter(e => conJug.has(e.id)).map(e => e.id); }
+  if (!Array.isArray(s)) {
+    if (_mjEsGestor()) { const conJug = new Set((DB.jugadores || []).map(j => j.equipoId)); s = _mjEquiposDisp().filter(e => conJug.has(e.id)).map(e => e.id); }
+    else { const mi = _miEqId(); s = mi ? [mi] : []; window._mjAbierto = !mi; } // familias: parte de "Mi equipo"
+  }
   window._mjSel = new Set(s); return window._mjSel;
 }
 function _mjGuardar() { try { localStorage.setItem(_mjKey(), JSON.stringify([...window._mjSel])); } catch (e) {} }
-function _mjToggleEq(id) { const s = _mjSeleccion(); s.has(id) ? s.delete(id) : s.add(id); _mjGuardar(); window._mjJornada = null; renderMisJornadas(); }
+function _mjToggleEq(id) { const s = _mjSeleccion(); s.has(id) ? s.delete(id) : s.add(id); _mjGuardar(); window._mjJornada = null; _mjRefrescar(); }
+// Repinta sin perder el texto del buscador ni el foco
+function _mjRefrescar() {
+  const q = (document.getElementById('mjBuscar') || {}).value || '', foco = document.activeElement && document.activeElement.id === 'mjBuscar';
+  window._mjQ = q; renderMisJornadas();
+  if (foco) { const i = document.getElementById('mjBuscar'); if (i) { i.focus(); i.setSelectionRange(q.length, q.length); } }
+}
+function _mjFiltrar() { window._mjQ = (document.getElementById('mjBuscar') || {}).value || ''; const b = document.getElementById('mjLista'); if (b) b.innerHTML = _mjListaHtml(); }
+function _mjListaHtml() {
+  const sel = _mjSeleccion(), q = _calNorm(window._mjQ || '').trim();
+  const disp = _mjEquiposDisp().filter(e => !q || _calNorm(e.nombre).includes(q));
+  if (!disp.length) return '<div style="font-size:13px;color:#888;padding:8px 0;">Ningún equipo coincide.</div>';
+  const porComp = {}; disp.forEach(e => (porComp[e.competicionId] = porComp[e.competicionId] || []).push(e));
+  return Object.keys(porComp).map(cid => { const comp = (DB.competiciones || []).find(c => c.id === cid);
+    return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:800;color:#7B1E3A;text-transform:uppercase;">${_escHtml(comp ? _etiquetaCompeticion(comp) : 'Sin competición')}</span>
+      ${!q ? `<button class="btn btn-outline btn-xs" onclick="_mjToggleComp('${cid}')">todos/ninguno</button>` : ''}</div>
+      <div class="mj-lista">${porComp[cid].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map(e => `<label class="mj-eq${sel.has(e.id) ? ' on' : ''}"><input type="checkbox" ${sel.has(e.id) ? 'checked' : ''} onchange="_mjToggleEq('${e.id}')"><span>${sel.has(e.id) ? '⭐ ' : ''}${_escHtml(e.nombre)}</span></label>`).join('')}</div></div>`; }).join('');
+}
+function _mjPasoJornada(d) {
+  const sel = _mjSeleccion(), js = [...new Set((DB.partidos || []).filter(p => sel.has(p.localId) || sel.has(p.visitanteId)).map(p => String(p.jornada)))].sort(_ordenarJornadas);
+  const i = js.indexOf(window._mjJornada) + d; if (i >= 0 && i < js.length) _mjSetJornada(js[i]);
+}
+// Resultado desde el punto de vista del equipo favorito: 'G' | 'E' | 'P' | ''
+function _mjResultado(p, sel) {
+  if (p.estado !== 'jugado') return '';
+  const gl = Number(p.golesLocal), gv = Number(p.golesVisitante); if (isNaN(gl) || isNaN(gv) || p.golesLocal === '' || p.golesVisitante === '') return '';
+  const loc = sel.has(p.localId), vis = sel.has(p.visitanteId); if (loc === vis) return '';
+  if (gl === gv) return 'E'; return (gl > gv) === loc ? 'G' : 'P';
+}
 function _mjToggleComp(cid) {
   const s = _mjSeleccion(), ids = _mjEquiposDisp().filter(e => e.competicionId === cid).map(e => e.id);
-  const todos = ids.every(i => s.has(i)); ids.forEach(i => todos ? s.delete(i) : s.add(i)); _mjGuardar(); window._mjJornada = null; renderMisJornadas();
+  const todos = ids.every(i => s.has(i)); ids.forEach(i => todos ? s.delete(i) : s.add(i)); _mjGuardar(); window._mjJornada = null; _mjRefrescar();
 }
 function _mjAbrirSel() { window._mjAbierto = !window._mjAbierto; renderMisJornadas(); }
 function _mjSetJornada(j) { window._mjJornada = j; renderMisJornadas(); }
@@ -9503,17 +9958,20 @@ function _mjFechaTxt(f) {
 function _mjPartidoCard(p, sel) {
   const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
   const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
-  const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId], rival = mE[esLocal ? p.visitanteId : p.localId];
-  const hora = _limpiarHora(p.hora);
-  return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.07),0 6px 18px rgba(60,20,30,.06);${_avisoActivo(p) ? 'border-left:4px solid #D4A017;' : ''}">
+  const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId];
+  const hora = _limpiarHora(p.hora), jug = p.estado === 'jugado', res = _mjResultado(p, sel);
+  const nm = id => sel.has(id) ? `<span style="color:var(--rojo);">${_escHtml(mE[id]?.nombre || '—')}</span>` : `<span style="font-weight:600;">${_escHtml(mE[id]?.nombre || '—')}</span>`;
+  const RES = { G: ['✅ Victoria', '#D5F5E3', '#1E8449'], E: ['🤝 Empate', '#FFF3CD', '#8A6D00'], P: ['❌ Derrota', '#FDE2E1', '#B42318'] }[res];
+  return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.07),0 6px 18px rgba(60,20,30,.06);${_avisoActivo(p) ? 'border-left:4px solid #D4A017;' : (RES ? 'border-left:4px solid ' + RES[2] + ';' : '')}">
     <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-      <div style="min-width:0;"><div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7B1E3A;">${_escHtml(comp ? _etiquetaCompeticion(comp) : '')}</div>
-        <div style="font-weight:800;font-size:15px;margin-top:3px;">${_escHtml(mio?.nombre || '—')} <span style="font-weight:600;color:var(--gris-suave);">${p.estado === 'jugado' ? `${p.golesLocal ?? ''}–${p.golesVisitante ?? ''}` : 'vs'}</span> ${_escHtml(rival?.nombre || '—')}</div></div>
-      <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:8px;white-space:nowrap;background:${esLocal ? '#D5F5E3' : '#EEE'};color:${esLocal ? '#1E8449' : '#555'};">${esLocal ? 'LOCAL' : 'VISITANTE'}</span></div>
-    <div style="font-size:13px;margin-top:8px;">📅 <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7B1E3A;min-width:0;">${_escHtml(comp ? _etiquetaCompeticion(comp) : '')}</div>
+      <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:8px;white-space:nowrap;background:${esLocal ? '#D5F5E3' : '#E5EFFB'};color:${esLocal ? '#1E8449' : '#1D5FB0'};">${esLocal ? '🏠 LOCAL' : '🚌 VISITANTE'}</span></div>
+    <div class="mj-marcador"><div class="mj-eqn">${nm(p.localId)}</div><div class="mj-goles${jug ? '' : ' vs'}">${jug ? `${_escHtml(p.golesLocal ?? '')} – ${_escHtml(p.golesVisitante ?? '')}` : 'vs'}</div><div class="mj-eqn" style="text-align:right;">${nm(p.visitanteId)}</div></div>
+    ${RES ? `<div style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${RES[1]};color:${RES[2]};margin-top:4px;">${RES[0]}</div>` : ''}
+    <div style="font-size:13px;margin-top:8px;">🗓️ <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
     <div style="font-size:13px;margin-top:3px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
     ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}
-    ${(sesion.rol === 'admin' || sesion.rol === 'club') && mio ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}</div>`;
+    ${_mjEsGestor() && mio ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}</div>`;
 }
 function _mjProximaJornada(parts) {
   const hoy = new Date().toISOString().slice(0, 10);
@@ -9544,18 +10002,20 @@ function renderMisJornadas() {
   if (avisos.length) h += `<div style="background:#FFF8E1;border:1px solid #F0D98A;border-radius:16px;padding:12px;margin-bottom:14px;">
       <div style="font-weight:800;font-size:13px;margin-bottom:8px;">⚠️ Partidos con aviso (${avisos.length})</div>${avisos.map(p => _mjPartidoCard(p, sel)).join('')}</div>`;
   h += `<div style="background:white;border-radius:16px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><b style="font-size:14px;">Mis equipos (${sel.size})</b>
-      <button class="btn btn-outline btn-sm" onclick="_mjAbrirSel()">${window._mjAbierto ? 'Cerrar' : '✏️ Elegir'}</button></div>
-      ${window._mjAbierto ? Object.keys(porComp).map(cid => { const comp = (DB.competiciones || []).find(c => c.id === cid);
-        return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:11px;font-weight:800;color:#7B1E3A;text-transform:uppercase;">${_escHtml(comp ? _etiquetaCompeticion(comp) : 'Sin competición')}</span>
-          <button class="btn btn-outline btn-xs" onclick="_mjToggleComp('${cid}')">todos/ninguno</button></div>
-          ${porComp[cid].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '')).map(e => `<label style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;"><input type="checkbox" ${sel.has(e.id) ? 'checked' : ''} onchange="_mjToggleEq('${e.id}')" style="width:auto;min-height:auto;"> ${_escHtml(e.nombre)}</label>`).join('')}</div>`; }).join('')
-        : `<div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${sel.size ? [...sel].map(id => _escHtml(mE[id]?.nombre || '?')).join(' · ') : 'Pulsa "Elegir" para seleccionar tus equipos.'}</div>`}</div>`;
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><b style="font-size:14px;">⭐ Mis equipos favoritos (${sel.size})</b>
+      <button class="btn btn-outline btn-sm" onclick="_mjAbrirSel()">${window._mjAbierto ? '✓ Listo' : '✏️ Elegir'}</button></div>
+      ${window._mjAbierto ? `<input id="mjBuscar" type="search" autocomplete="off" placeholder="🔎 Buscar equipo…" value="${_escHtml(window._mjQ || '')}" oninput="_mjFiltrar()" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;">
+        <div id="mjLista" class="mj-scroll">${_mjListaHtml()}</div>`
+        : `<div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${sel.size ? [...sel].map(id => '⭐ ' + _escHtml(mE[id]?.nombre || '?')).join(' · ') : 'Pulsa "Elegir" para marcar tus equipos favoritos.'}</div>`}</div>`;
   if (!jornadas.length) { el.innerHTML = h + '<div class="empty-state"><div class="ei">🗓️</div><p>Selecciona equipos que tengan partidos en el calendario.</p></div>'; return; }
-  h += `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;">
-      <select onchange="_mjSetJornada(this.value)" style="padding:10px;border:1px solid var(--gris-linea);border-radius:12px;min-width:150px;font-weight:700;">
+  const iJ = jornadas.indexOf(jor), cuenta = { G: 0, E: 0, P: 0 }; delaJ.forEach(p => { const r = _mjResultado(p, sel); if (r) cuenta[r]++; });
+  const hayRes = cuenta.G + cuenta.E + cuenta.P;
+  h += `<div class="mj-nav">
+      <button class="btn btn-outline btn-sm" ${iJ <= 0 ? 'disabled' : ''} onclick="_mjPasoJornada(-1)" aria-label="Jornada anterior">◀</button>
+      <select onchange="_mjSetJornada(this.value)">
         ${jornadas.map(j => `<option value="${j}" ${j === jor ? 'selected' : ''}>${/^\d+$/.test(j) ? 'Jornada ' + j : j}</option>`).join('')}</select>
-      <span style="font-size:14px;"><b>${delaJ.length}</b> partido${delaJ.length === 1 ? '' : 's'}</span>
+      <button class="btn btn-outline btn-sm" ${iJ >= jornadas.length - 1 ? 'disabled' : ''} onclick="_mjPasoJornada(1)" aria-label="Jornada siguiente">▶</button>
+      <span style="font-size:14px;"><b>${delaJ.length}</b> partido${delaJ.length === 1 ? '' : 's'}${hayRes ? ` · <span style="color:#1E8449;font-weight:700;">${cuenta.G}G</span> <span style="color:#8A6D00;font-weight:700;">${cuenta.E}E</span> <span style="color:#B42318;font-weight:700;">${cuenta.P}P</span>` : ''}</span>
       <span style="margin-left:auto;display:flex;gap:6px;"><button class="btn btn-outline btn-sm" onclick="_mjCompartir('wa')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="_mjCompartir('copiar')">📋</button></span></div>`;
   h += delaJ.length ? delaJ.map(p => _mjPartidoCard(p, sel)).join('') : '<div class="empty-state"><p>Ninguno de tus equipos juega esta jornada.</p></div>';
   if (descansan.length) h += `<div style="font-size:13px;color:var(--gris-suave);margin-top:6px;">😴 Descansan: ${descansan.map(_escHtml).join(', ')}</div>`;
@@ -9568,6 +10028,8 @@ function _mjTextoJornada() {
     .sort((a, b) => (_limpiarFecha(a.fecha) + (a.hora || '')).localeCompare(_limpiarFecha(b.fecha) + (b.hora || '')));
   return `📋 *Jornada ${jor}*\n` + l.map(p => {
     const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId], rival = mE[esLocal ? p.visitanteId : p.localId];
+    const marc = p.estado === 'jugado' ? `${mE[p.localId]?.nombre || ''} ${p.golesLocal ?? ''}-${p.golesVisitante ?? ''} ${mE[p.visitanteId]?.nombre || ''}` : '';
+    if (marc) return `\n⚽ ${marc} ${({ G: '✅', E: '🤝', P: '❌' })[_mjResultado(p, sel)] || ''}`;
     return `\n⚽ ${mio?.nombre || ''} ${esLocal ? 'vs' : '@'} ${rival?.nombre || ''}\n🗓️ ${_mjFechaTxt(p.fecha)} ${_limpiarHora(p.hora)}\n📍 ${p.campo || 'Lugar por confirmar'}${_avisoActivo(p) ? '\n⚠️ ' + _avisoTexto(p) : ''}`;
   }).join('\n');
 }
