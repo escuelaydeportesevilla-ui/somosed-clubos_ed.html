@@ -2166,7 +2166,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.3';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.4';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -6458,7 +6458,7 @@ function _golRanking(compId, max) {
   const l = (DB.goleadores || []).filter(g => Number(g.goles) > 0 && (!compId || _golCompDe(g) === compId))
     .map(g => ({ nombre: _golNombre(g.jugador), equipo: ((DB.equipos || []).find(e => e.id === g.equipoId) || {}).nombre || '', goles: Number(g.goles) || 0 }))
     .sort((a, b) => b.goles - a.goles || a.nombre.localeCompare(b.nombre, 'es'));
-  l.forEach((g, i) => { g.pos = i && l[i - 1].goles === g.goles ? l[i - 1].pos : i + 1; }); // empates comparten puesto
+  l.forEach((g, i) => { g.pos = !i ? 1 : (l[i - 1].goles === g.goles ? l[i - 1].pos : l[i - 1].pos + 1); }); // empates comparten puesto, numeración seguida (1,2,2,3…)
   return max ? l.slice(0, max) : l;
 }
 function _golTitulo(compId) {
@@ -6493,7 +6493,8 @@ async function _golCanvas(compId, top) {
   const C = '"Barlow Condensed", "Arial Narrow", Arial, sans-serif', B = 'Barlow, Arial, sans-serif';
   const lista = _golRanking(compId, top), tit = _golTitulo(compId);
   const W = 1080, HEAD = 330, ROW = 74, PODIO = 3, FOOT = 110;
-  const nPod = Math.min(5, lista.filter(p => p.pos <= PODIO).length), resto = lista.slice(nPod); // empatados en el podio, también dentro
+  let kP = PODIO; while (kP > 1 && lista.filter(p => p.pos <= kP).length > 5) kP--; // el podio nunca parte un empate
+  const nPod = Math.min(5, lista.filter(p => p.pos <= kP).length), resto = lista.slice(nPod);
   const H = HEAD + nPod * 112 + (resto.length ? 24 + resto.length * ROW : 0) + FOOT;
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const x = cv.getContext('2d');
   // Fondo
