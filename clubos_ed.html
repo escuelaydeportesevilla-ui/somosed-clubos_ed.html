@@ -2309,8 +2309,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.7';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.2';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.0.8';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.3';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2904,6 +2904,10 @@ function enlaceEquipoCopiar() {
 // ══════════════════════════════════════════════════════
 function _convpId(pid, eid) { return ('cv_' + pid + '_' + eid).replace(/[^A-Za-z0-9_\-]/g, ''); }
 function _convpConocida(id) { try { return (JSON.parse(localStorage.getItem('clubos_ed_convp') || '[]')).includes(id); } catch (e) { return false; } }
+function _convpOlvidar(base) { try { const l = JSON.parse(localStorage.getItem('clubos_ed_convp') || '[]').filter(x => x !== base); localStorage.setItem('clubos_ed_convp', JSON.stringify(l)); } catch (e) {} }
+// Versiones: la 1ª usa el id base; las siguientes, base_v2, base_v3…
+function _convpVer(id, base) { if (id === base) return 1; const m = String(id).match(/_v(\d+)$/); return m ? +m[1] : 1; }
+function _convpIdVer(base, n) { return n <= 1 ? base : base + '_v' + n; }
 function _convpRecordar(id) { try { const l = JSON.parse(localStorage.getItem('clubos_ed_convp') || '[]'); if (!l.includes(id)) { l.push(id); localStorage.setItem('clubos_ed_convp', JSON.stringify(l.slice(-300))); } } catch (e) {} }
 function _convpUrl(id) { return location.href.split('#')[0].split('?')[0] + '?conv=' + encodeURIComponent(id); }
 function _convpNom(j) { const n = (j.nombre || '').trim(), a = (j.apellidos || '').trim(); return n + (a ? ' ' + a.charAt(0).toUpperCase() + '.' : ''); }
@@ -2917,7 +2921,7 @@ function convPartidoAbrir(pid, eid) {
   const rival = (DB.equipos || []).find(x => x.id === (p.localId === eid ? p.visitanteId : p.localId));
   const js = (DB.jugadores || []).filter(j => j.equipoId === eid && !(j.activo === false || j.activo === 'false'))
     .sort((a, b) => _convpNom(a).localeCompare(_convpNom(b)));
-  window._convp = { pid, eid, id: _convpId(pid, eid) };
+  window._convp = { pid, eid, base: _convpId(pid, eid), id: _convpId(pid, eid), maxN: 0 };
   let m = document.getElementById('modalConvPartido');
   if (!m) { m = document.createElement('div'); m.className = 'modal'; m.id = 'modalConvPartido'; document.body.appendChild(m); }
   const marcados = js.filter(j => j.convocado === true || j.convocado === 'true').length;
@@ -2938,14 +2942,24 @@ function convPartidoAbrir(pid, eid) {
 async function _convpCargarExistente() {
   const c = window._convp; if (!c) return;
   const el = document.getElementById('convpRes'); if (el) el.innerHTML = '<div style="color:#888;font-size:13px;">Comprobando si ya existe…</div>';
+  // Busca todas las versiones de la convocatoria de este partido y se queda con la vigente
+  let vs = null; try { vs = await jsonpFetch(SCRIPT_URL + '?action=convBuscar&pwd=' + _convpPwd() + '&base=' + encodeURIComponent(c.base), 15000); } catch (e) {}
+  if (!window._convp || window._convp.base !== c.base || !document.getElementById('convpLista')) return;
+  if (vs && vs.ok && Array.isArray(vs.versiones)) {
+    c.maxN = vs.versiones.reduce((m, v) => Math.max(m, _convpVer(v.id, c.base)), 0);
+    const viva = vs.versiones.filter(v => !v.anulada).sort((a, b) => _convpVer(b.id, c.base) - _convpVer(a.id, c.base))[0];
+    if (viva) c.id = viva.id;
+    else if (c.maxN) { c.id = _convpIdVer(c.base, c.maxN + 1); if (el) el.innerHTML = '<div class="info-box">🚫 La convocatoria anterior está <b>anulada</b>. Marca los convocados y genera una nueva.</div>'; _convpOlvidar(c.base); return; }
+  }
   let d = null; try { d = await jsonpFetch(SCRIPT_URL + '?action=convGet&id=' + encodeURIComponent(c.id), 15000); } catch (e) {}
   if (!window._convp || window._convp.id !== c.id || !document.getElementById('convpLista')) return;
-  if (!d || !d.ok) { if (el) el.innerHTML = ''; return; }
+  if (!d || !d.ok || d.anulada) { if (el) el.innerHTML = ''; return; }
+  c.maxN = Math.max(c.maxN, _convpVer(c.id, c.base));
   const ids = new Set((d.jugadores || []).map(j => j.id));
   document.querySelectorAll('#convpLista input').forEach(i => { i.checked = ids.has(i.dataset.j); });
   const nt = document.getElementById('convpNota'); if (nt) nt.value = d.nota || '';
   const b = document.getElementById('convpBtn'); if (b) b.textContent = '💾 Guardar cambios';
-  _convpRecordar(c.id);
+  _convpRecordar(c.base);
   await convPartidoRefrescar(true);
 }
 async function convPartidoGenerar() {
@@ -2961,8 +2975,13 @@ async function convPartidoGenerar() {
   try {
     const r = await jsonpFetch(SCRIPT_URL + '?action=convCrear&pwd=' + _convpPwd() + '&datos=' + encodeURIComponent(JSON.stringify(datos)), 20000);
     if (!r || !r.ok) throw new Error((r && r.error) || 'Error');
-    window._convp.datos = datos; _convpRecordar(c.id); await convPartidoRefrescar(true); if (typeof renderMisJornadas === 'function') renderMisJornadas();
-  } catch (e) { toast('No se pudo crear. ¿Está subido el backend 2.4.0?'); }
+    window._convp.datos = datos; _convpRecordar(c.base); c.maxN = Math.max(c.maxN || 0, _convpVer(c.id, c.base));
+    if (c.anterior) {   // anula la anterior y deja su enlace apuntando a la nueva
+      try { await jsonpFetch(SCRIPT_URL + '?action=convAnular&pwd=' + _convpPwd() + '&id=' + encodeURIComponent(c.anterior) + '&nueva=' + encodeURIComponent(c.id), 20000); } catch (e) {}
+      c.anterior = null; toast('♻️ Nueva convocatoria creada. Envía el nuevo enlace a las familias');
+    }
+    await convPartidoRefrescar(true); if (typeof renderMisJornadas === 'function') renderMisJornadas();
+  } catch (e) { toast('No se pudo crear. ¿Está subido el backend 2.4.3?'); }
   b.disabled = false; b.textContent = '💾 Guardar cambios';
 }
 async function convPartidoRefrescar(primera) {
@@ -2977,8 +2996,30 @@ async function convPartidoRefrescar(primera) {
     <input readonly value="${_escHtml(url)}" onclick="this.select()" style="width:100%;padding:9px;border:1px solid #ddd;border-radius:8px;box-sizing:border-box;font-size:12px;">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0;"><button class="btn btn-rojo btn-xs" onclick="convPartidoCopiar()">📋 Copiar enlace</button><button class="btn btn-outline btn-xs" onclick="convPartidoWhatsApp()">💬 Enviar por WhatsApp</button><button class="btn btn-outline btn-xs" onclick="convPartidoRefrescar()">🔄 Actualizar estado</button></div>
     <div style="font-size:13px;margin:6px 0;">${_convpResumen(d)}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 10px;font-size:13px;">${d.jugadores.map(j => `<div>${ic((d.resp || {})[j.id])} ${_escHtml(j.n)}</div>`).join('')}</div></div>`;
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 10px;font-size:13px;">${d.jugadores.map(j => `<div>${ic((d.resp || {})[j.id])} ${_escHtml(j.n)}</div>`).join('')}</div>
+    <div style="border-top:1px solid #e6dde1;margin-top:10px;padding-top:10px;">
+      <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">¿Ha cambiado la disponibilidad? Para añadir o quitar a alguien sin enviar otro enlace, marca arriba y pulsa <b>Guardar cambios</b>. Si prefieres empezar de cero:</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-outline btn-xs" onclick="convPartidoNueva()">♻️ Anular y crear nueva</button><button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);" onclick="convPartidoAnular()">🚫 Anular convocatoria</button></div></div></div>`;
   if (!primera) toast('Actualizado');
+}
+// Prepara una convocatoria nueva (nueva versión, respuestas a cero). La anterior se anula al generar la nueva.
+function convPartidoNueva() {
+  const c = window._convp; if (!c) return;
+  if (!confirm('Se creará una convocatoria NUEVA con un enlace nuevo y las respuestas a cero.\n\nLa actual quedará anulada al generar la nueva (su enlace llevará a la nueva). ¿Continuar?')) return;
+  c.anterior = c.id; c.id = _convpIdVer(c.base, (c.maxN || 1) + 1); c.d = null; c.url = null;
+  const b = document.getElementById('convpBtn'); if (b) b.textContent = '🔗 Generar enlace nuevo';
+  const el = document.getElementById('convpRes');
+  if (el) el.innerHTML = '<div class="info-box">♻️ Marca los jugadores que van a esta <b>nueva convocatoria</b> y pulsa <b>Generar enlace nuevo</b>. Después envía el enlace nuevo a las familias.</div>';
+}
+async function convPartidoAnular() {
+  const c = window._convp; if (!c) return;
+  if (!confirm('¿Anular esta convocatoria?\n\nLas familias que abran el enlace verán que está anulada y ya no podrán responder.')) return;
+  try {
+    const r = await jsonpFetch(SCRIPT_URL + '?action=convAnular&pwd=' + _convpPwd() + '&id=' + encodeURIComponent(c.id), 20000);
+    if (!r || !r.ok) throw new Error((r && r.error) || 'Error');
+    _convpOlvidar(c.base); cerrarModal('modalConvPartido'); toast('🚫 Convocatoria anulada');
+    if (typeof renderMisJornadas === 'function') renderMisJornadas();
+  } catch (e) { toast('No se pudo anular. ¿Está subido el backend 2.4.3?'); }
 }
 function _convpTexto() {
   const c = window._convp, p = (DB.partidos || []).find(x => x.id === c.pid), eq = (DB.equipos || []).find(x => x.id === c.eid);
@@ -3014,6 +3055,16 @@ async function convPublicaCargar() {
 }
 function convPublicaPintar() {
   const d = _convpPub.d, ov = document.getElementById('convPublica'); if (!d) return;
+  if (d.anulada) {
+    ov.innerHTML = `<div style="max-width:520px;margin:0 auto;padding:30px 16px;text-align:center;font-family:inherit;">
+      <div style="font-size:46px;">🚫</div><div style="font-size:20px;font-weight:800;margin-top:6px;">Convocatoria anulada</div>
+      <div style="font-size:14px;color:#666;margin-top:6px;">${_escHtml(d.equipo || '')} ${d.esLocal ? 'vs' : '@'} ${_escHtml(d.rival || '')}</div>
+      ${d.sustituidaPor ? `<div style="font-size:14px;margin-top:14px;">El entrenador ha publicado una convocatoria nueva.</div>
+        <button onclick="location.replace(location.href.split('?')[0]+'?conv='+encodeURIComponent('${_escHtml(d.sustituidaPor)}'))" style="width:100%;margin-top:14px;padding:14px;border-radius:12px;border:0;background:#7B1E3A;color:#fff;font-weight:800;font-size:16px;font-family:inherit;">👉 Ver la nueva convocatoria</button>`
+        : '<div style="font-size:14px;margin-top:14px;">Ya no hace falta responder. Si tienes dudas, pregunta al entrenador.</div>'}
+      <button onclick="convPublicaSalir()" style="width:100%;margin-top:10px;padding:13px;border-radius:12px;border:2px solid #7B1E3A;background:#fff;color:#7B1E3A;font-weight:800;font-size:15px;font-family:inherit;">🚪 Salir</button></div>`;
+    clearInterval(_convpPub.timer); return;
+  }
   const fecha = d.fecha ? _mjFechaTxt(d.fecha) : '';
   const fila = j => {
     const r = (d.resp || {})[j.id] || '';
