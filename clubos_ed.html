@@ -1138,6 +1138,22 @@ body.cal-pop-on{overflow:hidden;}
 .coclub{display:flex!important;align-items:center;gap:8px;border:1px solid #e3e3e3;border-radius:10px;padding:8px 10px;font-size:13px!important;font-weight:600!important;opacity:1!important;text-transform:none!important;letter-spacing:0!important;cursor:pointer;margin:0!important;}
 .coclub.on{border-color:var(--rojo);background:var(--rojo-suave);}
 .coclub input{width:16px;height:16px;min-height:auto;margin:0;}
+.gx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+.gx-card{cursor:default;}
+.gx-card:hover{transform:none;}
+.gx-acc{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:1px solid #eee;}
+.gx-menu{position:relative;} .gx-menu summary{list-style:none;} .gx-menu summary::-webkit-details-marker{display:none;}
+.gx-menu .jlf-menu{left:0;right:auto;}
+.gx-del{background:var(--rojo-suave);color:var(--rojo);margin-left:auto;}
+.gx-eqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:14px;}
+.gx-eq{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:0;border-radius:14px;padding:12px 14px;cursor:pointer;font:inherit;color:#fff;background:var(--c);background-image:linear-gradient(145deg,rgba(255,255,255,.14),rgba(0,0,0,.18));opacity:.55;box-shadow:0 2px 8px rgba(0,0,0,.12);transition:opacity .15s,transform .15s;}
+.gx-eq:hover{opacity:.85;}
+.gx-eq.on{opacity:1;box-shadow:0 0 0 3px #fff,0 0 0 6px var(--c),0 8px 18px rgba(0,0,0,.2);transform:translateY(-2px);}
+.gx-eq-cat{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:rgba(255,255,255,.9);}
+.gx-eq-n{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:900;line-height:1.05;text-transform:uppercase;}
+.gx-eq-j{font-size:12px;font-weight:600;}
+.jb-seg button.warn:not(.on){color:#C2571A;font-weight:800;}
+@media (max-width:768px){.gx-grid{grid-template-columns:1fr;}.gx-eqs{grid-template-columns:1fr 1fr;}}
 </style>
 </head>
 <body>
@@ -2274,7 +2290,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.4';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.0.5';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.2';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -5957,7 +5973,7 @@ function renderCalendario() {
     return `<div id="calBloque_${compId}" class="cal-tile-wrap">
       <button type="button" class="cal-tile" style="--c:${col}" onclick="calAbrirComp('${compId}')">
         <span class="cal-tile-cat">${_escHtml(pc.cat || (comp ? comp.nombre : 'Sin competición'))}</span>
-        <span class="cal-tile-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
+        <span class="cal-tile-nom">${_escHtml(pc.nom || mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
         <span class="cal-tile-nums"><span><b>${partidosComp.length}</b>partidos</span><span><b>${nEq}</b>equipos</span><span><b>${jornadas.length}</b>jornadas</span></span>
         <span class="cal-tile-bar"><i style="width:${pct}%"></i></span>
         <span class="cal-tile-pie">✅ ${nJug} de ${partidosComp.length} jugados</span>
@@ -5967,7 +5983,7 @@ function renderCalendario() {
       <div class="cal-pop-fondo" id="calPop_${compId}" style="display:none;" onclick="if(event.target===this)calCerrarComp()">
       <div class="cal-pop-caja" role="dialog" aria-modal="true">
       <div class="cal-pop-cab" style="--c:${col}">
-        <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${partidosComp.length} partidos</div></div>
+        <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(pc.nom || mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${partidosComp.length} partidos</div></div>
         <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         <button class="btn btn-outline btn-xs" onclick="exportarCalendarioPDF('${compId}')">📄 Exportar</button>
         ${esAdmin && !comp && compId!=='__none__' ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="eliminarPartidosHuerfanos('${compId}')">🗑️ Eliminar huérfanos</button>` : ''}
@@ -6584,7 +6600,7 @@ function renderClasificacion() {
     return `<div class="cal-tile-wrap">
       <button type="button" class="cal-tile" style="--c:${col}" onclick="clasAbrirComp('${compId}')">
         <span class="cal-tile-cat">${_escHtml(pc.cat || compNombre)}</span>
-        <span class="cal-tile-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
+        <span class="cal-tile-nom">${_escHtml(pc.nom || mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
         <span class="cal-tile-nums"><span><b>${equiposComp.length}</b>equipos</span><span><b>${nJ}</b>jugados</span><span><b>${lider ? lider.pts : 0}</b>pts líder</span></span>
         ${lider && lider.pj ? `<span class="cal-tile-pie">🥇 ${_escHtml(lider.nombre)}</span>` : '<span class="cal-tile-pie">Sin partidos jugados aún</span>'}
         <span class="cal-tile-ir">Ver clasificación →</span>
@@ -6592,7 +6608,7 @@ function renderClasificacion() {
       <div class="cal-pop-fondo" id="clasPop_${compId}" style="display:none;" onclick="if(event.target===this)_popCerrar()">
       <div class="cal-pop-caja" role="dialog" aria-modal="true">
         <div class="cal-pop-cab" style="--c:${col}">
-          <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${equiposComp.length} equipos</div></div>
+          <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(pc.nom || mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${equiposComp.length} equipos</div></div>
           <span style="display:flex;gap:6px;align-items:center;"><button class="btn btn-outline btn-xs" onclick="exportarClasificacionPDF('${compId}')">📄 Exportar</button><button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span>
         </div>
         <div class="cal-pop-cuerpo">${_tablaClasificacionHTML(tabla)}</div>
@@ -7024,7 +7040,7 @@ function renderActas() {
   _acordeonATiles(el, 'actas', (contId) => {
     const compId = contId.slice('actasComp_'.length), c = (DB.competiciones || []).find(x => x.id === compId), ps = compGroups[compId] || [];
     const red = ps.filter(p => p.acta).length;
-    return { cat: c ? (_compPartes(c).cat || c.nombre) : 'Sin competición', sub: c ? _calModalidad(c) + (c.temporada ? ' · ' + c.temporada : '') : '',
+    return { cat: c ? (_compPartes(c).cat || c.nombre) : 'Sin competición', sub: c ? (_compPartes(c).nom || c.nombre) + (c.temporada ? ' · ' + c.temporada : '') : '',
       color: _calColorComp(compId), nums: [[ps.length, 'partidos'], [red, 'redactadas'], [ps.length - red, 'pendientes']], ir: 'Ver actas →' };
   });
   { const g = el.querySelector('.cal-tiles'); if (g) [...g.children].sort((a, b) => _calOrdenComp(a.dataset.pop.replace('pop_actasComp_', '')) - _calOrdenComp(b.dataset.pop.replace('pop_actasComp_', ''))).forEach(x => g.appendChild(x)); }
@@ -7093,7 +7109,7 @@ function abrirActaPartido(partidoId) {
   DB.actaEditId = partidoId;
   const p = DB.partidos.find(x=>x.id===partidoId); if (!p) return;
   const permiso = _permisoActa(p); if (!permiso) { toast('No tienes permiso para este acta'); return; }
-  const esClub = permiso === 'club', resFijo = esClub && p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
+  const esClub = permiso === 'club', resFijo = false; // los clubes con permiso pueden corregir también el resultado
   window._actaModoClub = esClub;
   const local = DB.equipos.find(e=>e.id===p.localId);
   const visit = DB.equipos.find(e=>e.id===p.visitanteId);
@@ -7115,7 +7131,7 @@ function abrirActaPartido(partidoId) {
       <div style="flex:1;min-width:200px;" id="actaTeamBlock_${local?.id||'local'}"></div>
       <div style="flex:1;min-width:200px;" id="actaTeamBlock_${visit?.id||'visit'}"></div>
     </div>
-    ${esClub ? `<div class="info-box" style="margin-bottom:10px;">⚽ Como club, puedes anotar los <b>goleadores de tu equipo</b>${resFijo ? '' : ' y el resultado si aún no está puesto'}. El texto del acta lo redacta la organización.</div>` : ''}
+    ${esClub ? `<div class="info-box" style="margin-bottom:10px;">⚽ Como club, puedes anotar el <b>resultado</b> y los <b>goleadores de tu equipo</b>. El texto del acta lo redacta la organización.</div>` : ''}
     <div class="form-field" style="${esClub ? 'display:none;' : ''}">
       <label>Texto del acta</label>
       <textarea id="actaTexto" style="min-height:140px" placeholder="Redacta aquí el acta del partido: incidencias, tarjetas, goles, observaciones…">${p.acta||''}</textarea>
@@ -7241,7 +7257,7 @@ async function guardarActa() {
   if (window._actaModoClub) {
     // Club: solo goleadores (y resultado si no estaba puesto). No toca texto, árbitro ni cierre del acta.
     const P = DB.partidos[idx], glTxt = document.getElementById('actaGL').value, gvTxt = document.getElementById('actaGV').value;
-    if (!(P.estado === 'jugado' && P.golesLocal !== '' && P.golesLocal != null) && glTxt !== '' && gvTxt !== '') { P.golesLocal = gl; P.golesVisitante = gv; P.estado = 'jugado'; }
+    if (glTxt !== '' && gvTxt !== '') { P.golesLocal = gl; P.golesVisitante = gv; P.estado = 'jugado'; }
     P.golesAsignados = JSON.stringify(sesionGoles);
     window._actaContextoGol = null; window._actaSesionGoles = []; window._actaModoClub = false;
     await saveCols(['goleadores','partidos']); cerrarModal('modalActa'); toast('⚽ Goleadores guardados' + avisoDescuadre); renderAll();
@@ -8958,14 +8974,28 @@ function renderEvaluaciones() {
         </div>
       </div>`).join('');
     return `
-    <div style="margin-bottom:22px;" data-nombre-eval="${nombreJ.toLowerCase()}">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <div style="font-weight:800;font-size:1rem;">📝 ${nombreJ}</div>
+    <div style="margin-bottom:14px;" data-nombre-eval="${nombreJ.toLowerCase()}">
+      <div onclick="toggleAcordeon('evalJ_${jugadorId}')"><span>${_escHtml(nombreJ)} <span>(${evs.length} evaluaci${evs.length === 1 ? 'ón' : 'ones'})</span></span>
         <button class="btn btn-outline btn-sm" onclick="exportarFichaJugadorPDF('${jugadorId}')">📄 Exportar</button>
       </div>
-      <div class="cards-escuelas">${tarjetas}</div>
+      <div id="evalJ_${jugadorId}" style="display:none;"><div class="cards-escuelas">${tarjetas}</div></div>
     </div>`;
   }).join('');
+  _acordeonATiles(el, 'eval', contId => {
+    const jid = contId.slice(6), j = (DB.jugadores || []).find(x => x.id === jid), eq = j && (DB.equipos || []).find(e => e.id === j.equipoId);
+    const evs = porJugador[jid] || [], ult = evs[0] || {};
+    const notas = evs.map(ev => _evalNota(ev)).filter(n => n != null), media = notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length).toFixed(1).replace('.', ',') : '—';
+    return { sub: eq ? eq.nombre : 'Sin equipo', color: eq?.competicionId ? _calColorComp(eq.competicionId) : '#2E4057',
+      nums: [[evs.length, 'evaluaciones'], [media, 'media']], pie: ult.fecha ? '🗓️ Última: ' + _escHtml(_convFmtFecha(_limpiarFecha(ult.fecha))) + (ult.valoracionGeneral ? ' · ' + _escHtml(ult.valoracionGeneral) : '') : '', ir: 'Ver evaluaciones →' };
+  });
+  // la búsqueda filtra por el nombre del jugador también en modo pastillas
+  el.querySelectorAll('.cal-tile-wrap[data-pop]').forEach(t => { const j = (DB.jugadores || []).find(x => 'pop_evalJ_' + x.id === t.dataset.pop); t.setAttribute('data-nombre-eval', j ? (j.nombre + ' ' + (j.apellidos || '')).toLowerCase() : ''); });
+}
+// Nota media de una evaluación (campos numéricos de 1 a 10 o 1 a 5 que existan)
+function _evalNota(ev) {
+  const ks = ['tecControl','tecPase','tecTiro','fisVelocidad','fisResistencia','fisFuerza','actEsfuerzo','actEquipo','actDisciplina'];
+  const v = ks.map(k => parseFloat(ev[k])).filter(n => !isNaN(n));
+  return v.length ? v.reduce((s, n) => s + n, 0) / v.length : null;
 }
 
 function _preseleccionarJugadorEval(jugadorId) {
@@ -9143,22 +9173,15 @@ function renderAlineaciones() {
   if (!window._alinEquipoId && equipos.length) window._alinEquipoId = equipos[0].id;
   const equipo = equipos.find(e=>e.id===window._alinEquipoId);
 
-  let html = `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
-      <div style="min-width:220px;">
-        <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Equipo</label>
-        <select onchange="_alinSetEquipo(this.value)" style="width:100%;padding:8px;border-radius:8px;border:1px solid var(--gris-linea);">
-          ${!equipos.length ? '<option value="">— Sin equipos —</option>' : equipos.map(e=>`<option value="${e.id}" ${window._alinEquipoId===e.id?'selected':''}>${e.nombre}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label style="display:block;font-size:11px;font-weight:700;color:var(--gris-suave);margin-bottom:4px;">Formato</label>
-        <div style="display:flex;gap:6px;">
-          ${['5','7'].map(f=>`<button class="btn ${window._alinFormato===f?'btn-rojo':'btn-outline'} btn-sm" onclick="_alinSetFormato('${f}')">${f} jugadores</button>`).join('')}
-        </div>
-      </div>
-      <button class="btn btn-rojo btn-sm" onclick="generarPromptAlineacion()">🤖 Generar prompt para Claude</button>
-    </div>
+  const nAct = id => jugadoresDisponibles.filter(j => j.equipoId === id && j.activo !== false && j.activo !== 'false').length;
+  let html = `<div class="gx-eqs">${!equipos.length ? '<div class="empty-state"><p>Sin equipos con jugadores.</p></div>' : equipos.map(e => {
+      const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
+      return `<button type="button" class="gx-eq${window._alinEquipoId === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="_alinSetEquipo('${e.id}')">
+        <span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : 'Sin categoría')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span><span class="gx-eq-j">${nAct(e.id)} jugadores activos</span></button>`; }).join('')}</div>
+  <div class="jb" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+    <span style="font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--gris-suave);">Formato</span>
+    <div class="jb-seg" style="margin:0;">${['5','7'].map(f=>`<button class="${window._alinFormato===f?'on':''}" onclick="_alinSetFormato('${f}')">${f} jugadores</button>`).join('')}</div>
+    <button class="btn btn-rojo" style="margin-left:auto;" onclick="generarPromptAlineacion()">🤖 Generar prompt para Claude</button>
   </div>`;
 
   const jugadoresEquipo = jugadoresDisponibles.filter(j => j.equipoId===window._alinEquipoId && j.activo!==false && j.activo!=='false')
@@ -9392,6 +9415,15 @@ function _convJugadoresDe(c) {
     .sort((a,b) => (a.equipoNombre||'').localeCompare(b.equipoNombre||'') || _convNombreJ(a).localeCompare(_convNombreJ(b)));
 }
 
+function _convColor(tipo) {
+  const t = _calNorm(tipo || '');
+  if (/partido|liga|amistoso/.test(t)) return '#1D5FB0';
+  if (/torneo|campeonato|copa/.test(t)) return '#C2571A';
+  if (/entren/.test(t)) return '#1E8449';
+  if (/reunion|familia/.test(t)) return '#6C3FA0';
+  if (/evento|fiesta|excursion|viaje/.test(t)) return '#0E7C86';
+  return '#7B1E3A';
+}
 function renderConvocatorias() {
   const el = document.getElementById('convocatoriasContent');
   if (!el) return;
@@ -9405,27 +9437,29 @@ function renderConvocatorias() {
       const porEq = {};
       js.forEach(j => { const k = j.equipoNombre || 'Sin equipo'; porEq[k] = (porEq[k]||0) + 1; });
       const resumen = Object.keys(porEq).map(k => `${_escHtml(k)} (${porEq[k]})`).join(' · ');
-      return `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
-        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-          <div style="min-width:220px;flex:1;">
-            <div style="font-weight:800;font-size:15px;">${_escHtml(c.nombre||'Sin nombre')}</div>
-            <div style="font-size:12px;color:var(--gris-suave);margin-top:2px;">
-              ${_escHtml(c.tipo||'')} · 📅 ${_convFmtFecha(c.fecha)}${c.hora?' · ⏰ '+_escHtml(c.hora):''}${c.lugar?' · 📍 '+_escHtml(c.lugar):''}
-            </div>
-            ${c.motivo?`<div style="font-size:12px;margin-top:4px;">${_escHtml(c.motivo)}</div>`:''}
-            <div style="font-size:12px;margin-top:6px;"><b>${js.length}</b> convocados${resumen?': '+resumen:''}</div>
+      return `<div class="card-competicion gx-card" style="--c:${_convColor(c.tipo)};cursor:default;">
+        <div class="cc-cab">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+            <div class="cc-cat" style="font-size:1.45rem;">${_escHtml(c.nombre||'Sin nombre')}</div>
+            ${c.tipo ? `<span class="cc-estado">${_escHtml(c.tipo)}</span>` : ''}
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button class="btn btn-outline btn-sm" onclick="editarConvocatoria('${c.id}')">✏️ Editar</button>
-            <button class="btn btn-outline btn-sm" onclick="duplicarConvocatoria('${c.id}')">📄 Duplicar</button>
-            <button class="btn btn-outline btn-sm" onclick="compartirConvocatoriaWhatsApp('${c.id}')">💬 WhatsApp</button>
-            <button class="btn btn-outline btn-sm" onclick="copiarConvocatoria('${c.id}')">📋 Copiar</button>
-            <button class="btn btn-outline btn-sm" onclick="exportarConvocatoriaPDF('${c.id}')">🖨️ PDF</button>
-            <button class="btn btn-rojo btn-sm" onclick="eliminarConvocatoria('${c.id}')">🗑</button>
-          </div>
+          <div class="cc-nom">🗓️ ${_convFmtFecha(c.fecha)}${c.hora?' · ⏰ '+_escHtml(c.hora):''}${c.lugar?' · 📍 '+_escHtml(c.lugar):''}</div>
+        </div>
+        <div class="comp-cifras"><span><b>${js.length}</b> convocados</span>${Object.keys(porEq).length ? `<span><b>${Object.keys(porEq).length}</b> equipo${Object.keys(porEq).length === 1 ? '' : 's'}</span>` : ''}</div>
+        ${c.motivo?`<div style="font-size:13px;margin-top:8px;">${_escHtml(c.motivo)}</div>`:''}
+        ${resumen ? `<div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${resumen}</div>` : ''}
+        <div class="gx-acc">
+          <button class="btn btn-rojo btn-sm" onclick="editarConvocatoria('${c.id}')">✏️ Editar</button>
+          <details class="gx-menu"><summary class="btn btn-outline btn-sm">📤 Compartir ▾</summary><div class="jlf-menu">
+            <button onclick="compartirConvocatoriaWhatsApp('${c.id}')">💬 WhatsApp</button>
+            <button onclick="copiarConvocatoria('${c.id}')">📋 Copiar texto</button>
+            <button onclick="exportarConvocatoriaPDF('${c.id}')">🖨️ PDF</button></div></details>
+          <button class="btn btn-outline btn-sm" onclick="duplicarConvocatoria('${c.id}')">📄 Duplicar</button>
+          <button class="btn btn-sm gx-del" onclick="eliminarConvocatoria('${c.id}')" aria-label="Eliminar">🗑️</button>
         </div>
       </div>`;
     }).join('');
+    html = html.replace('<div class="card-competicion gx-card"', '<div class="gx-grid"><div class="card-competicion gx-card"') + '</div>';
   }
   el.innerHTML = html;
 }
@@ -9680,7 +9714,7 @@ function renderPagos() {
   const t = _pagTotales(pagos);
   const disp = _convJugadoresDisponibles();
   const eqs = {}; disp.forEach(j => { if (j.equipoId) eqs[j.equipoId] = j.equipoNombre || j.equipoId; });
-  const chip = (id, txt) => `<button class="btn ${window._pagVista===id?'btn-rojo':'btn-outline'} btn-sm" onclick="_pagSetVista('${id}')">${txt}</button>`;
+  const chip = (id, txt) => `<button class="${window._pagVista===id?'on':''}${id === 'impagados' && t.pendiente > 0 ? ' warn' : ''}" onclick="_pagSetVista('${id}')">${txt}</button>`;
   let html = `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
       <button class="btn btn-primary" onclick="nuevoConceptoPago()">+ Nuevo cobro</button>
       <select onchange="_pagSetEq(this.value)" style="padding:9px;border-radius:10px;border:1px solid var(--gris-linea);max-width:190px;">
@@ -9693,7 +9727,7 @@ function renderPagos() {
       ${[['Cobrado', _pagEur(t.cobrado), '#1E8449'], ['Pendiente', _pagEur(t.pendiente), '#7B1E3A'], ['% cobro', t.pct + '%', '#1D5FB0']].map(k =>
         `<div class="cal-stat" style="background-color:${k[2]};text-align:center;"><b style="font-size:1.6rem;">${k[1]}</b><span>${k[0]}</span></div>`).join('')}
     </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${chip('cobros','📋 Cobros')}${chip('jugadores','👤 Por jugador')}${chip('impagados','⚠️ Impagados')}</div>`;
+    <div class="jb-seg" style="margin:0 0 14px;">${chip('cobros','📋 Cobros')}${chip('jugadores','👤 Por jugador')}${chip('impagados','⚠️ Impagados')}</div>`;
   if (window._pagVista === 'jugadores') html += _pagVistaJugadores(pagos);
   else if (window._pagVista === 'impagados') html += _pagVistaImpagados(pagos);
   else html += _pagVistaCobros(pagos);
@@ -10423,17 +10457,16 @@ function _mjKey() { return 'clubos_ed_misequipos_' + (sesion?.user || ''); }
 function _mjEquiposDisp() {
   const l = (DB.equipos || []).filter(e => e.competicionId);
   if (sesion.rol === 'admin') return l;
-  if (sesion.rol === 'club' && !sesion.esFamilia) return l.filter(e => _eqEsDeClub(e));
-  // Familias: cualquier equipo con partidos en el calendario
+  // Clubes y familias: cualquier equipo con partidos (los clubes, también los suyos aunque aún no jueguen)
   const conP = new Set(); (DB.partidos || []).forEach(p => { conP.add(p.localId); conP.add(p.visitanteId); });
-  return l.filter(e => conP.has(e.id));
+  return l.filter(e => conP.has(e.id) || (sesion.rol === 'club' && !sesion.esFamilia && _eqEsDeClub(e)));
 }
 function _mjEsGestor() { return (sesion.rol === 'admin' || sesion.rol === 'club') && !sesion.esFamilia; }
 function _mjSeleccion() {
   if (window._mjSel) return window._mjSel;
   let s = null; try { s = JSON.parse(localStorage.getItem(_mjKey()) || 'null'); } catch (e) {}
   if (!Array.isArray(s)) {
-    if (_mjEsGestor()) { const conJug = new Set((DB.jugadores || []).map(j => j.equipoId)); s = _mjEquiposDisp().filter(e => conJug.has(e.id)).map(e => e.id); }
+    if (_mjEsGestor()) { const conJug = new Set((DB.jugadores || []).map(j => j.equipoId)); s = _mjEquiposDisp().filter(e => conJug.has(e.id) && (sesion.rol === 'admin' || _eqEsDeClub(e))).map(e => e.id); }
     else { const mi = _miEqId(); s = mi ? [mi] : []; window._mjAbierto = !mi; } // familias: parte de "Mi equipo"
   }
   window._mjSel = new Set(s); return window._mjSel;
@@ -10451,8 +10484,12 @@ function _mjListaHtml() {
   const sel = _mjSeleccion(), q = _calNorm(window._mjQ || '').trim();
   const disp = _mjEquiposDisp().filter(e => !q || _calNorm(e.nombre).includes(q));
   if (!disp.length) return '<div style="font-size:13px;color:#888;padding:8px 0;">Ningún equipo coincide.</div>';
-  const porComp = {}; disp.forEach(e => (porComp[e.competicionId] = porComp[e.competicionId] || []).push(e));
-  return Object.keys(porComp).map(cid => { const comp = (DB.competiciones || []).find(c => c.id === cid);
+  const esClub = sesion.rol === 'club' && !sesion.esFamilia;
+  const propios = esClub ? disp.filter(e => _eqEsDeClub(e)) : [];
+  const fila = e => `<label class="mj-eq${sel.has(e.id) ? ' on' : ''}"><input type="checkbox" ${sel.has(e.id) ? 'checked' : ''} onchange="_mjToggleEq('${e.id}')"><span>${sel.has(e.id) ? '⭐ ' : ''}${_escHtml(e.nombre)}</span></label>`;
+  const cabPropios = propios.length ? `<div style="margin-top:10px;"><span style="font-size:11px;font-weight:800;color:#1E8449;text-transform:uppercase;">🏠 Equipos de tu club</span><div class="mj-lista">${propios.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map(fila).join('')}</div></div>` : '';
+  const porComp = {}; disp.filter(e => !propios.includes(e)).forEach(e => (porComp[e.competicionId] = porComp[e.competicionId] || []).push(e));
+  return cabPropios + Object.keys(porComp).map(cid => { const comp = (DB.competiciones || []).find(c => c.id === cid);
     return `<div style="margin-top:10px;"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:800;color:#7B1E3A;text-transform:uppercase;">${_escHtml(comp ? _etiquetaCompeticion(comp) : 'Sin competición')}</span>
       ${!q ? `<button class="btn btn-outline btn-xs" onclick="_mjToggleComp('${cid}')">todos/ninguno</button>` : ''}</div>
       <div class="mj-lista">${porComp[cid].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map(e => `<label class="mj-eq${sel.has(e.id) ? ' on' : ''}"><input type="checkbox" ${sel.has(e.id) ? 'checked' : ''} onchange="_mjToggleEq('${e.id}')"><span>${sel.has(e.id) ? '⭐ ' : ''}${_escHtml(e.nombre)}</span></label>`).join('')}</div></div>`; }).join('');
@@ -10495,7 +10532,7 @@ function _mjPartidoCard(p, sel) {
     <div style="font-size:13px;margin-top:8px;">🗓️ <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
     <div style="font-size:13px;margin-top:3px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
     ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}
-    ${_mjEsGestor() && mio ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}</div>`;
+    ${_mjEsGestor() && mio && (sesion.rol === 'admin' || _eqEsDeClub(mio)) ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}</div>`;
 }
 function _mjProximaJornada(parts) {
   const hoy = new Date().toISOString().slice(0, 10);
