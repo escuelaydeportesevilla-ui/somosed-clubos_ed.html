@@ -1035,6 +1035,14 @@ tbody td.center{text-align:center;}
 .pm-fila.gana .pm-g{background:var(--rojo);color:#fff;}
 .pm-res{display:inline-block;margin-top:8px;color:#fff;font-size:11px;font-weight:800;letter-spacing:1.2px;padding:4px 10px;border-radius:6px;}
 .pm-pie{font-size:12px;color:#555;margin-top:8px;line-height:1.6;}
+.rev-tit{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin:8px 0 6px;}
+.rev-fila{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid #eee;border-radius:10px;padding:8px 10px;margin-bottom:6px;}
+.rev-fila.warn{border-color:#F0D98A;background:#FFFBEA;}
+.rev-n{display:flex;flex-direction:column;min-width:200px;flex:1;font-size:13px;}
+.rev-n span{font-size:11px;color:var(--gris-suave);}
+.rev-n em{font-style:normal;font-size:11px;font-weight:700;color:#B45309;}
+.rev-acc{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.rev-acc select{padding:5px;border:1px solid #ddd;border-radius:8px;font-size:12px;max-width:170px;}
 </style>
 </head>
 <body>
@@ -2166,7 +2174,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.6';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.7';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3058,6 +3066,7 @@ function renderCompeticion() {
         <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️ Editar</button>
         <button class="btn" style="padding:5px 10px;font-size:10px;background:#117A65;color:white;border:none;" onclick="event.stopPropagation();abrirGeneradorCalendario('${c.id}')">📅 Calendario</button>
         <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();abrirImportarCalendario('${c.id}')">📥 Importar</button>
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();abrirRevisarEquipos('${c.id}')">🧹 Revisar equipos</button>
         <button class="btn" style="padding:5px 10px;font-size:10px;background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="event.stopPropagation();eliminarCompeticion('${c.id}')">🗑️ Eliminar</button>
       </div>` : `<div style="font-size:11px;color:var(--rojo);margin-top:8px;font-weight:700;">Ver detalles →</div>`}
     </div>`;
@@ -9867,7 +9876,8 @@ function _impAnalizar() {
   const existentes = (DB.equipos || []).slice().sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
   window._impEquipos = nombres.map(n => {
     const nn = _impNorm(n);
-    const ex = existentes.find(e => _impNorm(e.nombre) === nn && e.competicionId === window._impComp) || existentes.find(e => _impNorm(e.nombre) === nn);
+    // Solo se empareja solo con equipos de ESTA competición (evita mezclar categorías con nombres iguales)
+    const ex = existentes.find(e => _impNorm(e.nombre) === nn && e.competicionId === window._impComp);
     return { nombre: n, destino: ex ? ex.id : '__nuevo__' };
   });
   const fechas = filas.map(f => f.fecha).sort();
@@ -9879,7 +9889,9 @@ function _impAnalizar() {
       <span style="flex:1;font-size:13px;">${_escHtml(e.nombre)}</span>
       <select onchange="window._impEquipos[${i}].destino=this.value" style="max-width:55%;padding:8px;border:1px solid var(--gris-linea);border-radius:10px;">
         <option value="__nuevo__" ${e.destino === '__nuevo__' ? 'selected' : ''}>➕ Crear equipo nuevo</option>
-        ${existentes.map(x => `<option value="${x.id}" ${e.destino === x.id ? 'selected' : ''}>${_escHtml(x.nombre)}</option>`).join('')}</select></div>`).join('')}
+        <optgroup label="Esta competición">${existentes.filter(x => x.competicionId === window._impComp).map(x => `<option value="${x.id}" ${e.destino === x.id ? 'selected' : ''}>${_escHtml(x.nombre)}</option>`).join('')}</optgroup>
+        <optgroup label="Otras competiciones">${existentes.filter(x => x.competicionId !== window._impComp).map(x => `<option value="${x.id}" ${e.destino === x.id ? 'selected' : ''}>${_escHtml(x.nombre)} · ${_escHtml(_compPartes((DB.competiciones || []).find(c => c.id === x.competicionId)).cat || 'sin comp.')}</option>`).join('')}</optgroup></select></div>`).join('')}
+    ${window._impEquipos.some(e => e.destino === '__nuevo__') ? `<div style="font-size:12px;color:#B45309;font-weight:700;margin-top:6px;">⚠️ Se crearán ${window._impEquipos.filter(e => e.destino === '__nuevo__').length} equipos nuevos en esta competición. Si alguno ya existe con otro nombre, elígelo en su desplegable.</div>` : ''}
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;"><input type="checkbox" id="impSustituir" style="width:auto;min-height:auto;"> Sustituir los partidos que ya tiene esta competición</label>`;
   ok.disabled = !filas.length;
 }
@@ -9939,6 +9951,108 @@ async function confirmarImportarCal() {
   if (nuevos) partes.push(`${nuevos} equipos nuevos`);
   toast(partes.length ? '✅ ' + partes.join(' · ') + (iguales ? ` (${iguales} sin cambios)` : '') : 'Sin cambios: todo estaba al día');
   if (conflictos.length) alert(`⚠️ ${conflictos.length} resultado(s) NO se han cambiado porque el acta está cerrada y no coincide con el IMD. Revísalos a mano:\n\n` + conflictos.slice(0, 15).join('\n'));
+}
+
+// ══════════════════════════════════════════════════════
+//  REVISAR EQUIPOS DE UNA COMPETICIÓN (limpieza tras importaciones)
+// ══════════════════════════════════════════════════════
+function _revCat(compId) { const c = (DB.competiciones || []).find(x => x.id === compId); const p = _compPartes(c); return c ? (p.cat || c.nombre) : 'sin competición'; }
+function abrirRevisarEquipos(compId) { window._revComp = compId; _revPintar(); }
+function _revPintar() {
+  const compId = window._revComp, comp = (DB.competiciones || []).find(c => c.id === compId); if (!comp) return;
+  document.getElementById('revEqModal')?.remove();
+  const eqs = (DB.equipos || []).filter(e => e.competicionId === compId).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  const pComp = (DB.partidos || []).filter(p => p.competicionId === compId);
+  const nP = id => pComp.filter(p => p.localId === id || p.visitanteId === id).length;
+  const nJ = id => (DB.jugadores || []).filter(j => j.equipoId === id).length;
+  const otrasComp = id => [...new Set((DB.partidos || []).filter(p => p.competicionId !== compId && (p.localId === id || p.visitanteId === id)).map(p => _revCat(p.competicionId)))];
+  const parecido = e => eqs.filter(o => o.id !== e.id && (() => { const a = _impNorm(e.nombre), b = _impNorm(o.nombre); return a === b || a.startsWith(b) || b.startsWith(a); })());
+  // Equipos de OTRA competición usados en partidos de ésta
+  const ajenos = [...new Set(pComp.flatMap(p => [p.localId, p.visitanteId]))].map(id => (DB.equipos || []).find(e => e.id === id)).filter(e => e && e.competicionId !== compId);
+  const optsAqui = excl => eqs.filter(o => o.id !== excl).map(o => `<option value="${o.id}">${_escHtml(o.nombre)}</option>`).join('');
+  const fila = e => {
+    const avisos = [], n = nP(e.id), j = nJ(e.id), otras = otrasComp(e.id), par = parecido(e);
+    if (!n) avisos.push('Sin partidos aquí');
+    if (otras.length) avisos.push('Juega en ' + otras.join(', '));
+    if (par.length) avisos.push('Se parece a «' + par.map(x => x.nombre).join('», «') + '»');
+    return `<div class="rev-fila${avisos.length ? ' warn' : ''}">
+      <div class="rev-n"><b>${_escHtml(e.nombre)}</b><span>${n} partido${n === 1 ? '' : 's'} · ${j} jugador${j === 1 ? '' : 'es'}</span>
+        ${avisos.map(a => `<em>⚠️ ${_escHtml(a)}</em>`).join('')}</div>
+      <div class="rev-acc">
+        <select id="revF_${e.id}"><option value="">Fusionar con…</option>${optsAqui(e.id)}</select><button class="btn btn-outline btn-xs" onclick="_revFusionar('${e.id}')">🔗 Fusionar</button>
+        <select id="revM_${e.id}"><option value="">Mover a…</option>${(DB.competiciones || []).filter(c => c.id !== compId).map(c => `<option value="${c.id}">${_escHtml(_revCat(c.id))}</option>`).join('')}</select><button class="btn btn-outline btn-xs" onclick="_revMover('${e.id}')">↪️ Mover</button>
+        <button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;" onclick="_revEliminar('${e.id}')">🗑️ Quitar</button>
+      </div></div>`;
+  };
+  const d = document.createElement('div'); d.id = 'revEqModal'; d.className = 'golx-fondo';
+  d.onclick = ev => { if (ev.target === d) d.remove(); };
+  d.innerHTML = `<div class="golx-caja" style="max-width:760px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><b style="font-size:17px;">🧹 Revisar equipos · ${_escHtml(_revCat(compId))}</b><button class="btn btn-outline btn-xs" onclick="document.getElementById('revEqModal').remove()">✕</button></div>
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:10px;">
+      <b>Fusionar</b>: une un duplicado con el equipo bueno (pasa partidos, jugadores y goles) y borra el duplicado.<br>
+      <b>Mover</b>: el equipo es de otra categoría. <b>Quitar</b>: lo borra junto con sus partidos de esta competición.</div>
+    <div class="rev-tit">Equipos de esta competición (${eqs.length})</div>
+    ${eqs.map(fila).join('') || '<div style="font-size:13px;color:#888;">Ninguno.</div>'}
+    ${ajenos.length ? `<div class="rev-tit" style="margin-top:16px;">⚠️ Equipos de otras categorías usados en partidos de ésta (${ajenos.length})</div>
+      ${ajenos.map(e => `<div class="rev-fila warn"><div class="rev-n"><b>${_escHtml(e.nombre)}</b><span>es de ${_escHtml(_revCat(e.competicionId))} · ${nP(e.id)} partidos aquí</span></div>
+        <div class="rev-acc"><select id="revS_${e.id}"><option value="">Sustituir por…</option>${optsAqui('')}</select><button class="btn btn-outline btn-xs" onclick="_revSustituir('${e.id}')">🔁 Sustituir</button></div></div>`).join('')}` : ''}
+  </div>`;
+  document.body.appendChild(d);
+}
+function _revQuitarDuplicados(compId) {
+  // Tras fusionar pueden quedar dos partidos iguales: se conserva el que tiene resultado/acta
+  const vistos = {}; const borrar = [];
+  (DB.partidos || []).filter(p => p.competicionId === compId).forEach(p => {
+    const k = [p.jornada, p.localId, p.visitanteId].join('|'), o = vistos[k];
+    if (!o) { vistos[k] = p; return; }
+    const peso = x => (x.actaCerrada ? 4 : 0) + (x.estado === 'jugado' ? 2 : 0) + (x.acta ? 1 : 0);
+    if (peso(p) > peso(o)) { borrar.push(o.id); vistos[k] = p; } else borrar.push(p.id);
+  });
+  if (borrar.length) { DB.partidos = DB.partidos.filter(p => !borrar.includes(p.id)); borrar.forEach(id => DB._deleted[id] = Date.now()); }
+  return borrar.length;
+}
+async function _revFusionar(id) {
+  const dest = document.getElementById('revF_' + id)?.value; if (!dest) { toast('Elige con qué equipo fusionar'); return; }
+  const a = DB.equipos.find(e => e.id === id), b = DB.equipos.find(e => e.id === dest); if (!a || !b) return;
+  if (!confirm(`¿Fusionar «${a.nombre}» en «${b.nombre}»?\n\nSus partidos, jugadores y goles pasarán a «${b.nombre}» y «${a.nombre}» se borrará.`)) return;
+  if (!DB._deleted) DB._deleted = {};
+  (DB.partidos || []).forEach(p => { if (p.localId === id) p.localId = dest; if (p.visitanteId === id) p.visitanteId = dest; });
+  (DB.jugadores || []).forEach(j => { if (j.equipoId === id) { j.equipoId = dest; j.equipoNombre = b.nombre; } });
+  (DB.goleadores || []).forEach(g => { if (g.equipoId === id) { g.equipoId = dest; g.equipoNombre = b.nombre; } });
+  DB.equipos = DB.equipos.filter(e => e.id !== id); DB._deleted[id] = Date.now();
+  const dup = _revQuitarDuplicados(window._revComp);
+  await saveCols(['equipos', 'partidos', 'jugadores', 'goleadores']); renderAll(); _revPintar();
+  toast(`🔗 Fusionado${dup ? ` · ${dup} partidos repetidos eliminados` : ''}`);
+}
+async function _revMover(id) {
+  const cid = document.getElementById('revM_' + id)?.value; if (!cid) { toast('Elige la competición destino'); return; }
+  const e = DB.equipos.find(x => x.id === id), c = DB.competiciones.find(x => x.id === cid); if (!e || !c) return;
+  if (!confirm(`¿Mover «${e.nombre}» a ${_revCat(cid)}?`)) return;
+  e.competicionId = c.id; e.competicionNombre = c.nombre; if (c.categoria) e.categoria = c.categoria;
+  await saveCol('equipos'); renderAll(); _revPintar(); toast('↪️ Equipo movido');
+}
+async function _revEliminar(id) {
+  const e = DB.equipos.find(x => x.id === id); if (!e) return;
+  const compId = window._revComp, ps = (DB.partidos || []).filter(p => p.competicionId === compId && (p.localId === id || p.visitanteId === id));
+  const nj = (DB.jugadores || []).filter(j => j.equipoId === id).length, otros = (DB.partidos || []).filter(p => p.competicionId !== compId && (p.localId === id || p.visitanteId === id)).length;
+  if (!confirm(`¿Quitar «${e.nombre}»?\n\nSe borrarán ${ps.length} partidos suyos de esta competición.${nj ? `\n${nj} jugadores quedarán sin equipo.` : ''}${otros ? `\n(Sus ${otros} partidos de otras competiciones NO se tocan; el equipo se mantiene para ellos.)` : ''}`)) return;
+  if (!DB._deleted) DB._deleted = {};
+  ps.forEach(p => DB._deleted[p.id] = Date.now());
+  DB.partidos = DB.partidos.filter(p => !ps.includes(p));
+  const cols = ['partidos'];
+  if (!otros) {
+    (DB.jugadores || []).forEach(j => { if (j.equipoId === id) { j.equipoId = ''; j.equipoNombre = ''; } });
+    DB.equipos = DB.equipos.filter(x => x.id !== id); DB._deleted[id] = Date.now(); cols.push('equipos', 'jugadores');
+  }
+  await saveCols(cols); renderAll(); _revPintar(); toast('🗑️ Quitado');
+}
+async function _revSustituir(id) {
+  const dest = document.getElementById('revS_' + id)?.value; if (!dest) { toast('Elige el equipo correcto'); return; }
+  const compId = window._revComp; let n = 0;
+  (DB.partidos || []).filter(p => p.competicionId === compId).forEach(p => { if (p.localId === id) { p.localId = dest; n++; } if (p.visitanteId === id) { p.visitanteId = dest; n++; } });
+  if (!DB._deleted) DB._deleted = {};
+  const dup = _revQuitarDuplicados(compId);
+  await saveCol('partidos'); renderAll(); _revPintar(); toast(`🔁 ${n} partidos corregidos${dup ? ` · ${dup} repetidos eliminados` : ''}`);
 }
 
 // ══════════════════════════════════════════════════════
