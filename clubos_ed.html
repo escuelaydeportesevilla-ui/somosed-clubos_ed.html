@@ -1043,6 +1043,38 @@ tbody td.center{text-align:center;}
 .rev-n em{font-style:normal;font-size:11px;font-weight:700;color:#B45309;}
 .rev-acc{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
 .rev-acc select{padding:5px;border:1px solid #ddd;border-radius:8px;font-size:12px;max-width:170px;}
+.cal-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:4px;}
+.cal-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;height:100%;text-align:left;background:#fff;border:1px solid #eadde1;border-top:5px solid var(--rojo);border-radius:16px;padding:16px;cursor:pointer;font:inherit;color:inherit;box-shadow:0 2px 6px rgba(60,20,30,.06);transition:transform .15s,box-shadow .15s;}
+.cal-tile:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(60,20,30,.14);}
+.cal-tile:active{transform:scale(.98);}
+.cal-tile-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;line-height:1.05;text-transform:uppercase;color:var(--rojo);}
+.cal-tile-nom{font-size:11px;font-weight:600;color:var(--gris-suave);text-transform:uppercase;letter-spacing:.3px;line-height:1.3;}
+.cal-tile-st{font-size:12px;color:#444;margin-top:6px;}
+.cal-tile-bar{display:block;width:100%;height:6px;background:#f1e8eb;border-radius:4px;overflow:hidden;margin-top:4px;}
+.cal-tile-bar i{display:block;height:100%;background:#17803D;border-radius:4px;}
+.cal-tile-pie{font-size:11px;color:var(--gris-suave);}
+.cal-tile-ir{margin-top:auto;padding-top:8px;font-size:12px;font-weight:800;color:var(--rojo);letter-spacing:.3px;}
+.cal-pop-fondo{position:fixed;inset:0;z-index:450;background:rgba(25,10,16,0);backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0);display:flex;align-items:center;justify-content:center;padding:24px;transition:background .2s,backdrop-filter .2s;}
+.cal-pop-fondo.open{background:rgba(25,10,16,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
+.cal-pop-caja{background:var(--crema,#f6f2ee);border-radius:18px;width:100%;max-width:1100px;max-height:100%;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35);opacity:0;transform:translateY(16px) scale(.98);transition:opacity .2s,transform .2s;}
+.cal-pop-fondo.open .cal-pop-caja{opacity:1;transform:none;}
+.cal-pop-cab{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #eee;padding:14px 18px;border-radius:18px 18px 0 0;}
+.cal-pop-x{border:0;background:#f1eef0;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;flex:none;}
+.cal-pop-x:hover{background:var(--rojo-suave);color:var(--rojo);}
+.cal-pop-cuerpo{padding:16px 18px;}
+body.cal-pop-on{overflow:hidden;}
+.comp-cifras{display:flex;gap:6px;margin-top:8px;}
+.comp-cifras span{font-size:11px;background:var(--rojo-suave);color:var(--rojo);border-radius:20px;padding:3px 10px;}
+.comp-cifras b{font-weight:800;font-size:13px;}
+@media (max-width:768px){
+  .cal-tiles{grid-template-columns:1fr 1fr;gap:8px;}
+  .cal-tile{padding:12px;border-radius:14px;} .cal-tile-cat{font-size:1.15rem;}
+  .cal-tile-st{font-size:11px;}
+  .cal-pop-fondo{padding:0;align-items:stretch;}
+  .cal-pop-caja{max-width:none;border-radius:0;max-height:none;height:100%;}
+  .cal-pop-cab{border-radius:0;padding:12px;}
+  .cal-pop-cuerpo{padding:12px;}
+}
 </style>
 </head>
 <body>
@@ -2174,7 +2206,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.8';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.9';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3061,6 +3093,8 @@ function renderCompeticion() {
         <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:#eee;color:#999;':''}flex-shrink:0;">${activa?'✅ Activa':'⏸ Inactiva'}</span>
       </div>
       <div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}</div>
+      ${(() => { const nE = (DB.equipos||[]).filter(e => e.competicionId === c.id).length, nPa = (DB.partidos||[]).filter(p => p.competicionId === c.id).length;
+        return `<div class="comp-cifras"><span><b>${nE}</b> equipos</span><span><b>${nPa}</b> partidos</span></div>`; })()}
       ${c.fechaInicio?`<div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
       ${isAdmin ? `<div style="display:flex;gap:4px;margin-top:10px;flex-wrap:wrap;border-top:1px solid var(--gris-linea);padding-top:8px;">
         <button class="btn btn-outline" style="padding:5px 10px;font-size:10px;" onclick="event.stopPropagation();editarCompeticion('${c.id}')">✏️ Editar</button>
@@ -5746,23 +5780,40 @@ function renderCalendario() {
     compGroups[key].push(p);
   });
 
-  el.innerHTML = _calBarraGlobal() + Object.entries(compGroups).map(([compId, partidosComp], idx) => {
+  // Quitar ventanas emergentes de un pintado anterior (se movieron al <body> al abrirse)
+  document.querySelectorAll('body > .cal-pop-fondo').forEach(x => x.remove());
+  const _ordenComp = Object.entries(compGroups).sort((a, b) => _calOrdenComp(a[0]) - _calOrdenComp(b[0]) || _calTituloComp(a[0]).localeCompare(_calTituloComp(b[0]), 'es'));
+  el.innerHTML = _calBarraGlobal() + '<div class="cal-tiles">' + _ordenComp.map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
     const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
     const jornadas = [...new Set(partidosComp.map(p=>p.jornada))].sort(_ordenarJornadas);
     const contId = 'calComp_' + compId;
+    const pc = _compPartes(comp), nJug = partidosComp.filter(p => p.estado === 'jugado').length;
+    const nEq = new Set(partidosComp.flatMap(p => [p.localId, p.visitanteId]).filter(Boolean)).size;
+    const hoy = new Date().toISOString().slice(0, 10);
+    const prox = partidosComp.filter(p => p.estado !== 'jugado' && _limpiarFecha(p.fecha) >= hoy).sort((a, b) => (_limpiarFecha(a.fecha) + a.hora).localeCompare(_limpiarFecha(b.fecha) + b.hora))[0];
+    const pct = partidosComp.length ? Math.round(100 * nJug / partidosComp.length) : 0;
 
-    return `<div id="calBloque_${compId}" style="margin-bottom:14px;">
-      <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
-           font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
-           padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
-        <span><span id="${contId}_icon">▶</span> ${compNombre} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${partidosComp.length} partidos)</span></span>
-        <span style="display:flex;gap:6px;">
-        ${esAdmin||true ? `<button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarCalendarioPDF('${compId}')">📄 Exportar</button>` : ''}
-        ${esAdmin && !comp && compId!=='__none__' ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="event.stopPropagation();eliminarPartidosHuerfanos('${compId}')">🗑️ Eliminar huérfanos</button>` : ''}
+    return `<div id="calBloque_${compId}" class="cal-tile-wrap">
+      <button type="button" class="cal-tile" onclick="calAbrirComp('${compId}')">
+        <span class="cal-tile-cat">${_escHtml(pc.cat || (comp ? comp.nombre : 'Sin competición'))}</span>
+        <span class="cal-tile-nom">${_escHtml(pc.cat ? pc.nom : '')}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
+        <span class="cal-tile-st"><b>${partidosComp.length}</b> partidos · <b>${nEq}</b> equipos · <b>${jornadas.length}</b> jornadas</span>
+        <span class="cal-tile-bar"><i style="width:${pct}%"></i></span>
+        <span class="cal-tile-pie">${nJug} jugados${prox ? ` · Próx.: ${/^\d+$/.test(String(prox.jornada)) ? 'J' + _escHtml(prox.jornada) : _escHtml(prox.jornada)} ${_escHtml(_calBusFecha(prox.fecha))}` : ''}</span>
+        <span class="cal-tile-ir">Ver calendario →</span>
+      </button>
+      <div class="cal-pop-fondo" id="calPop_${compId}" style="display:none;" onclick="if(event.target===this)calCerrarComp()">
+      <div class="cal-pop-caja" role="dialog" aria-modal="true">
+      <div class="cal-pop-cab">
+        <div style="min-width:0;"><div class="cal-tile-cat" style="font-size:1.5rem;">${_escHtml(pc.cat || compNombre)}</div><div class="cal-tile-nom">${_escHtml(pc.cat ? pc.nom : '')}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${partidosComp.length} partidos</div></div>
+        <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+        <button class="btn btn-outline btn-xs" onclick="exportarCalendarioPDF('${compId}')">📄 Exportar</button>
+        ${esAdmin && !comp && compId!=='__none__' ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="eliminarPartidosHuerfanos('${compId}')">🗑️ Eliminar huérfanos</button>` : ''}
+        <button class="cal-pop-x" onclick="calCerrarComp()" aria-label="Cerrar">✕</button>
         </span>
       </div>
-      <div id="${contId}" style="display:none;padding-top:12px;">
+      <div id="${contId}" class="cal-pop-cuerpo">
         ${(() => {
           const f = (window._calFiltro && window._calFiltro[compId]) || {};
           const ids = [...new Set(partidosComp.flatMap(p => [p.localId, p.visitanteId]).filter(Boolean))];
@@ -5821,12 +5872,35 @@ function renderCalendario() {
         <div id="calVacio_${compId}" class="empty-state" style="display:none;"><p>Ningún partido con ese filtro.</p></div>
         </div>
       </div>
+      </div></div>
     </div>`;
-  }).join('');
-  aplicarEstadoAcordeones();
+  }).join('') + '</div>';
   Object.keys(compGroups).forEach(id => calFiltrar(id, false));
   _calAplicarTodo();
+  if (window._calPopAbierto && compGroups[window._calPopAbierto]) calAbrirComp(window._calPopAbierto, true);
 }
+// Orden de las pastillas: por edad de la categoría
+function _calOrdenComp(compId) {
+  const t = _calNorm(_calTituloComp(compId));
+  const orden = ['peque', 'prebenjamin', 'benjamin', 'alevin', 'infantil', 'cadete', 'juvenil', 'senior'];
+  const i = orden.findIndex(o => t.includes(o)); return i < 0 ? 99 : i;
+}
+function _calTituloComp(compId) { const c = (DB.competiciones || []).find(x => x.id === compId); const p = _compPartes(c); return (p.cat || (c ? c.nombre : '')) + ' ' + (p.nom || ''); }
+// Ventana emergente dentro de la misma pestaña, con fondo oscurecido
+function calAbrirComp(compId, silencioso) {
+  document.querySelectorAll('.cal-pop-fondo.open').forEach(x => { x.classList.remove('open'); x.style.display = 'none'; });
+  const pop = document.getElementById('calPop_' + compId); if (!pop) return;
+  if (pop.parentElement !== document.body) document.body.appendChild(pop); // fuera de cualquier contenedor: siempre por encima de todo
+  pop.style.display = ''; requestAnimationFrame(() => pop.classList.add('open'));
+  document.body.classList.add('cal-pop-on'); window._calPopAbierto = compId;
+  const cont = document.getElementById('calComp_' + compId); if (cont) cont.style.display = '';
+  if (!silencioso) { const c = pop.querySelector('.cal-pop-caja'); if (c) c.scrollTop = 0; }
+}
+function calCerrarComp() {
+  document.querySelectorAll('.cal-pop-fondo').forEach(x => { x.classList.remove('open'); x.style.display = 'none'; });
+  document.body.classList.remove('cal-pop-on'); window._calPopAbierto = null;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && window._calPopAbierto) calCerrarComp(); });
 
 // Filtro por jornada y equipo dentro de cada competición + filtro global de todas las competiciones
 window._calFiltro = window._calFiltro || {};
