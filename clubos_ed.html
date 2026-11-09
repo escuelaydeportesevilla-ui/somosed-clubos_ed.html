@@ -1043,22 +1043,29 @@ tbody td.center{text-align:center;}
 .rev-n em{font-style:normal;font-size:11px;font-weight:700;color:#B45309;}
 .rev-acc{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
 .rev-acc select{padding:5px;border:1px solid #ddd;border-radius:8px;font-size:12px;max-width:170px;}
-.cal-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:4px;}
-.cal-tile{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;height:100%;text-align:left;background:#fff;border:1px solid #eadde1;border-top:5px solid var(--rojo);border-radius:16px;padding:16px;cursor:pointer;font:inherit;color:inherit;box-shadow:0 2px 6px rgba(60,20,30,.06);transition:transform .15s,box-shadow .15s;}
-.cal-tile:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(60,20,30,.14);}
+.cal-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:4px;}
+.cal-tile{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:6px;width:100%;height:100%;text-align:left;background:var(--c,#7B1E3A);background-image:linear-gradient(145deg,rgba(255,255,255,.14),rgba(0,0,0,.18));border:0;border-radius:18px;padding:18px;cursor:pointer;font:inherit;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.14);transition:transform .15s,box-shadow .15s;}
+.cal-tile::after{content:'';position:absolute;right:-40px;top:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.08);pointer-events:none;}
+.cal-tile:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(0,0,0,.22);}
 .cal-tile:active{transform:scale(.98);}
-.cal-tile-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.45rem;font-weight:900;line-height:1.05;text-transform:uppercase;color:var(--rojo);}
-.cal-tile-nom{font-size:11px;font-weight:600;color:var(--gris-suave);text-transform:uppercase;letter-spacing:.3px;line-height:1.3;}
-.cal-tile-st{font-size:12px;color:#444;margin-top:6px;}
-.cal-tile-bar{display:block;width:100%;height:6px;background:#f1e8eb;border-radius:4px;overflow:hidden;margin-top:4px;}
-.cal-tile-bar i{display:block;height:100%;background:#17803D;border-radius:4px;}
-.cal-tile-pie{font-size:11px;color:var(--gris-suave);}
-.cal-tile-ir{margin-top:auto;padding-top:8px;font-size:12px;font-weight:800;color:var(--rojo);letter-spacing:.3px;}
+.cal-tile:focus-visible{outline:3px solid #E8C66A;outline-offset:3px;}
+.cal-tile-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:900;line-height:1;text-transform:uppercase;color:#fff;letter-spacing:.3px;}
+.cal-tile-nom{font-size:13px;font-weight:700;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.6px;}
+.cal-tile-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;margin-top:8px;}
+.cal-tile-nums span{display:flex;flex-direction:column;align-items:center;background:rgba(255,255,255,.16);border-radius:10px;padding:7px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:rgba(255,255,255,.92);}
+.cal-tile-nums b{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;line-height:1;color:#fff;}
+.cal-tile-bar{display:block;width:100%;height:8px;background:rgba(255,255,255,.25);border-radius:5px;overflow:hidden;margin-top:6px;}
+.cal-tile-bar i{display:block;height:100%;background:#fff;border-radius:5px;min-width:4px;}
+.cal-tile-pie{font-size:13px;font-weight:600;color:#fff;}
+.cal-tile-ir{margin-top:auto;align-self:stretch;text-align:center;background:#fff;color:var(--c,#7B1E3A);font-weight:800;font-size:14px;letter-spacing:.3px;border-radius:12px;padding:10px;margin-top:10px;}
+.cal-pop-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:900;line-height:1;text-transform:uppercase;color:#fff;}
+.cal-pop-nom{font-size:13px;font-weight:700;color:rgba(255,255,255,.9);text-transform:uppercase;letter-spacing:.5px;margin-top:3px;}
 .cal-pop-fondo{position:fixed;inset:0;z-index:450;background:rgba(25,10,16,0);backdrop-filter:blur(0);-webkit-backdrop-filter:blur(0);display:flex;align-items:center;justify-content:center;padding:24px;transition:background .2s,backdrop-filter .2s;}
 .cal-pop-fondo.open{background:rgba(25,10,16,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);}
 .cal-pop-caja{background:var(--crema,#f6f2ee);border-radius:18px;width:100%;max-width:1100px;max-height:100%;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.35);opacity:0;transform:translateY(16px) scale(.98);transition:opacity .2s,transform .2s;}
 .cal-pop-fondo.open .cal-pop-caja{opacity:1;transform:none;}
-.cal-pop-cab{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border-bottom:1px solid #eee;padding:14px 18px;border-radius:18px 18px 0 0;}
+.cal-pop-cab{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--c,#7B1E3A);border-bottom:0;padding:14px 18px;border-radius:18px 18px 0 0;}
+.cal-pop-cab .btn-outline{background:#fff;border-color:#fff;color:#222;}
 .cal-pop-x{border:0;background:#f1eef0;width:36px;height:36px;border-radius:50%;font-size:16px;cursor:pointer;flex:none;}
 .cal-pop-x:hover{background:var(--rojo-suave);color:var(--rojo);}
 .cal-pop-cuerpo{padding:16px 18px;}
@@ -1068,8 +1075,8 @@ body.cal-pop-on{overflow:hidden;}
 .comp-cifras b{font-weight:800;font-size:13px;}
 @media (max-width:768px){
   .cal-tiles{grid-template-columns:1fr 1fr;gap:8px;}
-  .cal-tile{padding:12px;border-radius:14px;} .cal-tile-cat{font-size:1.15rem;}
-  .cal-tile-st{font-size:11px;}
+  .cal-tiles{grid-template-columns:1fr;}
+  .cal-tile{padding:16px;border-radius:16px;} .cal-tile-cat{font-size:1.7rem;}
   .cal-pop-fondo{padding:0;align-items:stretch;}
   .cal-pop-caja{max-width:none;border-radius:0;max-height:none;height:100%;}
   .cal-pop-cab{border-radius:0;padding:12px;}
@@ -2206,7 +2213,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.9';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.0.0';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -5794,19 +5801,21 @@ function renderCalendario() {
     const prox = partidosComp.filter(p => p.estado !== 'jugado' && _limpiarFecha(p.fecha) >= hoy).sort((a, b) => (_limpiarFecha(a.fecha) + a.hora).localeCompare(_limpiarFecha(b.fecha) + b.hora))[0];
     const pct = partidosComp.length ? Math.round(100 * nJug / partidosComp.length) : 0;
 
+    const col = _calColorComp(compId), mod = _calModalidad(comp);
     return `<div id="calBloque_${compId}" class="cal-tile-wrap">
-      <button type="button" class="cal-tile" onclick="calAbrirComp('${compId}')">
+      <button type="button" class="cal-tile" style="--c:${col}" onclick="calAbrirComp('${compId}')">
         <span class="cal-tile-cat">${_escHtml(pc.cat || (comp ? comp.nombre : 'Sin competición'))}</span>
-        <span class="cal-tile-nom">${_escHtml(pc.cat ? pc.nom : '')}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
-        <span class="cal-tile-st"><b>${partidosComp.length}</b> partidos · <b>${nEq}</b> equipos · <b>${jornadas.length}</b> jornadas</span>
+        <span class="cal-tile-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
+        <span class="cal-tile-nums"><span><b>${partidosComp.length}</b>partidos</span><span><b>${nEq}</b>equipos</span><span><b>${jornadas.length}</b>jornadas</span></span>
         <span class="cal-tile-bar"><i style="width:${pct}%"></i></span>
-        <span class="cal-tile-pie">${nJug} jugados${prox ? ` · Próx.: ${/^\d+$/.test(String(prox.jornada)) ? 'J' + _escHtml(prox.jornada) : _escHtml(prox.jornada)} ${_escHtml(_calBusFecha(prox.fecha))}` : ''}</span>
+        <span class="cal-tile-pie">✅ ${nJug} de ${partidosComp.length} jugados</span>
+        ${prox ? `<span class="cal-tile-pie">🗓️ Próxima: ${/^\d+$/.test(String(prox.jornada)) ? 'Jornada ' + _escHtml(prox.jornada) : _escHtml(prox.jornada)} · ${_escHtml(_calBusFecha(prox.fecha))}</span>` : ''}
         <span class="cal-tile-ir">Ver calendario →</span>
       </button>
       <div class="cal-pop-fondo" id="calPop_${compId}" style="display:none;" onclick="if(event.target===this)calCerrarComp()">
       <div class="cal-pop-caja" role="dialog" aria-modal="true">
-      <div class="cal-pop-cab">
-        <div style="min-width:0;"><div class="cal-tile-cat" style="font-size:1.5rem;">${_escHtml(pc.cat || compNombre)}</div><div class="cal-tile-nom">${_escHtml(pc.cat ? pc.nom : '')}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${partidosComp.length} partidos</div></div>
+      <div class="cal-pop-cab" style="--c:${col}">
+        <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${partidosComp.length} partidos</div></div>
         <span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
         <button class="btn btn-outline btn-xs" onclick="exportarCalendarioPDF('${compId}')">📄 Exportar</button>
         ${esAdmin && !comp && compId!=='__none__' ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;" onclick="eliminarPartidosHuerfanos('${compId}')">🗑️ Eliminar huérfanos</button>` : ''}
@@ -5878,6 +5887,23 @@ function renderCalendario() {
   Object.keys(compGroups).forEach(id => calFiltrar(id, false));
   _calAplicarTodo();
   if (window._calPopAbierto && compGroups[window._calPopAbierto]) calAbrirComp(window._calPopAbierto, true);
+}
+// Color propio por categoría (A más claro, B más oscuro) y modalidad corta
+function _calColorComp(compId) {
+  const pal = ['#0E7C86', '#1E8449', '#1D5FB0', '#C2571A', '#6C3FA0', '#A61E4D', '#34495E', '#2E4057'];
+  const i = _calOrdenComp(compId), base = pal[i < pal.length ? i : 7];
+  const c = (DB.competiciones || []).find(x => x.id === compId), cat = _calNorm(_compPartes(c).cat || '');
+  const f7 = /futbol\s*7/.test(_calNorm(c ? c.nombre : ''));
+  const osc = (/\bb\b/.test(cat) ? 0.18 : 0) + (f7 ? 0.28 : 0);
+  if (!osc) return base;
+  const n = parseInt(base.slice(1), 16), k = 1 - osc, m = v => Math.round(v * k);
+  return '#' + [m(n >> 16), m((n >> 8) & 255), m(n & 255)].map(v => v.toString(16).padStart(2, '0')).join('');
+}
+function _calModalidad(c) {
+  const n = _calNorm(c ? c.nombre : '');
+  if (/futbol\s*7/.test(n)) return 'Fútbol 7';
+  if (/\bfs\b|sala/.test(n)) return 'Fútbol sala';
+  return _compPartes(c).nom || '';
 }
 // Orden de las pastillas: por edad de la categoría
 function _calOrdenComp(compId) {
