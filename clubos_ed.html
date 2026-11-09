@@ -1126,11 +1126,14 @@ body.cal-pop-on{overflow:hidden;}
 .card-competicion{border-top:0;border-radius:18px;padding:0 0 14px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.1);}
 .card-competicion>*:not(.cc-cab){margin-left:16px;margin-right:16px;}
 .cc-cab{background:var(--c,#7B1E3A);background-image:linear-gradient(145deg,rgba(255,255,255,.14),rgba(0,0,0,.18));color:#fff;padding:16px;}
-.cc-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;line-height:1;text-transform:uppercase;}
+.cc-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;line-height:1.1;text-transform:uppercase;}
 .cc-nom{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.9);margin-top:4px;}
 .cc-estado{flex:none;font-size:11px;font-weight:800;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 10px;white-space:nowrap;}
 .card-competicion .comp-cifras span{background:#f4eff1;color:#333;font-size:12px;padding:4px 12px;}
 .card-competicion .btn{font-size:12px!important;padding:8px 12px!important;border-radius:10px!important;}
+.cat-chip{display:inline-block;background:var(--c,#7B1E3A);background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.15));color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;border-radius:20px;padding:4px 10px;white-space:nowrap;}
+.cal-tile-match{display:inline-block;background:#fff;color:var(--c,#7B1E3A);font-size:12px;font-weight:800;border-radius:20px;padding:3px 10px;margin-top:4px;}
+.cal-pop-cuerpo .partido-card,.cal-pop-cuerpo .card{background:#fff;}
 </style>
 </head>
 <body>
@@ -2262,7 +2265,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.1';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.0.2';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3653,7 +3656,7 @@ function renderEquipos() {
         </div>
         <div class="ceq-info">
           <div class="ceq-nombre" style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</div>
-          <div class="ceq-meta">${e.categoria||'—'}${isAdmin&&e.clubId?' · '+nombreClub(e.clubId):''} · ${nJug} jugadores</div>
+          <div class="ceq-meta">${e.competicionId ? `<span class="cat-chip" style="--c:${_calColorComp(e.competicionId)}">${_escHtml(_compPartes(comp).cat || e.categoria || '—')}</span>` : (e.categoria||'—')}${isAdmin&&e.clubId?' · '+nombreClub(e.clubId):''} · ${nJug} jugadores</div>
           ${comp?`<div style="font-size:10px;color:var(--rojo);margin-top:1px;">🏆 ${comp.nombre}</div>`:''}
           ${contacto}
           ${contacto2}
@@ -3691,7 +3694,7 @@ function renderEquipos() {
       h += `<tr data-nombre="${(e.nombre||'').toLowerCase()}">
         <td><strong style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</strong></td>
         <td>${kitTabla(e.eq1Camiseta||'#ccc',e.eq1Pantalon||'#333')}</td>
-        <td>${e.categoria||'—'}</td>
+        <td>${e.competicionId ? `<span class="cat-chip" style="--c:${_calColorComp(e.competicionId)}">${_escHtml(_compPartes(comp).cat || e.categoria || '—')}${comp && _calModalidad(comp) === 'Fútbol 7' ? ' · F7' : ''}</span>` : (e.categoria||'—')}</td>
         ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${nombreClub(e.clubId)||'—'}</td>`:''}
         <td class="td-comp" style="font-size:11px;color:var(--gris-suave);" title="${comp?comp.nombre:''}">${comp?comp.nombre:'—'}</td>
         <td>${nJug}</td>
@@ -4333,6 +4336,47 @@ function _toggleEscuelaCheck(chk) {
 }
 
 // ══════════════════════════════════════════════════════
+//  ACORDEONES → PASTILLAS DE COLOR + VENTANA EMERGENTE (esquema común)
+// ══════════════════════════════════════════════════════
+// info(contId) → { cat, sub, color, nums:[[n,'etiqueta'],…], pie, ir }
+function _acordeonATiles(cont, grupo, info) {
+  if (!cont) return;
+  document.querySelectorAll(`body > .cal-pop-fondo[data-g="${grupo}"]`).forEach(x => x.remove());
+  const cabs = [...cont.querySelectorAll('div[onclick^="toggleAcordeon("]')];
+  if (!cabs.length) return;
+  const grid = document.createElement('div'); grid.className = 'cal-tiles';
+  cabs[0].parentElement.parentElement.insertBefore(grid, cabs[0].parentElement);
+  cabs.forEach(cab => {
+    const m = cab.getAttribute('onclick').match(/toggleAcordeon\('([^']+)'\)/); if (!m) return;
+    const contId = m[1], cuerpo = document.getElementById(contId), wrap = cab.parentElement;
+    if (!cuerpo) return;
+    const span = cab.querySelector('span'), cuenta = (span?.querySelector('span:last-child')?.textContent || '').replace(/[()]/g, '').trim();
+    const titulo = (span?.textContent || '').replace(/^[▶▼]\s*/, '').replace(/\([^)]*\)\s*$/, '').trim();
+    const d = Object.assign({ cat: titulo, sub: cuenta, color: '#7B1E3A', nums: [], pie: '', ir: 'Abrir →' }, info(contId, titulo, cuenta) || {});
+    const botones = [...cab.querySelectorAll('button')];
+    const popId = 'pop_' + contId;
+    const t = document.createElement('div'); t.className = 'cal-tile-wrap'; t.dataset.pop = popId;
+    t.innerHTML = `<button type="button" class="cal-tile" style="--c:${d.color}" onclick="_popAbrir('${popId}')">
+        <span class="cal-tile-cat" style="font-size:1.45rem;">${_escHtml(d.cat)}</span>
+        ${d.sub ? `<span class="cal-tile-nom">${_escHtml(d.sub)}</span>` : ''}
+        ${d.nums.length ? `<span class="cal-tile-nums" style="grid-template-columns:repeat(${d.nums.length},1fr)">${d.nums.map(([n, l]) => `<span><b>${n}</b>${_escHtml(l)}</span>`).join('')}</span>` : ''}
+        ${d.pie ? `<span class="cal-tile-pie">${d.pie}</span>` : ''}
+        <span class="cal-tile-ir">${_escHtml(d.ir)}</span></button>`;
+    const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = popId; pop.dataset.g = grupo; pop.style.display = 'none';
+    pop.onclick = ev => { if (ev.target === pop) _popCerrar(); };
+    pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" style="--c:${d.color}">
+        <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(d.cat)}</div>${d.sub ? `<div class="cal-pop-nom">${_escHtml(d.sub)}</div>` : ''}</div>
+        <span class="cal-pop-bts" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;"></span></div><div class="cal-pop-cuerpo"></div></div>`;
+    const bts = pop.querySelector('.cal-pop-bts');
+    botones.forEach(b => { b.classList.add('btn-outline'); bts.appendChild(b); });
+    const x = document.createElement('button'); x.className = 'cal-pop-x'; x.textContent = '✕'; x.setAttribute('aria-label', 'Cerrar'); x.onclick = _popCerrar; bts.appendChild(x);
+    cuerpo.style.display = ''; cuerpo.style.paddingTop = '0';
+    pop.querySelector('.cal-pop-cuerpo').appendChild(cuerpo);
+    t.appendChild(pop); grid.appendChild(t); wrap.remove();
+  });
+  if (window._popAbierto && document.getElementById(window._popAbierto)?.dataset.g === grupo) _popAbrir(window._popAbierto, true);
+}
+// ══════════════════════════════════════════════════════
 //  JUGADORES: inscritos 26/27, únicos (sin contar duplicados) y barra de vista/filtros
 // ══════════════════════════════════════════════════════
 window._jugF = window._jugF || { ins: 'todos', est: 'todos' };
@@ -4421,7 +4465,6 @@ function _jugBarraRender() {
     ${vista === 'tarjetas' ? `<div class="jb-fil">
       <div class="jb-grp"><span>Temporada 26/27</span>${chip('ins', 'todos', 'Todos')}${chip('ins', 'si', '✅ Inscritos')}${chip('ins', 'no', '⬜ No inscritos')}</div>
       <div class="jb-grp"><span>Estado</span>${chip('est', 'todos', 'Todos')}${chip('est', 'activos', 'Activos')}${chip('est', 'inactivos', 'Inactivos')}</div>
-      ${isAdmin || sesion.rol === 'arbitro' ? `<div class="jb-grp jb-acc"><button class="jb-link" onclick="_jugAcordeonTodos(true)">▼ Abrir todos</button><button class="jb-link" onclick="_jugAcordeonTodos(false)">▶ Plegar todos</button></div>` : ''}
     </div>` : ''}</div>`;
 }
 // Marca/desmarca "Inscrito 26/27" en el jugador y en sus duplicados (misma persona en otros equipos)
@@ -4668,7 +4711,18 @@ function renderJugadores() {
   }
 
   el.innerHTML=out;
-  aplicarEstadoAcordeones();
+  _acordeonATiles(el, 'jug', (contId) => {
+    const lst = contId.startsWith('jugEq_') ? listaF.filter(j => j.equipoId === contId.slice(6))
+      : contId.startsWith('jugEsc_') ? listaF.filter(j => (j.escuelaIds || []).includes(contId.slice(7))) : listaF.filter(j => !j.equipoId && !(j.escuelaIds && j.escuelaIds.length));
+    const r = _jugResumen(lst);
+    if (contId.startsWith('jugEq_')) {
+      const eq = (DB.equipos || []).find(e => e.id === contId.slice(6)), c = eq && (DB.competiciones || []).find(x => x.id === eq.competicionId);
+      return { sub: c ? (_compPartes(c).cat || '') + ' · ' + _calModalidad(c) : 'Sin competición', color: eq?.competicionId ? _calColorComp(eq.competicionId) : '#6B7280',
+        nums: [[r.unicos, 'jugadores'], [r.inscritos, 'inscritos'], [r.activos, 'activos']], ir: 'Ver jugadores →' };
+    }
+    if (contId.startsWith('jugEsc_')) return { sub: 'Escuela deportiva', color: '#1A56A0', nums: [[r.unicos, 'alumnos'], [r.inscritos, 'inscritos'], [r.activos, 'activos']], ir: 'Ver alumnos →' };
+    return { cat: 'Sin asignar', sub: 'Jugadores sin equipo ni escuela', color: '#6B7280', nums: [[r.unicos, 'jugadores']], ir: 'Ver jugadores →' };
+  });
   const qb = document.getElementById('buscadorJugadoresGlobal'); if (qb && qb.value) filtrarJugadoresGlobal(qb.value);
 }
 
@@ -5379,6 +5433,21 @@ function filtrarJugadoresGlobal(texto) {
   const q = (texto||'').toLowerCase().trim();
   const el = document.getElementById('jugadoresContent');
   if (!el) return;
+  const tiles = el.querySelectorAll('.cal-tile-wrap[data-pop]');
+  if (tiles.length) {
+    // Modo pastillas: oculta las que no tienen coincidencias y marca cuántas hay
+    tiles.forEach(t => {
+      const pop = document.getElementById(t.dataset.pop); let n = 0;
+      // Cada jugador aparece como tarjeta (móvil) y como fila de tabla (escritorio): se cuenta una sola vez
+      let nTab = 0;
+      if (pop) pop.querySelectorAll('[data-nombre]').forEach(it => { const ok = !q || it.getAttribute('data-nombre').includes(q); it.style.display = ok ? '' : 'none'; if (ok) { if (it.closest('table')) nTab++; else n++; } });
+      n = n || nTab;
+      t.style.display = n || !q ? '' : 'none';
+      let b = t.querySelector('.cal-tile-match'); if (!b) { b = document.createElement('span'); b.className = 'cal-tile-match'; t.querySelector('.cal-tile').appendChild(b); }
+      b.textContent = q && n ? `🔎 ${n} coincidencia${n === 1 ? '' : 's'}` : ''; b.style.display = q && n ? '' : 'none';
+    });
+    return;
+  }
   el.querySelectorAll(':scope > div').forEach(grupo => {
     let visibles = 0;
     grupo.querySelectorAll('[data-nombre]').forEach(item => {
@@ -6924,6 +6993,13 @@ function renderActas() {
       </div>
     </div>`;
   }).join('');
+  _acordeonATiles(el, 'actas', (contId) => {
+    const compId = contId.slice('actasComp_'.length), c = (DB.competiciones || []).find(x => x.id === compId), ps = compGroups[compId] || [];
+    const red = ps.filter(p => p.acta).length;
+    return { cat: c ? (_compPartes(c).cat || c.nombre) : 'Sin competición', sub: c ? _calModalidad(c) + (c.temporada ? ' · ' + c.temporada : '') : '',
+      color: _calColorComp(compId), nums: [[ps.length, 'partidos'], [red, 'redactadas'], [ps.length - red, 'pendientes']], ir: 'Ver actas →' };
+  });
+  { const g = el.querySelector('.cal-tiles'); if (g) [...g.children].sort((a, b) => _calOrdenComp(a.dataset.pop.replace('pop_actasComp_', '')) - _calOrdenComp(b.dataset.pop.replace('pop_actasComp_', ''))).forEach(x => g.appendChild(x)); }
   aplicarEstadoAcordeones();
 }
 
@@ -8569,21 +8645,20 @@ function renderEscuelas() {
     return;
   }
 
-  el.innerHTML = `<div class="cards-escuelas">` + lista.map(e => {
+  const palEsc = ['#1A56A0', '#0E7C86', '#6C3FA0', '#C2571A', '#1E8449', '#A61E4D'];
+  el.innerHTML = `<div class="cards-escuelas">` + lista.map((e, i) => {
     const nAlumnos = (DB.jugadores||[]).filter(j => (j.escuelaIds||[]).includes(e.id)).length;
-    const estado   = e.activa ? '<span style="color:#1A7A3C;font-weight:700;">● Activa</span>' : '<span style="color:#999;">● Inactiva</span>';
+    const nIns = _jugResumen((DB.jugadores||[]).filter(j => (j.escuelaIds||[]).includes(e.id))).inscritos;
     return `
-    <div class="card-equipo" style="border-top:4px solid #1A56A0;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div>
-          <div style="font-weight:800;font-size:1rem;margin-bottom:2px;">🏫 ${e.nombre||'Sin nombre'}</div>
-          <div style="font-size:12px;color:var(--gris-suave);">🏅 ${e.deporte||'—'} · 👤 ${e.responsable||'Sin responsable'}</div>
+    <div class="card-competicion${e.activa ? '' : ' inactiva'}" style="--c:${palEsc[i % palEsc.length]};cursor:default;">
+      <div class="cc-cab">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="cc-cat" style="font-size:1.4rem;">🏫 ${_escHtml(e.nombre||'Sin nombre')}</div>
+          <span class="cc-estado">${e.activa ? '✅ Activa' : '⏸ Inactiva'}</span>
         </div>
-        <div style="text-align:right;font-size:12px;">${estado}</div>
+        <div class="cc-nom">🏅 ${_escHtml(e.deporte||'—')} · 👤 ${_escHtml(e.responsable||'Sin responsable')}</div>
       </div>
-      <div style="margin-top:10px;display:flex;gap:16px;font-size:13px;">
-        <span>👥 <strong>${nAlumnos}</strong> alumno${nAlumnos!==1?'s':''}</span>
-      </div>
+      <div class="comp-cifras"><span><b>${nAlumnos}</b> alumno${nAlumnos!==1?'s':''}</span><span><b>${nIns}</b> inscritos 26/27</span></div>
       ${isAdmin ? `
       <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;">
         <button class="btn btn-outline btn-sm" onclick="editarEscuela('${e.id}')">✏️ Editar</button>
@@ -9560,8 +9635,8 @@ function renderPagos() {
       <button class="btn btn-outline btn-sm" onclick="exportarPagosCSV()">📊 Excel</button>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
-      ${[['Cobrado', _pagEur(t.cobrado), '#1E8449'], ['Pendiente', _pagEur(t.pendiente), '#7B1E3A'], ['% cobro', t.pct + '%', '#222']].map(k =>
-        `<div style="background:white;border-radius:14px;padding:12px 8px;text-align:center;box-shadow:0 1px 3px rgba(60,20,30,.07);"><div style="font-size:10px;font-weight:700;text-transform:uppercase;opacity:.5;">${k[0]}</div><div style="font-size:1.15rem;font-weight:900;color:${k[2]};margin-top:2px;">${k[1]}</div></div>`).join('')}
+      ${[['Cobrado', _pagEur(t.cobrado), '#1E8449'], ['Pendiente', _pagEur(t.pendiente), '#7B1E3A'], ['% cobro', t.pct + '%', '#1D5FB0']].map(k =>
+        `<div class="cal-stat" style="background-color:${k[2]};text-align:center;"><b style="font-size:1.6rem;">${k[1]}</b><span>${k[0]}</span></div>`).join('')}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">${chip('cobros','📋 Cobros')}${chip('jugadores','👤 Por jugador')}${chip('impagados','⚠️ Impagados')}</div>`;
   if (window._pagVista === 'jugadores') html += _pagVistaJugadores(pagos);
