@@ -2166,7 +2166,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.4';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.5';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -9801,7 +9801,8 @@ function _impAsegurarModal() {
   const d = document.createElement('div'); d.className = 'modal'; d.id = 'modalImportarCal';
   d.innerHTML = `<div class="modal-box" style="max-width:760px;">
     <div class="modal-header"><h3 id="impTitulo">Importar calendario</h3><button class="modal-close" onclick="cerrarModal('modalImportarCal')">✕</button></div>
-    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:8px;">Columnas (separadas por ; , o tabulador): <b>Jornada · Fecha · Hora · Local · Visitante · Campo</b> (opcional: Goles local · Goles visitante)</div>
+    <div style="font-size:12px;color:var(--gris-suave);margin-bottom:8px;">Columnas (separadas por ; , o tabulador): <b>Jornada · Fecha · Hora · Local · Visitante · Campo</b> y, opcional, <b>Resultado</b> (<i>4-6</i>) o <b>Goles local · Goles visitante</b>.<br>
+      Reimportar es seguro: los partidos que ya existen <b>no se duplican</b>; se actualizan resultado, fecha, hora y campo. Los goleadores no se tocan.</div>
     <input type="file" id="impArchivo" accept=".csv,.txt,.tsv" onchange="_impLeerArchivo(this)" style="margin-bottom:8px;">
     <textarea id="impTexto" rows="5" placeholder="…o pega aquí las filas" oninput="_impAnalizar()" style="width:100%;font-size:12px;font-family:monospace;border:1px solid var(--gris-linea);border-radius:10px;padding:8px;"></textarea>
     <div id="impPrevia" style="margin-top:12px;"></div>
@@ -9814,7 +9815,7 @@ function _impAsegurarModal() {
 function abrirImportarCalendario(compId) {
   const c = (DB.competiciones || []).find(x => x.id === compId); if (!c) return;
   _impAsegurarModal(); window._impComp = compId;
-  document.getElementById('impTitulo').textContent = 'Importar calendario · ' + c.nombre;
+  document.getElementById('impTitulo').textContent = 'Importar calendario y resultados · ' + _etiquetaCompeticion(c);
   document.getElementById('impTexto').value = ''; document.getElementById('impArchivo').value = '';
   document.getElementById('impPrevia').innerHTML = ''; document.getElementById('impBtnOk').disabled = true;
   abrirModal('modalImportarCal');
@@ -9837,7 +9838,10 @@ function _impAnalizar() {
     if (i === 0 && /jornada/i.test(c[0])) return;
     const jor = parseInt(String(c[0]).replace(/\D/g, ''), 10), fecha = _impFecha(c[1]);
     if (!jor || !fecha || !c[3] || !c[4]) { errores.push(`Línea ${i + 1}: ${l.slice(0, 80)}`); return; }
-    const gl = c[6] !== undefined && c[6] !== '' ? parseInt(c[6], 10) : null, gv = c[7] !== undefined && c[7] !== '' ? parseInt(c[7], 10) : null;
+    // Resultado: "4-6" / "4 - 6" en una columna, o goles en dos columnas
+    let gl = null, gv = null; const r1 = String(c[6] || '').match(/^\s*(\d{1,2})\s*[-–:]\s*(\d{1,2})\s*$/);
+    if (r1) { gl = +r1[1]; gv = +r1[2]; }
+    else { gl = c[6] !== undefined && /^\s*\d{1,2}\s*$/.test(c[6]) ? parseInt(c[6], 10) : null; gv = c[7] !== undefined && /^\s*\d{1,2}\s*$/.test(c[7]) ? parseInt(c[7], 10) : null; if (gl === null || gv === null) gl = gv = null; }
     filas.push({ jornada: jor, fecha, hora: _impHora(c[2]), local: c[3], visitante: c[4], campo: c[5] || '',
       gl: isNaN(gl) ? null : gl, gv: isNaN(gv) ? null : gv });
   });
@@ -9850,7 +9854,8 @@ function _impAnalizar() {
     return { nombre: n, destino: ex ? ex.id : '__nuevo__' };
   });
   const fechas = filas.map(f => f.fecha).sort();
-  prev.innerHTML = `<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}</div>
+  const nRes = filas.filter(f => f.gl !== null).length;
+  prev.innerHTML = `<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}${nRes ? ` · <b style="color:#17803D;">${nRes} con resultado</b>` : ''}</div>
     ${errores.length ? `<div style="font-size:12px;color:#7B1E3A;margin-bottom:8px;">⚠️ ${errores.length} líneas ignoradas:<br>${errores.slice(0, 4).map(_escHtml).join('<br>')}</div>` : ''}
     <div style="font-weight:700;font-size:12px;margin:10px 0 6px;">Equipos (revisa a cuál corresponde cada uno)</div>
     ${window._impEquipos.map((e, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
@@ -9882,19 +9887,41 @@ async function confirmarImportarCal() {
     (DB.partidos || []).filter(p => p.competicionId === comp.id).forEach(p => DB._deleted[p.id] = Date.now());
     DB.partidos = (DB.partidos || []).filter(p => p.competicionId !== comp.id);
   }
-  const clave = p => [p.competicionId, p.jornada, p.localId, p.visitanteId].join('|');
-  const ya = new Set((DB.partidos || []).map(clave));
-  let creados = 0, repetidos = 0;
+  const clave = p => [p.competicionId, String(p.jornada), p.localId, p.visitanteId].join('|');
+  const ya = {}; (DB.partidos || []).forEach(p => { ya[clave(p)] = p; });
+  let creados = 0, resultados = 0, cambiosFecha = 0, iguales = 0; const conflictos = [];
+  const nom = id => (DB.equipos.find(e => e.id === id) || {}).nombre || '?';
   filas.forEach(f => {
     const p = { id: uid(), competicionId: comp.id, jornada: String(f.jornada), fecha: f.fecha, hora: f.hora, sedeId: '', campoNombre: '', campo: f.campo,
       localId: idDe[f.local], visitanteId: idDe[f.visitante], golesLocal: f.gl, golesVisitante: f.gv,
       estado: (f.gl !== null && f.gv !== null) ? 'jugado' : 'pendiente', acta: '' };
-    if (ya.has(clave(p))) { repetidos++; return; }
-    ya.add(clave(p)); DB.partidos.push(p); creados++;
+    const ex = ya[clave(p)];
+    if (!ex) { ya[clave(p)] = p; DB.partidos.push(p); creados++; if (f.gl !== null) resultados++; return; }
+    // Ya existe: actualizar sin duplicar
+    let cambio = false;
+    if (f.gl !== null && f.gv !== null) {
+      const mismo = ex.estado === 'jugado' && String(ex.golesLocal) === String(f.gl) && String(ex.golesVisitante) === String(f.gv);
+      if (!mismo) {
+        if (ex.actaCerrada && ex.estado === 'jugado') conflictos.push(`J${f.jornada} ${nom(ex.localId)} ${ex.golesLocal}-${ex.golesVisitante} (acta) / IMD ${f.gl}-${f.gv}`);
+        else { ex.golesLocal = f.gl; ex.golesVisitante = f.gv; ex.estado = 'jugado'; resultados++; cambio = true; }
+      }
+    }
+    // Fecha / hora / campo: solo si no tiene aviso manual (suspendido/aplazado)
+    if (!ex.avisoTipo) {
+      const nf = f.fecha && _limpiarFecha(ex.fecha) !== f.fecha, nh = f.hora && _limpiarHora(ex.hora) !== f.hora, nc = f.campo && ex.campo !== f.campo;
+      if (nf || nh || nc) { if (nf) ex.fecha = f.fecha; if (nh) ex.hora = f.hora; if (nc) ex.campo = f.campo; if (nf || nh) cambiosFecha++; cambio = true; }
+    }
+    if (!cambio) iguales++;
   });
   cerrarModal('modalImportarCal');
   await saveCols(['equipos', 'partidos']); renderAll();
-  toast(`Importados ${creados} partidos${nuevos ? ` y ${nuevos} equipos nuevos` : ''}${repetidos ? ` (${repetidos} ya existían)` : ''}`);
+  const partes = [];
+  if (creados) partes.push(`${creados} partidos nuevos`);
+  if (resultados) partes.push(`${resultados} resultados`);
+  if (cambiosFecha) partes.push(`${cambiosFecha} cambios de fecha/hora`);
+  if (nuevos) partes.push(`${nuevos} equipos nuevos`);
+  toast(partes.length ? '✅ ' + partes.join(' · ') + (iguales ? ` (${iguales} sin cambios)` : '') : 'Sin cambios: todo estaba al día');
+  if (conflictos.length) alert(`⚠️ ${conflictos.length} resultado(s) NO se han cambiado porque el acta está cerrada y no coincide con el IMD. Revísalos a mano:\n\n` + conflictos.slice(0, 15).join('\n'));
 }
 
 // ══════════════════════════════════════════════════════
