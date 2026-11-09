@@ -1158,6 +1158,21 @@ body.cal-pop-on{overflow:hidden;}
 .alin-j.nd{opacity:.55;background:#f6f3f4;border-color:#f3c9c9;}
 .alin-disp{margin-top:6px;width:100%;border:0;border-radius:9px;padding:7px;font-size:12px;font-weight:800;cursor:pointer;background:#D5F5E3;color:#1E8449;}
 .alin-j.nd .alin-disp{background:#FDE2E1;color:#B42318;}
+.mj-favs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.mj-favs .cat-chip{text-transform:none;font-size:12px;padding:5px 11px;white-space:normal;max-width:100%;box-sizing:border-box;}
+.mjc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;}
+.mjc{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.08);}
+.mjc.aviso{box-shadow:0 0 0 2px #D97706,0 4px 14px rgba(0,0,0,.08);}
+.mjc-cab{display:flex;align-items:center;gap:8px;background:var(--c);background-image:linear-gradient(145deg,rgba(255,255,255,.14),rgba(0,0,0,.18));color:#fff;padding:12px 14px;}
+.mjc-cab>div{flex:1;}
+.mjc-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;line-height:1;text-transform:uppercase;}
+.mjc-nom{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:rgba(255,255,255,.88);margin-top:2px;}
+.mjc-lv{flex:none;font-size:11px;font-weight:800;background:rgba(255,255,255,.22);border-radius:20px;padding:4px 9px;white-space:nowrap;}
+.mjc-est{flex:none;font-size:11px;font-weight:800;letter-spacing:.8px;background:#fff;color:var(--c);border-radius:6px;padding:4px 8px;white-space:nowrap;}
+.mjc-est.fin{background:#1F1A1C;color:#fff;}
+.mjc-cuerpo{padding:12px 14px 14px;}
+.mjc-info{display:flex;flex-direction:column;gap:3px;font-size:13px;margin-top:10px;color:#333;}
+@media (max-width:768px){.mjc-grid{grid-template-columns:1fr;}.mjc-cab{flex-wrap:wrap;}}
 </style>
 </head>
 <body>
@@ -2294,7 +2309,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.6';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.0.7';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.2';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -10554,21 +10569,28 @@ function _mjFechaTxt(f) {
 }
 function _mjPartidoCard(p, sel) {
   const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
-  const comp = (DB.competiciones || []).find(c => c.id === p.competicionId);
+  const comp = (DB.competiciones || []).find(c => c.id === p.competicionId), pc = _compPartes(comp);
   const esLocal = sel.has(p.localId), mio = mE[esLocal ? p.localId : p.visitanteId];
-  const hora = _limpiarHora(p.hora), jug = p.estado === 'jugado', res = _mjResultado(p, sel);
-  const nm = id => sel.has(id) ? `<span style="color:var(--rojo);">${_escHtml(mE[id]?.nombre || '—')}</span>` : `<span style="font-weight:600;">${_escHtml(mE[id]?.nombre || '—')}</span>`;
-  const RES = { G: ['✅ Victoria', '#D5F5E3', '#1E8449'], E: ['🤝 Empate', '#FFF3CD', '#8A6D00'], P: ['❌ Derrota', '#FDE2E1', '#B42318'] }[res];
-  return `<div style="background:white;border-radius:16px;padding:14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.07),0 6px 18px rgba(60,20,30,.06);${_avisoActivo(p) ? 'border-left:4px solid #D4A017;' : (RES ? 'border-left:4px solid ' + RES[2] + ';' : '')}">
-    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
-      <div style="font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#7B1E3A;min-width:0;">${_escHtml(comp ? _etiquetaCompeticion(comp) : '')}</div>
-      <span style="font-size:10px;font-weight:800;padding:4px 8px;border-radius:8px;white-space:nowrap;background:${esLocal ? '#D5F5E3' : '#E5EFFB'};color:${esLocal ? '#1E8449' : '#1D5FB0'};">${esLocal ? '🏠 LOCAL' : '🚌 VISITANTE'}</span></div>
-    <div class="mj-marcador"><div class="mj-eqn">${nm(p.localId)}</div><div class="mj-goles${jug ? '' : ' vs'}">${jug ? `${_escHtml(p.golesLocal ?? '')} – ${_escHtml(p.golesVisitante ?? '')}` : 'vs'}</div><div class="mj-eqn" style="text-align:right;">${nm(p.visitanteId)}</div></div>
-    ${RES ? `<div style="display:inline-block;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${RES[1]};color:${RES[2]};margin-top:4px;">${RES[0]}</div>` : ''}
-    <div style="font-size:13px;margin-top:8px;">🗓️ <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</div>
-    <div style="font-size:13px;margin-top:3px;">📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</div>
-    ${_avisoActivo(p) ? _avisoBadge(p, sesion.rol === 'admin') : ''}
-    ${_mjEsGestor() && mio && (sesion.rol === 'admin' || _eqEsDeClub(mio)) ? `<button class="btn btn-outline btn-xs" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}</div>`;
+  const hora = _limpiarHora(p.hora), jug = p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null, res = _mjResultado(p, sel);
+  const gl = Number(p.golesLocal), gv = Number(p.golesVisitante), ganaL = jug && gl > gv, ganaV = jug && gv > gl;
+  const RES = { G: ['VICTORIA', '#1E8449'], E: ['EMPATE', '#8A6D00'], P: ['DERROTA', '#B42318'] }[res];
+  const col = p.competicionId ? _calColorComp(p.competicionId) : '#7B1E3A', av = _avisoActivo(p);
+  const fila = (id, g, gana) => `<div class="pm-fila${gana ? ' gana' : ''}${jug && !gana ? ' pierde' : ''}">
+      <span class="pm-n">${sel.has(id) ? '<i class="pm-mio"></i>' : ''}${_escHtml(mE[id]?.nombre || '—')}</span>${jug ? `<span class="pm-g">${_escHtml(g)}</span>` : ''}</div>`;
+  return `<div class="mjc${av ? ' aviso' : ''}" style="--c:${col}">
+    <div class="mjc-cab">
+      <div style="min-width:0;"><div class="mjc-cat">${_escHtml(pc.cat || (comp ? comp.nombre : 'Partido'))}</div><div class="mjc-nom">${_escHtml(pc.nom || '')}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</div></div>
+      <span class="mjc-lv">${esLocal ? '🏠 LOCAL' : '🚌 VISITANTE'}</span>
+      <span class="mjc-est${jug ? ' fin' : ''}">${jug ? 'FINAL' : (av ? 'AVISO' : _escHtml(hora || 'HORA ?'))}</span>
+    </div>
+    <div class="mjc-cuerpo">
+      <div class="pm-tabla">${fila(p.localId, p.golesLocal, ganaL)}${fila(p.visitanteId, p.golesVisitante, ganaV)}</div>
+      ${RES ? `<div class="pm-res" style="background:${RES[1]};">${RES[0]}</div>` : ''}
+      <div class="mjc-info"><span>🗓️ <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</span><span>📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</span></div>
+      ${av ? _avisoBadge(p, sesion.rol === 'admin') : ''}
+      ${_mjEsGestor() && mio && (sesion.rol === 'admin' || _eqEsDeClub(mio)) ? `<button class="btn ${_convpConocida(_convpId(p.id, mio.id)) ? 'btn-outline' : 'btn-rojo'} btn-sm" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}
+      ${_permisoActa(p) === 'club' ? `<button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="abrirActaPartido('${p.id}')">⚽ Goleadores</button>` : ''}
+    </div></div>`;
 }
 function _mjProximaJornada(parts) {
   const hoy = new Date().toISOString().slice(0, 10);
@@ -10603,7 +10625,7 @@ function renderMisJornadas() {
       <button class="btn btn-outline btn-sm" onclick="_mjAbrirSel()">${window._mjAbierto ? '✓ Listo' : '✏️ Elegir'}</button></div>
       ${window._mjAbierto ? `<input id="mjBuscar" type="search" autocomplete="off" placeholder="🔎 Buscar equipo…" value="${_escHtml(window._mjQ || '')}" oninput="_mjFiltrar()" style="width:100%;box-sizing:border-box;margin-top:10px;padding:11px 12px;border:1px solid #ddd;border-radius:10px;font-size:15px;">
         <div id="mjLista" class="mj-scroll">${_mjListaHtml()}</div>`
-        : `<div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${sel.size ? [...sel].map(id => '⭐ ' + _escHtml(mE[id]?.nombre || '?')).join(' · ') : 'Pulsa "Elegir" para marcar tus equipos favoritos.'}</div>`}</div>`;
+        : `<div class="mj-favs">${sel.size ? [...sel].map(id => mE[id]).filter(Boolean).sort((a, b) => _calOrdenComp(a.competicionId) - _calOrdenComp(b.competicionId)).map(e => `<span class="cat-chip" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#6B7280'}">⭐ ${_escHtml(e.nombre)}</span>`).join('') : '<span style="font-size:13px;color:var(--gris-suave);">Pulsa "Elegir" para marcar tus equipos favoritos.</span>'}</div>`}</div>`;
   if (!jornadas.length) { el.innerHTML = h + '<div class="empty-state"><div class="ei">🗓️</div><p>Selecciona equipos que tengan partidos en el calendario.</p></div>'; return; }
   const iJ = jornadas.indexOf(jor), cuenta = { G: 0, E: 0, P: 0 }; delaJ.forEach(p => { const r = _mjResultado(p, sel); if (r) cuenta[r]++; });
   const hayRes = cuenta.G + cuenta.E + cuenta.P;
@@ -10614,7 +10636,7 @@ function renderMisJornadas() {
       <button class="btn btn-outline btn-sm" ${iJ >= jornadas.length - 1 ? 'disabled' : ''} onclick="_mjPasoJornada(1)" aria-label="Jornada siguiente">▶</button>
       <span style="font-size:14px;"><b>${delaJ.length}</b> partido${delaJ.length === 1 ? '' : 's'}${hayRes ? ` · <span style="color:#1E8449;font-weight:700;">${cuenta.G}G</span> <span style="color:#8A6D00;font-weight:700;">${cuenta.E}E</span> <span style="color:#B42318;font-weight:700;">${cuenta.P}P</span>` : ''}</span>
       <span style="margin-left:auto;display:flex;gap:6px;"><button class="btn btn-outline btn-sm" onclick="_mjCompartir('wa')">💬 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="_mjCompartir('copiar')">📋</button></span></div>`;
-  h += delaJ.length ? delaJ.map(p => _mjPartidoCard(p, sel)).join('') : '<div class="empty-state"><p>Ninguno de tus equipos juega esta jornada.</p></div>';
+  h += delaJ.length ? '<div class="mjc-grid">' + delaJ.map(p => _mjPartidoCard(p, sel)).join('') + '</div>' : '<div class="empty-state"><p>Ninguno de tus equipos juega esta jornada.</p></div>';
   if (descansan.length) h += `<div style="font-size:13px;color:var(--gris-suave);margin-top:6px;">😴 Descansan: ${descansan.map(_escHtml).join(', ')}</div>`;
   el.innerHTML = h;
 }
