@@ -2166,7 +2166,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.5';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.6';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -9804,7 +9804,7 @@ function _impAsegurarModal() {
     <div style="font-size:12px;color:var(--gris-suave);margin-bottom:8px;">Columnas (separadas por ; , o tabulador): <b>Jornada · Fecha · Hora · Local · Visitante · Campo</b> y, opcional, <b>Resultado</b> (<i>4-6</i>) o <b>Goles local · Goles visitante</b>.<br>
       Reimportar es seguro: los partidos que ya existen <b>no se duplican</b>; se actualizan resultado, fecha, hora y campo. Los goleadores no se tocan.</div>
     <input type="file" id="impArchivo" accept=".csv,.txt,.tsv" onchange="_impLeerArchivo(this)" style="margin-bottom:8px;">
-    <textarea id="impTexto" rows="5" placeholder="…o pega aquí las filas" oninput="_impAnalizar()" style="width:100%;font-size:12px;font-family:monospace;border:1px solid var(--gris-linea);border-radius:10px;padding:8px;"></textarea>
+    <textarea id="impTexto" rows="5" placeholder="…o pega aquí las filas, o el texto copiado de la web del IMD (Consulta de Resultados)" oninput="_impAnalizar()" style="width:100%;font-size:12px;font-family:monospace;border:1px solid var(--gris-linea);border-radius:10px;padding:8px;"></textarea>
     <div id="impPrevia" style="margin-top:12px;"></div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
       <button class="btn btn-outline" onclick="cerrarModal('modalImportarCal')">Cancelar</button>
@@ -9826,8 +9826,25 @@ function _impLeerArchivo(inp) {
   r.onload = () => { document.getElementById('impTexto').value = String(r.result).replace(/^﻿/, ''); _impAnalizar(); };
   r.readAsText(f, 'UTF-8');
 }
+// Convierte el texto copiado de la web del IMD (Consulta de Resultados / Calendarios) a filas CSV
+// "Jornada Nº. 1 …" + líneas "06/11/2026  16:30  LOCAL  VISITANTE  1-6  LUGAR  OBS  OBS"
+function _impDesdeIMD(txt) {
+  if (!/Jornada\s*N[ºo°]\.?\s*\d+/i.test(txt)) return null;
+  let jor = null; const out = [];
+  txt.split(/\r?\n/).forEach(l => {
+    const mj = l.match(/Jornada\s*N[ºo°]\.?\s*(\d+)/i); if (mj) { jor = mj[1]; return; }
+    if (!jor || !/^\s*\d{1,2}\/\d{1,2}\/\d{2,4}/.test(l)) return;
+    let c = l.split('\t').map(x => x.trim()).filter(x => x !== '');
+    if (c.length < 4) c = l.trim().split(/\s{2,}/).map(x => x.trim());
+    if (c.length < 4) return;
+    const res = /^\d{1,2}\s*[-–]\s*\d{1,2}$/.test(c[4] || '') ? c[4].replace(/\s/g, '') : '';
+    out.push([jor, c[0], c[1], c[2], c[3], (c[5] || '').split('-')[0].trim(), res].join(';'));
+  });
+  return out.length ? out.join('\n') : null;
+}
 function _impAnalizar() {
-  const txt = document.getElementById('impTexto').value.trim();
+  let txt = document.getElementById('impTexto').value.trim();
+  const imd = _impDesdeIMD(txt); window._impEsIMD = !!imd; if (imd) txt = imd;
   const prev = document.getElementById('impPrevia'), ok = document.getElementById('impBtnOk');
   if (!txt) { prev.innerHTML = ''; ok.disabled = true; return; }
   const lineas = txt.split(/\r?\n/).filter(l => l.trim());
@@ -9855,7 +9872,7 @@ function _impAnalizar() {
   });
   const fechas = filas.map(f => f.fecha).sort();
   const nRes = filas.filter(f => f.gl !== null).length;
-  prev.innerHTML = `<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}${nRes ? ` · <b style="color:#17803D;">${nRes} con resultado</b>` : ''}</div>
+  prev.innerHTML = `${window._impEsIMD ? '<div style="font-size:12px;font-weight:700;color:#1D5FB0;margin-bottom:6px;">🌐 Texto de la web del IMD reconocido</div>' : ''}<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}${nRes ? ` · <b style="color:#17803D;">${nRes} con resultado</b>` : ''}</div>
     ${errores.length ? `<div style="font-size:12px;color:#7B1E3A;margin-bottom:8px;">⚠️ ${errores.length} líneas ignoradas:<br>${errores.slice(0, 4).map(_escHtml).join('<br>')}</div>` : ''}
     <div style="font-weight:700;font-size:12px;margin:10px 0 6px;">Equipos (revisa a cuál corresponde cada uno)</div>
     ${window._impEquipos.map((e, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
@@ -9908,7 +9925,7 @@ async function confirmarImportarCal() {
     }
     // Fecha / hora / campo: solo si no tiene aviso manual (suspendido/aplazado)
     if (!ex.avisoTipo) {
-      const nf = f.fecha && _limpiarFecha(ex.fecha) !== f.fecha, nh = f.hora && _limpiarHora(ex.hora) !== f.hora, nc = f.campo && ex.campo !== f.campo;
+      const nf = f.fecha && _limpiarFecha(ex.fecha) !== f.fecha, nh = f.hora && _limpiarHora(ex.hora) !== f.hora, nc = f.campo && !window._impEsIMD && ex.campo !== f.campo;
       if (nf || nh || nc) { if (nf) ex.fecha = f.fecha; if (nh) ex.hora = f.hora; if (nc) ex.campo = f.campo; if (nf || nh) cambiosFecha++; cambio = true; }
     }
     if (!cambio) iguales++;
