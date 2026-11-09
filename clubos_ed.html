@@ -2174,7 +2174,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '2.9.7';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '2.9.8';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -9877,7 +9877,9 @@ function _impAnalizar() {
   window._impEquipos = nombres.map(n => {
     const nn = _impNorm(n);
     // Solo se empareja solo con equipos de ESTA competición (evita mezclar categorías con nombres iguales)
-    const ex = existentes.find(e => _impNorm(e.nombre) === nn && e.competicionId === window._impComp);
+    const cand = existentes.filter(e => _impNorm(e.nombre) === nn && e.competicionId === window._impComp);
+    const nPar = id => (DB.partidos || []).filter(p => p.localId === id || p.visitanteId === id).length;
+    const ex = cand.sort((a, b) => nPar(b.id) - nPar(a.id))[0];
     return { nombre: n, destino: ex ? ex.id : '__nuevo__' };
   });
   const fechas = filas.map(f => f.fecha).sort();
@@ -9969,7 +9971,8 @@ function _revPintar() {
   const parecido = e => eqs.filter(o => o.id !== e.id && (() => { const a = _impNorm(e.nombre), b = _impNorm(o.nombre); return a === b || a.startsWith(b) || b.startsWith(a); })());
   // Equipos de OTRA competición usados en partidos de ésta
   const ajenos = [...new Set(pComp.flatMap(p => [p.localId, p.visitanteId]))].map(id => (DB.equipos || []).find(e => e.id === id)).filter(e => e && e.competicionId !== compId);
-  const optsAqui = excl => eqs.filter(o => o.id !== excl).map(o => `<option value="${o.id}">${_escHtml(o.nombre)}</option>`).join('');
+  const optsAqui = excl => eqs.filter(o => o.id !== excl).map(o => `<option value="${o.id}">${_escHtml(o.nombre)} (${nP(o.id)} partidos)</option>`).join('');
+  const nDup = _revGruposDup(compId).reduce((s, g) => s + g.length - 1, 0);
   const fila = e => {
     const avisos = [], n = nP(e.id), j = nJ(e.id), otras = otrasComp(e.id), par = parecido(e);
     if (!n) avisos.push('Sin partidos aquí');
@@ -9991,6 +9994,10 @@ function _revPintar() {
     <div style="font-size:12px;color:var(--gris-suave);margin-bottom:10px;">
       <b>Fusionar</b>: une un duplicado con el equipo bueno (pasa partidos, jugadores y goles) y borra el duplicado.<br>
       <b>Mover</b>: el equipo es de otra categoría. <b>Quitar</b>: lo borra junto con sus partidos de esta competición.</div>
+    ${nDup ? `<div style="background:#E8F5EC;border:1px solid #BFE6CC;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;">
+      Hay <b>${nDup}</b> equipo${nDup === 1 ? '' : 's'} repetido${nDup === 1 ? '' : 's'} con el mismo nombre en esta categoría.
+      <button class="btn btn-rojo btn-sm" style="margin-top:6px;" onclick="_revFusionarAuto()">🔗 Fusionar duplicados automáticamente</button>
+      <div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">Se queda con el que tiene más partidos y le pasa todo lo del repetido.</div></div>` : ''}
     <div class="rev-tit">Equipos de esta competición (${eqs.length})</div>
     ${eqs.map(fila).join('') || '<div style="font-size:13px;color:#888;">Ninguno.</div>'}
     ${ajenos.length ? `<div class="rev-tit" style="margin-top:16px;">⚠️ Equipos de otras categorías usados en partidos de ésta (${ajenos.length})</div>
@@ -9998,6 +10005,29 @@ function _revPintar() {
         <div class="rev-acc"><select id="revS_${e.id}"><option value="">Sustituir por…</option>${optsAqui('')}</select><button class="btn btn-outline btn-xs" onclick="_revSustituir('${e.id}')">🔁 Sustituir</button></div></div>`).join('')}` : ''}
   </div>`;
   document.body.appendChild(d);
+}
+// Grupos de equipos con el MISMO nombre dentro de una competición
+function _revGruposDup(compId) {
+  const g = {}; (DB.equipos || []).filter(e => e.competicionId === compId).forEach(e => { const k = _impNorm(e.nombre); (g[k] = g[k] || []).push(e); });
+  return Object.values(g).filter(x => x.length > 1);
+}
+async function _revFusionarAuto() {
+  const compId = window._revComp, grupos = _revGruposDup(compId); if (!grupos.length) return;
+  const nP = id => (DB.partidos || []).filter(p => p.localId === id || p.visitanteId === id).length + (DB.jugadores || []).filter(j => j.equipoId === id).length * 100;
+  if (!confirm(`¿Fusionar ${grupos.reduce((s, g) => s + g.length - 1, 0)} equipos repetidos?\n\n${grupos.map(g => '· ' + g[0].nombre + ' (' + g.length + ')').join('\n')}`)) return;
+  if (!DB._deleted) DB._deleted = {};
+  grupos.forEach(g => {
+    const bueno = g.slice().sort((a, b) => nP(b.id) - nP(a.id))[0];
+    g.filter(e => e.id !== bueno.id).forEach(e => {
+      (DB.partidos || []).forEach(p => { if (p.localId === e.id) p.localId = bueno.id; if (p.visitanteId === e.id) p.visitanteId = bueno.id; });
+      (DB.jugadores || []).forEach(j => { if (j.equipoId === e.id) { j.equipoId = bueno.id; j.equipoNombre = bueno.nombre; } });
+      (DB.goleadores || []).forEach(x => { if (x.equipoId === e.id) { x.equipoId = bueno.id; x.equipoNombre = bueno.nombre; } });
+      DB.equipos = DB.equipos.filter(x => x.id !== e.id); DB._deleted[e.id] = Date.now();
+    });
+  });
+  const dup = _revQuitarDuplicados(compId);
+  await saveCols(['equipos', 'partidos', 'jugadores', 'goleadores']); renderAll(); _revPintar();
+  toast(`🔗 Duplicados fusionados${dup ? ` · ${dup} partidos repetidos eliminados` : ''}`);
 }
 function _revQuitarDuplicados(compId) {
   // Tras fusionar pueden quedar dos partidos iguales: se conserva el que tiene resultado/acta
