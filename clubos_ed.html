@@ -1173,6 +1173,17 @@ body.cal-pop-on{overflow:hidden;}
 .mjc-cuerpo{padding:12px 14px 14px;}
 .mjc-info{display:flex;flex-direction:column;gap:3px;font-size:13px;margin-top:10px;color:#333;}
 @media (max-width:768px){.mjc-grid{grid-template-columns:1fr;}.mjc-cab{flex-wrap:wrap;}}
+.ch-wrap{overflow-x:auto;background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.ch-tabla{border-collapse:collapse;width:100%;font-size:13px;}
+.ch-tabla th{background:#1F1A1C;color:#fff;font-size:11px;font-weight:800;padding:8px 6px;text-align:center;white-space:nowrap;}
+.ch-tabla th small{display:block;font-weight:600;opacity:.85;font-size:10px;}
+.ch-tabla td{border-bottom:1px solid #f0eaec;padding:7px 6px;text-align:center;}
+.ch-tabla tbody tr:nth-child(even){background:#faf7f8;}
+.ch-nom{text-align:left!important;font-weight:700;white-space:nowrap;position:sticky;left:0;background:inherit;}
+.ch-tabla thead .ch-nom{background:#1F1A1C;}
+.ch-tabla tbody .ch-nom{background:#fff;}
+.ch-x{color:#ccc;} .ch-t{font-weight:800;}
+.ch-pie td{background:#F6F3F4;font-weight:800;font-size:12px;}
 </style>
 </head>
 <body>
@@ -1473,7 +1484,7 @@ body.cal-pop-on{overflow:hidden;}
     <!-- ══ PANEL: CONVOCATORIAS ══ -->
     <div class="tab-panel" id="panel-convocatorias">
       <div class="section-header">
-        <h2>📣 Convocatorias especiales</h2><div class="section-line"></div>
+        <h2>📣 Convocatorias</h2><div class="section-line"></div>
       </div>
       <div id="convocatoriasContent"></div>
     </div>
@@ -2309,8 +2320,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.8';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.3';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.0.9';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2975,7 +2986,7 @@ async function convPartidoGenerar() {
   try {
     const r = await jsonpFetch(SCRIPT_URL + '?action=convCrear&pwd=' + _convpPwd() + '&datos=' + encodeURIComponent(JSON.stringify(datos)), 20000);
     if (!r || !r.ok) throw new Error((r && r.error) || 'Error');
-    window._convp.datos = datos; _convpRecordar(c.base); c.maxN = Math.max(c.maxN || 0, _convpVer(c.id, c.base));
+    window._convp.datos = datos; _convpRecordar(c.base); window._convHist.datos = null; c.maxN = Math.max(c.maxN || 0, _convpVer(c.id, c.base));
     if (c.anterior) {   // anula la anterior y deja su enlace apuntando a la nueva
       try { await jsonpFetch(SCRIPT_URL + '?action=convAnular&pwd=' + _convpPwd() + '&id=' + encodeURIComponent(c.anterior) + '&nueva=' + encodeURIComponent(c.id), 20000); } catch (e) {}
       c.anterior = null; toast('♻️ Nueva convocatoria creada. Envía el nuevo enlace a las familias');
@@ -3017,7 +3028,7 @@ async function convPartidoAnular() {
   try {
     const r = await jsonpFetch(SCRIPT_URL + '?action=convAnular&pwd=' + _convpPwd() + '&id=' + encodeURIComponent(c.id), 20000);
     if (!r || !r.ok) throw new Error((r && r.error) || 'Error');
-    _convpOlvidar(c.base); cerrarModal('modalConvPartido'); toast('🚫 Convocatoria anulada');
+    _convpOlvidar(c.base); window._convHist.datos = null; cerrarModal('modalConvPartido'); toast('🚫 Convocatoria anulada');
     if (typeof renderMisJornadas === 'function') renderMisJornadas();
   } catch (e) { toast('No se pudo anular. ¿Está subido el backend 2.4.3?'); }
 }
@@ -3035,6 +3046,70 @@ function convPartidoCopiar() {
   const u = window._convp.url;   // solo el enlace, sin texto
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(u).then(() => toast('🔗 Enlace copiado'), () => calBusCopiarAlt(u));
   else calBusCopiarAlt(u);
+}
+
+// ══════════════════════════════════════════════════════
+//  HISTORIAL DE CONVOCATORIAS DE PARTIDO (por equipo y jornada)
+//  Es lo que se CONVOCÓ y lo que respondieron las familias; no es el acta (quién jugó de verdad).
+// ══════════════════════════════════════════════════════
+window._convHist = window._convHist || { datos: null, eq: '', cargando: false, t: 0 };
+async function _convHistCargar(forzar) {
+  const H = window._convHist;
+  if (H.cargando || (!forzar && H.datos && Date.now() - H.t < 60000)) return;
+  H.cargando = true;
+  try {
+    const r = await jsonpFetch(SCRIPT_URL + '?action=convListar&pwd=' + _convpPwd(), 20000);
+    if (r && r.ok) { H.datos = r.convocatorias || []; H.t = Date.now(); } else H.err = (r && r.error) || 'Error';
+  } catch (e) { H.err = 'Sin conexión'; }
+  H.cargando = false;
+}
+async function _convHistRender(forzar) {
+  const el = document.getElementById('convHist'); if (!el) return;
+  const H = window._convHist;
+  if (!H.datos || forzar) { el.innerHTML = '<div style="color:#888;font-size:13px;padding:10px;">Cargando historial…</div>'; await _convHistCargar(forzar); }
+  if (!document.getElementById('convHist')) return;
+  if (!H.datos) { el.innerHTML = `<div class="empty-state"><p>No se pudo cargar el historial (${_escHtml(H.err || '')}). ¿Está subido el backend 2.4.4?</p><button class="btn btn-outline btn-sm" onclick="_convHistRender(true)">🔄 Reintentar</button></div>`; return; }
+  const misEq = sesion.rol === 'admin' ? null : new Set((DB.equipos || []).filter(e => _eqEsDeClub(e)).map(e => e.id));
+  const convs = H.datos.filter(c => !misEq || misEq.has(c.equipoId));
+  const eqIds = [...new Set(convs.map(c => c.equipoId))];
+  if (!eqIds.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📚</div><p>Aún no hay convocatorias de partido.<br>Se crean desde Mi jornada → 📣 Convocatoria.</p></div>'; return; }
+  const eqs = eqIds.map(id => (DB.equipos || []).find(e => e.id === id) || { id, nombre: (convs.find(c => c.equipoId === id) || {}).equipo || id })
+    .sort((a, b) => _calOrdenComp(a.competicionId) - _calOrdenComp(b.competicionId) || (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  if (!eqIds.includes(H.eq)) H.eq = eqs[0].id;
+  const delEq = convs.filter(c => c.equipoId === H.eq).map(c => { const p = (DB.partidos || []).find(x => x.id === c.partidoId) || {}; return Object.assign({ jornada: p.jornada || '?' }, c); })
+    .sort((a, b) => String(_limpiarFecha(a.fecha)).localeCompare(String(_limpiarFecha(b.fecha))));
+  // Jugadores: todos los que alguna vez fueron convocados (con su nombre corto guardado)
+  const nombres = {}; delEq.forEach(c => (c.jugadores || []).forEach(j => { nombres[j.id] = j.n; }));
+  const jIds = Object.keys(nombres).sort((a, b) => nombres[a].localeCompare(nombres[b], 'es'));
+  const celda = (c, jid) => { const conv = (c.jugadores || []).some(j => j.id === jid); if (!conv) return '<td class="ch-x" title="No convocado">—</td>'; const r = (c.resp || {})[jid];
+    return r === 'si' ? '<td class="ch-si" title="Va">✅</td>' : (r === 'no' ? '<td class="ch-no" title="No va">❌</td>' : '<td class="ch-pe" title="Sin respuesta">⏳</td>'); };
+  const tot = jid => { let cv = 0, si = 0, no = 0; delEq.forEach(c => { if ((c.jugadores || []).some(j => j.id === jid)) { cv++; const r = (c.resp || {})[jid]; if (r === 'si') si++; else if (r === 'no') no++; } }); return { cv, si, no }; };
+  const eqSel = eqs.find(e => e.id === H.eq);
+  el.innerHTML = `<div class="gx-eqs">${eqs.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId), n = convs.filter(x => x.equipoId === e.id).length;
+      return `<button type="button" class="gx-eq${H.eq === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="window._convHist.eq='${e.id}';_convHistRender()">
+        <span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : '')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span><span class="gx-eq-j">${n} convocatoria${n === 1 ? '' : 's'}</span></button>`; }).join('')}</div>
+    <div class="jb" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="font-size:13px;"><b>${_escHtml(eqSel ? eqSel.nombre : '')}</b> · ${delEq.length} jornada${delEq.length === 1 ? '' : 's'} · ${delEq.filter(c => c.cerrada).length} cerrada${delEq.filter(c => c.cerrada).length === 1 ? '' : 's'}
+        <div style="font-size:11px;color:var(--gris-suave);margin-top:2px;">Lo convocado y lo que respondieron las familias. Quién jugó realmente está en el acta.</div></div>
+      <div style="display:flex;gap:6px;"><button class="btn btn-outline btn-sm" onclick="_convHistRender(true)">🔄 Actualizar</button><button class="btn btn-outline btn-sm" onclick="_convHistImprimir()">🖨️ PDF</button></div></div>
+    <div class="ch-wrap" id="convHistTabla"><table class="ch-tabla"><thead><tr><th class="ch-nom">Jugador</th>
+      ${delEq.map(c => `<th title="${_escHtml((c.esLocal ? 'vs ' : '@ ') + (c.rival || ''))}"><div>J${_escHtml(c.jornada)}</div><small>${_escHtml(String(_limpiarFecha(c.fecha)).slice(8, 10) + '/' + String(_limpiarFecha(c.fecha)).slice(5, 7))}</small><small>${c.cerrada ? '🔒' : '🟢'}</small></th>`).join('')}
+      <th>Conv.</th><th>Va</th><th>No</th></tr></thead><tbody>
+      ${jIds.map(jid => { const t = tot(jid); return `<tr><td class="ch-nom">${_escHtml(nombres[jid])}</td>${delEq.map(c => celda(c, jid)).join('')}<td class="ch-t">${t.cv}</td><td class="ch-t" style="color:#17803D;">${t.si}</td><td class="ch-t" style="color:#B3261E;">${t.no}</td></tr>`; }).join('')}
+      <tr class="ch-pie"><td class="ch-nom">Van / convocados</td>${delEq.map(c => { const cu = _convpCuenta(c); return `<td>${cu.si}/${(c.jugadores || []).length}</td>`; }).join('')}<td colspan="3"></td></tr>
+    </tbody></table></div>
+    <div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">✅ va · ❌ no va · ⏳ sin respuesta · — no convocado · 🔒 jornada terminada (grabada) · 🟢 abierta</div>`;
+}
+function _convHistImprimir() {
+  const t = document.getElementById('convHistTabla'), eq = (DB.equipos || []).find(e => e.id === window._convHist.eq); if (!t) return;
+  const v = window.open('', '_blank'); if (!v) { toast('Permite las ventanas emergentes'); return; }
+  v.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Convocatorias · ${_escHtml(eq ? eq.nombre : '')}</title><style>
+    @page{size:A4 landscape;margin:12mm;} body{font-family:Arial,sans-serif;color:#222;} h1{font-size:18px;color:#7B1E3A;margin:0 0 4px;} p{font-size:11px;color:#666;margin:0 0 10px;}
+    table{border-collapse:collapse;width:100%;font-size:11px;} th,td{border:1px solid #ddd;padding:4px;text-align:center;} th{background:#7B1E3A;color:#fff;} td:first-child,th:first-child{text-align:left;}
+    small{display:block;font-size:9px;} *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}</style></head><body>
+    <h1>Convocatorias de partido · ${_escHtml(eq ? eq.nombre : '')}</h1><p>✅ va · ❌ no va · ⏳ sin respuesta · — no convocado · Generado el ${new Date().toLocaleDateString('es-ES')}</p>
+    ${t.innerHTML}<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></body></html>`);
+  v.document.close();
 }
 
 // ── Página pública para familias (?conv=ID): sin login, solo convocados ──
@@ -3068,6 +3143,7 @@ function convPublicaPintar() {
   const fecha = d.fecha ? _mjFechaTxt(d.fecha) : '';
   const fila = j => {
     const r = (d.resp || {})[j.id] || '';
+    if (d.cerrada) return `<div style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;border-left:5px solid ${r === 'si' ? '#17803D' : (r === 'no' ? '#B3261E' : '#ccc')};"><b style="font-size:16px;">${_escHtml(j.n)}</b><span style="font-weight:800;color:${r === 'si' ? '#17803D' : (r === 'no' ? '#B3261E' : '#888')};">${r === 'si' ? '✅ Fue' : (r === 'no' ? '❌ No fue' : '⏳ Sin respuesta')}</span></div>`;
     const bt = (v, txt, col, bg) => `<button onclick="convPublicaResp('${j.id}','${v}')" style="flex:1;padding:12px 6px;border-radius:10px;border:2px solid ${r === v ? col : '#ddd'};background:${r === v ? bg : '#fff'};color:${r === v ? col : '#666'};font-weight:800;font-size:14px;font-family:inherit;">${txt}</button>`;
     return `<div style="background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(60,20,30,.08);border-left:5px solid ${r === 'si' ? '#17803D' : (r === 'no' ? '#B3261E' : '#ccc')};">
       <div style="font-size:17px;font-weight:800;margin-bottom:8px;">${_escHtml(j.n)}</div>
@@ -3082,7 +3158,8 @@ function convPublicaPintar() {
       <div style="display:inline-block;margin-top:8px;font-size:11px;font-weight:800;padding:3px 10px;border-radius:20px;background:${d.esLocal ? '#E4F5EA' : '#E5EFFB'};color:${d.esLocal ? '#17803D' : '#1D5FB0'};">${d.esLocal ? '🏠 LOCAL' : '🚌 VISITANTE'}</div>
       ${d.nota ? `<div style="margin-top:10px;font-size:13px;background:rgba(255,255,255,.15);padding:8px 10px;border-radius:10px;">${_escHtml(d.nota)}</div>` : ''}</div>
     <div style="background:#fff;border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:14px;text-align:center;">${_convpResumen(d)}</div>
-    <div style="font-size:13px;color:#666;margin:0 2px 8px;">Pulsa a tu hijo/a y marca si <b>va</b> o <b>no va</b>. Puedes cambiarlo cuando quieras.</div>
+    ${d.cerrada ? '<div style="background:#F2F3F4;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:13px;font-weight:700;text-align:center;">🔒 Jornada terminada: la convocatoria queda grabada y ya no se puede cambiar.</div>'
+      : '<div style="font-size:13px;color:#666;margin:0 2px 8px;">Pulsa a tu hijo/a y marca si <b>va</b> o <b>no va</b>. Puedes cambiarlo cuando quieras.</div>'}
     ${d.jugadores.map(fila).join('')}
     <button onclick="convPublicaSalir()" style="width:100%;margin-top:8px;padding:13px;border-radius:12px;border:2px solid #7B1E3A;background:#fff;color:#7B1E3A;font-weight:800;font-size:15px;font-family:inherit;">🚪 Salir</button>
     <div style="text-align:center;font-size:11px;color:#999;margin-top:14px;">ClubOS ED · Escuela &amp; Deporte</div></div>`;
@@ -3098,7 +3175,7 @@ async function convPublicaResp(jid, v) {
   convPublicaPintar();
   try {
     const r = await jsonpFetch(SCRIPT_URL + '?action=convResp&id=' + encodeURIComponent(_convpPub.id) + '&j=' + encodeURIComponent(jid) + '&r=' + nuevo, 15000);
-    if (r && r.ok) { d.resp = r.resp; convPublicaPintar(); } else toast('No se pudo guardar. Inténtalo de nuevo');
+    if (r && r.ok) { d.resp = r.resp; convPublicaPintar(); } else if (r && /cerrada|anulada/i.test(r.error || '')) { convPublicaCargar(); toast(r.error); } else toast('No se pudo guardar. Inténtalo de nuevo');
   } catch (e) { toast('Sin conexión. Inténtalo de nuevo'); convPublicaCargar(); }
 }
 
@@ -9526,11 +9603,15 @@ function _convColor(tipo) {
   if (/evento|fiesta|excursion|viaje/.test(t)) return '#0E7C86';
   return '#7B1E3A';
 }
+window._convVista = window._convVista || 'esp';
+function _convSetVista(v) { window._convVista = v; renderConvocatorias(); }
 function renderConvocatorias() {
   const el = document.getElementById('convocatoriasContent');
   if (!el) return;
+  const seg = `<div class="jb-seg" style="margin:0 0 14px;"><button class="${window._convVista === 'esp' ? 'on' : ''}" onclick="_convSetVista('esp')">📣 Especiales</button><button class="${window._convVista === 'hist' ? 'on' : ''}" onclick="_convSetVista('hist')">📚 Historial de partidos</button></div>`;
+  if (window._convVista === 'hist') { el.innerHTML = seg + '<div id="convHist"></div>'; _convHistRender(); return; }
   const lista = _convVisibles();
-  let html = `<div style="margin-bottom:14px;"><button class="btn btn-primary" onclick="nuevaConvocatoria()">+ Nueva convocatoria</button></div>`;
+  let html = seg + `<div style="margin-bottom:14px;"><button class="btn btn-primary" onclick="nuevaConvocatoria()">+ Nueva convocatoria</button></div>`;
   if (!lista.length) {
     html += '<div class="empty-state"><div class="ei">📣</div><p>No hay convocatorias especiales todavía.</p></div>';
   } else {
