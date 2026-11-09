@@ -1484,9 +1484,19 @@ body.cal-pop-on{overflow:hidden;}
     <!-- ══ PANEL: CONVOCATORIAS ══ -->
     <div class="tab-panel" id="panel-convocatorias">
       <div class="section-header">
-        <h2>📣 Convocatorias</h2><div class="section-line"></div>
+        <h2>📣 Convocatorias especiales</h2><div class="section-line"></div>
       </div>
+      <div style="font-size:13px;color:var(--gris-suave);margin:-6px 0 12px;">Torneos, convivencias, partidos de entrenamiento… Las de la jornada de liga están en <a href="#" onclick="activarTab('convpartido');return false;" style="color:var(--rojo);font-weight:700;">⚽ Convocatorias de jornada</a>.</div>
       <div id="convocatoriasContent"></div>
+    </div>
+
+    <!-- ══ PANEL: CONVOCATORIAS DE JORNADA (partidos de liga) ══ -->
+    <div class="tab-panel" id="panel-convpartido">
+      <div class="section-header">
+        <h2>⚽ Convocatorias de jornada</h2><div class="section-line"></div>
+      </div>
+      <div style="font-size:13px;color:var(--gris-suave);margin:-6px 0 12px;">Las que se envían a las familias para cada partido de liga. Se crean desde <a href="#" onclick="activarTab('misjornadas');return false;" style="color:var(--rojo);font-weight:700;">🗓️ Mi jornada</a> → 📣 Convocatoria.</div>
+      <div id="convHist"></div>
     </div>
 
     <!-- ══ PANEL: PAGOS ══ -->
@@ -2320,7 +2330,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.9';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.1.0';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2666,14 +2676,14 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convpartido','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convpartido','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
   familias: ['miequipo','misjornadas','competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
   arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   miequipo:'⭐ Mi equipo', competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
-  escuelas:'🏫 Escuelas', personal:'🧢 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convocatorias:'📣 Convocatorias', pagos:'💶 Pagos', misjornadas:'🗓️ Mi jornada',
+  escuelas:'🏫 Escuelas', personal:'🧢 Personal', evaluaciones:'📝 Evaluaciones', alineaciones:'🧩 Alineaciones', convpartido:'⚽ Conv. de jornada', convocatorias:'📣 Conv. especiales', pagos:'💶 Pagos', misjornadas:'🗓️ Mi jornada',
   calendario:'📅 Calendario', clasificacion:'📊 Clasificación', goleadores:'⚽ Goleadores',
   actas:'📋 Actas', noticias:'📰 Noticias', patrocinadores:'🤝 Patrocinadores', sugerencias:'💬 Sugerencias', clubes:'🏛️ Clubes'
 };
@@ -2750,7 +2760,7 @@ function _tabsVisibles() {
 const _SN_GRUPOS = [
   ['Competición', ['miequipo','misjornadas','calendario','clasificacion','goleadores','actas','competicion']],
   ['Equipos y personas', ['equipos','jugadores','escuelas','personal','clubes']],
-  ['Gestión', ['convocatorias','alineaciones','evaluaciones','pagos']],
+  ['Gestión', ['convpartido','convocatorias','alineaciones','evaluaciones','pagos']],
   ['Comunicación', ['noticias','patrocinadores','sugerencias']]
 ];
 function _buildSideNav() {
@@ -3072,7 +3082,7 @@ async function _convHistRender(forzar) {
   const misEq = sesion.rol === 'admin' ? null : new Set((DB.equipos || []).filter(e => _eqEsDeClub(e)).map(e => e.id));
   const convs = H.datos.filter(c => !misEq || misEq.has(c.equipoId));
   const eqIds = [...new Set(convs.map(c => c.equipoId))];
-  if (!eqIds.length) { el.innerHTML = '<div class="empty-state"><div class="ei">📚</div><p>Aún no hay convocatorias de partido.<br>Se crean desde Mi jornada → 📣 Convocatoria.</p></div>'; return; }
+  if (!eqIds.length) { el.innerHTML = '<div class="empty-state"><div class="ei">⚽</div><p>Aún no hay convocatorias de jornada.<br>Se crean desde Mi jornada → 📣 Convocatoria.</p></div>'; return; }
   const eqs = eqIds.map(id => (DB.equipos || []).find(e => e.id === id) || { id, nombre: (convs.find(c => c.equipoId === id) || {}).equipo || id })
     .sort((a, b) => _calOrdenComp(a.competicionId) - _calOrdenComp(b.competicionId) || (a.nombre || '').localeCompare(b.nombre || '', 'es'));
   if (!eqIds.includes(H.eq)) H.eq = eqs[0].id;
@@ -3092,6 +3102,12 @@ async function _convHistRender(forzar) {
       <div style="font-size:13px;"><b>${_escHtml(eqSel ? eqSel.nombre : '')}</b> · ${delEq.length} jornada${delEq.length === 1 ? '' : 's'} · ${delEq.filter(c => c.cerrada).length} cerrada${delEq.filter(c => c.cerrada).length === 1 ? '' : 's'}
         <div style="font-size:11px;color:var(--gris-suave);margin-top:2px;">Lo convocado y lo que respondieron las familias. Quién jugó realmente está en el acta.</div></div>
       <div style="display:flex;gap:6px;"><button class="btn btn-outline btn-sm" onclick="_convHistRender(true)">🔄 Actualizar</button><button class="btn btn-outline btn-sm" onclick="_convHistImprimir()">🖨️ PDF</button></div></div>
+    ${(() => { const ab = delEq.filter(c => !c.cerrada); return ab.length ? `<div class="rev-tit" style="margin-top:4px;">🟢 Abiertas (${ab.length})</div><div class="gx-grid" style="margin-bottom:14px;">${ab.map(c => { const cu = _convpCuenta(c);
+      return `<div class="card-competicion gx-card" style="--c:${eqSel && eqSel.competicionId ? _calColorComp(eqSel.competicionId) : '#7B1E3A'};">
+        <div class="cc-cab"><div class="cc-cat" style="font-size:1.3rem;">Jornada ${_escHtml(c.jornada)} · ${c.esLocal ? 'vs' : '@'} ${_escHtml(c.rival || '')}</div><div class="cc-nom">🗓️ ${_escHtml(_mjFechaTxt(c.fecha))}${c.hora ? ' · ⏰ ' + _escHtml(c.hora) : ''}</div></div>
+        <div class="comp-cifras"><span style="color:#17803D;"><b>${cu.si}</b> van</span><span style="color:#B3261E;"><b>${cu.no}</b> no van</span><span><b>${cu.pend}</b> sin responder</span></div>
+        <div class="gx-acc"><button class="btn btn-rojo btn-sm" onclick="convPartidoAbrir('${c.partidoId}','${c.equipoId}')">📊 Ver estado / enlace</button></div></div>`; }).join('')}</div>` : ''; })()}
+    <div class="rev-tit">📚 Historial</div>
     <div class="ch-wrap" id="convHistTabla"><table class="ch-tabla"><thead><tr><th class="ch-nom">Jugador</th>
       ${delEq.map(c => `<th title="${_escHtml((c.esLocal ? 'vs ' : '@ ') + (c.rival || ''))}"><div>J${_escHtml(c.jornada)}</div><small>${_escHtml(String(_limpiarFecha(c.fecha)).slice(8, 10) + '/' + String(_limpiarFecha(c.fecha)).slice(5, 7))}</small><small>${c.cerrada ? '🔒' : '🟢'}</small></th>`).join('')}
       <th>Conv.</th><th>Va</th><th>No</th></tr></thead><tbody>
@@ -3288,7 +3304,7 @@ function renderTab(tab) {
     noticias: renderNoticias, patrocinadores: renderPatrocinadores,
     sugerencias: renderSugerencias, jugadores: renderJugadores, clubes: renderClubes,
     escuelas: renderEscuelas, personal: renderPersonal, evaluaciones: renderEvaluaciones,
-    miequipo: renderMiEquipo, alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, pagos: renderPagos, misjornadas: renderMisJornadas
+    miequipo: renderMiEquipo, alineaciones: renderAlineaciones, convocatorias: renderConvocatorias, convpartido: () => _convHistRender(), pagos: renderPagos, misjornadas: renderMisJornadas
   };
   if (fn[tab]) fn[tab]();
   _reaplicarEscala();
@@ -9604,14 +9620,12 @@ function _convColor(tipo) {
   return '#7B1E3A';
 }
 window._convVista = window._convVista || 'esp';
-function _convSetVista(v) { window._convVista = v; renderConvocatorias(); }
+function _convSetVista(v) { activarTab(v === 'hist' ? 'convpartido' : 'convocatorias'); }
 function renderConvocatorias() {
   const el = document.getElementById('convocatoriasContent');
   if (!el) return;
-  const seg = `<div class="jb-seg" style="margin:0 0 14px;"><button class="${window._convVista === 'esp' ? 'on' : ''}" onclick="_convSetVista('esp')">📣 Especiales</button><button class="${window._convVista === 'hist' ? 'on' : ''}" onclick="_convSetVista('hist')">📚 Historial de partidos</button></div>`;
-  if (window._convVista === 'hist') { el.innerHTML = seg + '<div id="convHist"></div>'; _convHistRender(); return; }
   const lista = _convVisibles();
-  let html = seg + `<div style="margin-bottom:14px;"><button class="btn btn-primary" onclick="nuevaConvocatoria()">+ Nueva convocatoria</button></div>`;
+  let html = `<div style="margin-bottom:14px;"><button class="btn btn-primary" onclick="nuevaConvocatoria()">+ Nueva convocatoria</button></div>`;
   if (!lista.length) {
     html += '<div class="empty-state"><div class="ei">📣</div><p>No hay convocatorias especiales todavía.</p></div>';
   } else {
