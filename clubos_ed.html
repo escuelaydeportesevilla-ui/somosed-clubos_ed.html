@@ -1082,6 +1082,55 @@ body.cal-pop-on{overflow:hidden;}
   .cal-pop-cab{border-radius:0;padding:12px;}
   .cal-pop-cuerpo{padding:12px;}
 }
+/* ═══ ESTILO v3: botones, pestañas y cifras con el esquema de las pastillas ═══ */
+.btn{font-size:13px;letter-spacing:.6px;padding:10px 18px;border-radius:12px;gap:7px;}
+.btn-sm{padding:8px 14px;font-size:12px;border-radius:11px;}
+.btn-xs{padding:6px 11px;font-size:11.5px;border-radius:10px;}
+.btn-rojo,.btn-primary,.btn-verde{background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.18));box-shadow:0 3px 10px rgba(60,20,30,.18);}
+.btn-rojo:hover,.btn-primary:hover,.btn-verde:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(60,20,30,.25);}
+.btn-outline{border:1.5px solid #e2d8dc;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+.btn-outline:hover{background:var(--rojo-suave);border-color:var(--rojo);color:var(--rojo);}
+.btn:active{transform:scale(.97);}
+.btn:focus-visible,.jb-chip:focus-visible,.jb-seg button:focus-visible{outline:3px solid #E8C66A;outline-offset:2px;}
+/* Cifras de resumen como pastillas de color */
+.cal-stat,.stat-card{position:relative;overflow:hidden;background:var(--rojo);background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.2));border:0;border-radius:16px;box-shadow:0 4px 12px rgba(60,20,30,.15);color:#fff;}
+.cal-stat::after,.stat-card::after{content:'';position:absolute;right:-30px;top:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.08);}
+.cal-stat b,.stat-card .sv{color:#fff!important;}
+.cal-stat span,.stat-card .sl{color:rgba(255,255,255,.92)!important;opacity:1!important;font-size:11.5px;}
+.cal-stat.ok{background-color:#1E8449;} .cal-stat.warn{background-color:#C2571A;}
+.cal-stat:nth-child(1){background-color:#1D5FB0;}
+.jb-st{background:#7B1E3A;background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.2));border:0;border-radius:14px;color:#fff;box-shadow:0 3px 10px rgba(60,20,30,.14);}
+.jb-st b,.jb-st span{color:#fff!important;}
+.jb-st span{opacity:.92;}
+.jb-st:nth-child(3){background-color:#1D5FB0;}
+.jb-st.ins{background-color:#1E8449;cursor:pointer;}
+.jb-st.ins.on{box-shadow:0 0 0 3px #fff,0 0 0 6px #1E8449;}
+.jb-st.ins.on span::after{content:' ✓ filtrando';}
+.jb-st.warn{background-color:#C2571A;}
+/* Selectores y filtros */
+.jb-seg{background:#efe9eb;border-radius:14px;padding:4px;}
+.jb-seg button{border-radius:11px;font-size:14px;padding:9px 16px;}
+.jb-seg button.on{background:var(--rojo);background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.18));color:#fff;box-shadow:0 3px 8px rgba(60,20,30,.2);}
+.jb-chip{font-size:13.5px;padding:8px 14px;}
+.jb-chip.on{background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.18));box-shadow:0 2px 6px rgba(60,20,30,.2);}
+/* Navegación */
+@media (min-width:769px){
+  #sideNav .sn-btn{border-radius:12px;margin:2px 8px;}
+  #sideNav .sn-btn.active{background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.08));box-shadow:0 4px 12px rgba(0,0,0,.25);}
+}
+@media (max-width:768px){
+  #bottomNav button.active .bn-ic{background:var(--rojo);background-image:linear-gradient(145deg,rgba(255,255,255,.18),rgba(0,0,0,.18));box-shadow:0 3px 8px rgba(60,20,30,.25);}
+}
+.nav-btn.active{color:var(--rojo);}
+/* Tarjetas de competición con cabecera de color */
+.card-competicion{border-top:0;border-radius:18px;padding:0 0 14px;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.1);}
+.card-competicion>*:not(.cc-cab){margin-left:16px;margin-right:16px;}
+.cc-cab{background:var(--c,#7B1E3A);background-image:linear-gradient(145deg,rgba(255,255,255,.14),rgba(0,0,0,.18));color:#fff;padding:16px;}
+.cc-cat{font-family:'Barlow Condensed',sans-serif;font-size:1.7rem;font-weight:900;line-height:1;text-transform:uppercase;}
+.cc-nom{font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.9);margin-top:4px;}
+.cc-estado{flex:none;font-size:11px;font-weight:800;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 10px;white-space:nowrap;}
+.card-competicion .comp-cifras span{background:#f4eff1;color:#333;font-size:12px;padding:4px 12px;}
+.card-competicion .btn{font-size:12px!important;padding:8px 12px!important;border-radius:10px!important;}
 </style>
 </head>
 <body>
@@ -2213,7 +2262,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.0.1';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3094,12 +3143,16 @@ function renderCompeticion() {
 
   el.innerHTML = `<div class="cards-competiciones">` + lista.map(c => {
     const activa = c.activa !== false;
-    return `<div class="card-competicion${activa?'':' inactiva'}" onclick="abrirDetalleCompeticion('${c.id}')">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
-        <div style="font-weight:800;font-size:1rem;line-height:1.2;">${c.nombre}</div>
-        <span class="badge ${activa?'badge-activa':'badge-inactiva'}" style="${!activa?'background:#eee;color:#999;':''}flex-shrink:0;">${activa?'✅ Activa':'⏸ Inactiva'}</span>
+    const _pc = _compPartes(c);
+    return `<div class="card-competicion${activa?'':' inactiva'}" style="--c:${_calColorComp(c.id)}" onclick="abrirDetalleCompeticion('${c.id}')">
+      <div class="cc-cab">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div class="cc-cat">${_escHtml(_pc.cat || c.nombre)}</div>
+          <span class="cc-estado">${activa?'✅ Activa':'⏸ Inactiva'}</span>
+        </div>
+        <div class="cc-nom">${_escHtml(_calModalidad(c))}${c.temporada ? ' · ' + _escHtml(c.temporada) : ''} · ${_escHtml(c.formato || '')}</div>
       </div>
-      <div style="font-size:12px;color:var(--gris-suave);margin-top:6px;">${c.categoria?c.categoria+' · ':''}${c.temporada||''} · ${c.formato}</div>
+      <div style="font-size:11px;color:var(--gris-suave);margin-top:6px;">${_escHtml(c.nombre)}</div>
       ${(() => { const nE = (DB.equipos||[]).filter(e => e.competicionId === c.id).length, nPa = (DB.partidos||[]).filter(p => p.competicionId === c.id).length;
         return `<div class="comp-cifras"><span><b>${nE}</b> equipos</span><span><b>${nPa}</b> partidos</span></div>`; })()}
       ${c.fechaInicio?`<div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">📅 ${c.fechaInicio}${c.fechaFin?' → '+c.fechaFin:''}</div>`:''}
@@ -5788,7 +5841,7 @@ function renderCalendario() {
   });
 
   // Quitar ventanas emergentes de un pintado anterior (se movieron al <body> al abrirse)
-  document.querySelectorAll('body > .cal-pop-fondo').forEach(x => x.remove());
+  document.querySelectorAll('body > .cal-pop-fondo[id^="calPop_"]').forEach(x => x.remove());
   const _ordenComp = Object.entries(compGroups).sort((a, b) => _calOrdenComp(a[0]) - _calOrdenComp(b[0]) || _calTituloComp(a[0]).localeCompare(_calTituloComp(b[0]), 'es'));
   el.innerHTML = _calBarraGlobal() + '<div class="cal-tiles">' + _ordenComp.map(([compId, partidosComp], idx) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
@@ -5913,20 +5966,27 @@ function _calOrdenComp(compId) {
 }
 function _calTituloComp(compId) { const c = (DB.competiciones || []).find(x => x.id === compId); const p = _compPartes(c); return (p.cat || (c ? c.nombre : '')) + ' ' + (p.nom || ''); }
 // Ventana emergente dentro de la misma pestaña, con fondo oscurecido
-function calAbrirComp(compId, silencioso) {
+function _popAbrir(elId, silencioso) {
   document.querySelectorAll('.cal-pop-fondo.open').forEach(x => { x.classList.remove('open'); x.style.display = 'none'; });
-  const pop = document.getElementById('calPop_' + compId); if (!pop) return;
+  const pop = document.getElementById(elId); if (!pop) return false;
   if (pop.parentElement !== document.body) document.body.appendChild(pop); // fuera de cualquier contenedor: siempre por encima de todo
   pop.style.display = ''; requestAnimationFrame(() => pop.classList.add('open'));
-  document.body.classList.add('cal-pop-on'); window._calPopAbierto = compId;
-  const cont = document.getElementById('calComp_' + compId); if (cont) cont.style.display = '';
+  document.body.classList.add('cal-pop-on'); window._popAbierto = elId;
   if (!silencioso) { const c = pop.querySelector('.cal-pop-caja'); if (c) c.scrollTop = 0; }
+  return true;
 }
-function calCerrarComp() {
+function _popCerrar() {
   document.querySelectorAll('.cal-pop-fondo').forEach(x => { x.classList.remove('open'); x.style.display = 'none'; });
-  document.body.classList.remove('cal-pop-on'); window._calPopAbierto = null;
+  document.body.classList.remove('cal-pop-on'); window._popAbierto = null; window._calPopAbierto = null;
 }
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && window._calPopAbierto) calCerrarComp(); });
+function calAbrirComp(compId, silencioso) {
+  if (!_popAbrir('calPop_' + compId, silencioso)) return;
+  window._calPopAbierto = compId;
+  const cont = document.getElementById('calComp_' + compId); if (cont) cont.style.display = '';
+}
+function calCerrarComp() { _popCerrar(); }
+function clasAbrirComp(compId) { _popAbrir('clasPop_' + compId); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && window._popAbierto) _popCerrar(); });
 
 // Filtro por jornada y equipo dentro de cada competición + filtro global de todas las competiciones
 window._calFiltro = window._calFiltro || {};
@@ -6414,25 +6474,33 @@ function renderClasificacion() {
     compGroups[key].push(eq);
   });
 
-  el.innerHTML = Object.entries(compGroups).map(([compId, equiposComp], idx) => {
+  document.querySelectorAll('body > .cal-pop-fondo[id^="clasPop_"]').forEach(x => x.remove());
+  const ordenC = Object.entries(compGroups).sort((a, b) => _calOrdenComp(a[0]) - _calOrdenComp(b[0]) || _calTituloComp(a[0]).localeCompare(_calTituloComp(b[0]), 'es'));
+  el.innerHTML = '<div class="cal-tiles">' + ordenC.map(([compId, equiposComp]) => {
     const comp = (DB.competiciones||[]).find(c=>c.id===compId);
     const compNombre = (comp ? _etiquetaCompeticion(comp) : (compId==='__none__'?'Sin competición asignada':'Competición desconocida'));
-    const contId = 'clasComp_' + compId;
     const tabla = _calcularClasificacion(equiposComp);
-
-    return `<div style="margin-bottom:14px;">
-      <div onclick="toggleAcordeon('${contId}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;
-           font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);
-           padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
-        <span><span id="${contId}_icon">▶</span> ${compNombre} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${equiposComp.length} equipos)</span></span>
-        <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarClasificacionPDF('${compId}')">📄 Exportar</button>
-      </div>
-      <div id="${contId}" style="display:none;padding-top:12px;">
-        ${_tablaClasificacionHTML(tabla)}
-      </div>
+    const pc = _compPartes(comp), col = _calColorComp(compId), mod = _calModalidad(comp), lider = tabla[0];
+    const nJ = (DB.partidos||[]).filter(p => p.competicionId === compId && p.estado === 'jugado').length;
+    return `<div class="cal-tile-wrap">
+      <button type="button" class="cal-tile" style="--c:${col}" onclick="clasAbrirComp('${compId}')">
+        <span class="cal-tile-cat">${_escHtml(pc.cat || compNombre)}</span>
+        <span class="cal-tile-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''}</span>
+        <span class="cal-tile-nums"><span><b>${equiposComp.length}</b>equipos</span><span><b>${nJ}</b>jugados</span><span><b>${lider ? lider.pts : 0}</b>pts líder</span></span>
+        ${lider && lider.pj ? `<span class="cal-tile-pie">🥇 ${_escHtml(lider.nombre)}</span>` : '<span class="cal-tile-pie">Sin partidos jugados aún</span>'}
+        <span class="cal-tile-ir">Ver clasificación →</span>
+      </button>
+      <div class="cal-pop-fondo" id="clasPop_${compId}" style="display:none;" onclick="if(event.target===this)_popCerrar()">
+      <div class="cal-pop-caja" role="dialog" aria-modal="true">
+        <div class="cal-pop-cab" style="--c:${col}">
+          <div style="min-width:0;"><div class="cal-pop-cat">${_escHtml(pc.cat || compNombre)}</div><div class="cal-pop-nom">${_escHtml(mod)}${pc.temp ? ' · ' + _escHtml(pc.temp) : ''} · ${equiposComp.length} equipos</div></div>
+          <span style="display:flex;gap:6px;align-items:center;"><button class="btn btn-outline btn-xs" onclick="exportarClasificacionPDF('${compId}')">📄 Exportar</button><button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span>
+        </div>
+        <div class="cal-pop-cuerpo">${_tablaClasificacionHTML(tabla)}</div>
+      </div></div>
     </div>`;
-  }).join('');
-  aplicarEstadoAcordeones();
+  }).join('') + '</div>';
+  if (window._popAbierto && /^clasPop_/.test(window._popAbierto)) _popAbrir(window._popAbierto, true);
 }
 
 function exportarClasificacionPDF(soloCompId) {
