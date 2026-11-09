@@ -1134,6 +1134,10 @@ body.cal-pop-on{overflow:hidden;}
 .cat-chip{display:inline-block;background:var(--c,#7B1E3A);background-image:linear-gradient(145deg,rgba(255,255,255,.16),rgba(0,0,0,.15));color:#fff;font-size:11px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;border-radius:20px;padding:4px 10px;white-space:nowrap;}
 .cal-tile-match{display:inline-block;background:#fff;color:var(--c,#7B1E3A);font-size:12px;font-weight:800;border-radius:20px;padding:3px 10px;margin-top:4px;}
 .cal-pop-cuerpo .partido-card,.cal-pop-cuerpo .card{background:#fff;}
+.coclubs{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;max-height:200px;overflow-y:auto;}
+.coclub{display:flex!important;align-items:center;gap:8px;border:1px solid #e3e3e3;border-radius:10px;padding:8px 10px;font-size:13px!important;font-weight:600!important;opacity:1!important;text-transform:none!important;letter-spacing:0!important;cursor:pointer;margin:0!important;}
+.coclub.on{border-color:var(--rojo);background:var(--rojo-suave);}
+.coclub input{width:16px;height:16px;min-height:auto;margin:0;}
 </style>
 </head>
 <body>
@@ -1853,10 +1857,15 @@ body.cal-pop-on{overflow:hidden;}
         <div id="paletaPantalon" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;"></div>
       </div>
       <div class="form-field form-full" id="wrapReasignarClub" style="display:none;">
-        <label>Club propietario (admin)</label>
+        <label>Club propietario principal (admin)</label>
         <select id="eqReasignarClub">
           <option value="__sin_cambio__">— No cambiar —</option>
         </select>
+      </div>
+      <div class="form-field form-full" id="wrapCoClubs" style="display:none;">
+        <label>Otros clubes propietarios (comparten el equipo)</label>
+        <div id="eqCoClubs" class="coclubs"></div>
+        <div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">Todos los clubes marcados ven y gestionan este equipo y sus jugadores.</div>
       </div>
     </div>
 
@@ -2265,8 +2274,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.0.2';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.1';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.0.4';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.2';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -3550,6 +3559,13 @@ function _etiquetaCompeticion(c) {
   return extra ? `${c.nombre} (${extra})` : c.nombre;
 }
 
+// Un equipo puede tener varios clubes propietarios: clubId (principal) + clubIds (copropietarios)
+function _eqClubs(e) {
+  if (!e) return [];
+  let extra = e.clubIds; if (typeof extra === 'string') { try { extra = JSON.parse(extra); } catch (x) { extra = []; } }
+  return [...new Set([e.clubId || 'cbedadmin', ...(Array.isArray(extra) ? extra : [])].filter(Boolean))];
+}
+function _eqEsDeClub(e, user) { return _eqClubs(e).includes(user === undefined ? sesion.user : user); }
 function nombreClub(clubId) {
   if (!clubId || clubId === 'cbedadmin') return 'ClubOS ED';
   const c = (DB.clubes||[]).find(c => c.user === clubId);
@@ -3600,7 +3616,7 @@ function renderEquipos() {
   if (!DB.equipos) DB.equipos = [];
 
   // Admin/Familias/Árbitro ven todos, club solo los suyos
-  let lista = (isAdmin || isFamilia || isArbitro) ? DB.equipos : DB.equipos.filter(e=>e.clubId===sesion.user);
+  let lista = (isAdmin || isFamilia || isArbitro) ? DB.equipos : DB.equipos.filter(e=>_eqEsDeClub(e));
 
   const btnAdd = document.getElementById('btnNuevoEquipo');
   if (btnAdd) btnAdd.style.display = (isAdmin||isClub) ? '' : 'none';
@@ -3656,7 +3672,7 @@ function renderEquipos() {
         </div>
         <div class="ceq-info">
           <div class="ceq-nombre" style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</div>
-          <div class="ceq-meta">${e.competicionId ? `<span class="cat-chip" style="--c:${_calColorComp(e.competicionId)}">${_escHtml(_compPartes(comp).cat || e.categoria || '—')}</span>` : (e.categoria||'—')}${isAdmin&&e.clubId?' · '+nombreClub(e.clubId):''} · ${nJug} jugadores</div>
+          <div class="ceq-meta">${e.competicionId ? `<span class="cat-chip" style="--c:${_calColorComp(e.competicionId)}">${_escHtml(_compPartes(comp).cat || e.categoria || '—')}</span>` : (e.categoria||'—')}${isAdmin&&e.clubId?' · '+_eqClubs(e).map(nombreClub).join(' + '):''} · ${nJug} jugadores</div>
           ${comp?`<div style="font-size:10px;color:var(--rojo);margin-top:1px;">🏆 ${comp.nombre}</div>`:''}
           ${contacto}
           ${contacto2}
@@ -3695,7 +3711,7 @@ function renderEquipos() {
         <td><strong style="cursor:pointer;" onclick="abrirFichaEquipo('${e.id}')">${e.nombre}</strong></td>
         <td>${kitTabla(e.eq1Camiseta||'#ccc',e.eq1Pantalon||'#333')}</td>
         <td>${e.competicionId ? `<span class="cat-chip" style="--c:${_calColorComp(e.competicionId)}">${_escHtml(_compPartes(comp).cat || e.categoria || '—')}${comp && _calModalidad(comp) === 'Fútbol 7' ? ' · F7' : ''}</span>` : (e.categoria||'—')}</td>
-        ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${nombreClub(e.clubId)||'—'}</td>`:''}
+        ${isAdmin?`<td style="font-size:12px;color:var(--gris-suave);">${_eqClubs(e).map(nombreClub).join('<br>')||'—'}</td>`:''}
         <td class="td-comp" style="font-size:11px;color:var(--gris-suave);" title="${comp?comp.nombre:''}">${comp?comp.nombre:'—'}</td>
         <td>${nJug}</td>
         ${(isAdmin||isClub||isArbitro)?delCell:''}
@@ -3716,12 +3732,12 @@ function renderEquipos() {
   if (isAdmin) {
     // ── VISTA ADMIN: LISTADO PLANO DE EQUIPOS, FILTRABLE POR COMPETICIÓN Y CLUB ──
     const todasComps = (DB.competiciones||[]).slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
-    const todosClubesIds = [...new Set(lista.map(e=>e.clubId||'cbedadmin'))];
+    const todosClubesIds = [...new Set(lista.flatMap(e=>_eqClubs(e)))];
     const filtro = window._equiposFiltroComp;
     const filtroClub = window._equiposFiltroClub;
     const equiposFiltrados = lista
       .filter(e => !filtro || filtro.has(e.competicionId || '__none__'))
-      .filter(e => !filtroClub || filtroClub.has(e.clubId || 'cbedadmin'))
+      .filter(e => !filtroClub || _eqClubs(e).some(c => filtroClub.has(c)))
       .slice().sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||''));
 
     html += `<div style="background:white;border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);">
@@ -3804,7 +3820,7 @@ function exportarEquiposPDF(soloCompId) {
             <td>${e.nombre}</td>
             <td>${kitMini(e.eq1Camiseta,e.eq1Pantalon)}</td>
             <td>${e.categoria||'—'}</td>
-            <td>${nombreClub(e.clubId)||'—'}</td>
+            <td>${_eqClubs(e).map(nombreClub).join(', ')||'—'}</td>
             <td>${nJug}</td>
             <td>${e.delegado||'—'}</td>
             <td>${contactoPrincipal}</td>
@@ -3867,7 +3883,7 @@ function exportarDelegadosPDF() {
 
   if (!isAdmin) {
     const misComps = new Set(
-      equipos.filter(e=>e.clubId===sesion.user).map(e=>e.competicionId).filter(Boolean)
+      equipos.filter(e=>_eqEsDeClub(e)).map(e=>e.competicionId).filter(Boolean)
     );
     equipos = equipos.filter(e=>misComps.has(e.competicionId));
   }
@@ -3938,7 +3954,7 @@ function mostrarSugerenciasEquipo(texto) {
   if (!q) { drop.style.display = 'none'; return; }
   const isAdmin = sesion.rol === 'admin';
   const isClub  = sesion.rol === 'club';
-  let lista = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  let lista = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   const resultados = lista.filter(e => (e.nombre||'').toLowerCase().includes(q)).slice(0,10);
   if (!resultados.length) { drop.style.display = 'none'; return; }
   drop.innerHTML = resultados.map(e => {
@@ -4027,6 +4043,7 @@ function abrirModalEquipo() {
   sel.innerHTML = '<option value="">— Sin competición —</option>' +
     comps.map(c=>`<option value="${c.id}">${_etiquetaCompeticion(c)}${c.activa===false?' (inactiva)':''}</option>`).join('');
   document.getElementById('wrapReasignarClub').style.display = 'none';
+  if (isAdmin) _pintarCoClubs([]); else { const wc = document.getElementById('wrapCoClubs'); if (wc) wc.style.display = 'none'; }
   { const b=document.getElementById('btnEqEnlace'); if(b) b.style.display='none'; }
   abrirModal('modalEquipo');
 }
@@ -4065,13 +4082,22 @@ function editarEquipo(id) {
       '<option value="cbedadmin">ClubOS ED (Admin)</option>' +
       (DB.clubes||[]).map(c=>`<option value="${c.user}">${_etiquetaDestinatarioClub(c.user)}</option>`).join('');
     selReasig.value = '__sin_cambio__';
+    _pintarCoClubs(_eqClubs(e).filter(c => c !== (e.clubId || 'cbedadmin')));
   } else {
     wrapReasig.style.display = 'none';
+    const wc = document.getElementById('wrapCoClubs'); if (wc) wc.style.display = 'none';
   }
   { const b=document.getElementById('btnEqEnlace'); if(b) b.style.display=''; }
   abrirModal('modalEquipo');
 }
 
+function _pintarCoClubs(marcados) {
+  const w = document.getElementById('wrapCoClubs'), box = document.getElementById('eqCoClubs'); if (!w || !box) return;
+  w.style.display = '';
+  const clubs = (DB.clubes || []).filter(c => !(c.esFamilia === true || c.esFamilia === 'true')).slice().sort((a, b) => (a.nombre || a.user || '').localeCompare(b.nombre || b.user || '', 'es'));
+  box.innerHTML = clubs.length ? clubs.map(c => `<label class="coclub${marcados.includes(c.user) ? ' on' : ''}"><input type="checkbox" value="${_escHtml(c.user)}" ${marcados.includes(c.user) ? 'checked' : ''} onchange="this.parentElement.classList.toggle('on',this.checked)"> ${_escHtml(_etiquetaDestinatarioClub(c.user))}</label>`).join('')
+    : '<div style="font-size:12px;color:var(--gris-suave);">No hay clubes dados de alta.</div>';
+}
 async function guardarEquipo() {
   const nombre = document.getElementById('eqNombre').value.trim();
   if (!nombre) { alert('El nombre es obligatorio'); return; }
@@ -4108,6 +4134,10 @@ async function guardarEquipo() {
     emailDelegado2:  document.getElementById('eqEmailDelegado2').value.trim(),
     telDelegado2:    document.getElementById('eqTelDelegado2').value.trim(),
     clubId:         clubIdFinal,
+    // Copropietarios: si el admin ve el selector se toma de ahí; si no, se conservan los que tenía
+    clubIds:        (document.getElementById('wrapCoClubs')?.style.display !== 'none' && sesion.rol === 'admin')
+                      ? [...document.querySelectorAll('#eqCoClubs input:checked')].map(i => i.value).filter(v => v !== clubIdFinal)
+                      : _eqClubs(equipoExistente).filter(c => c !== clubIdFinal && c !== (equipoExistente?.clubId || 'cbedadmin')),
     eq1Camiseta:    eq1Camiseta,
     eq1Pantalon:    eq1Pantalon,
   };
@@ -4413,7 +4443,7 @@ function _jugResumen(lista) {
 function _jugVisiblesRol() {
   const isAdmin = sesion.rol === 'admin', isArb = sesion.rol === 'arbitro';
   if (isAdmin || isArb) return DB.jugadores || [];
-  const misEq = (DB.equipos || []).filter(e => e.clubId === sesion.user), misEsc = (DB.escuelas || []).filter(e => e.clubId === sesion.user);
+  const misEq = (DB.equipos || []).filter(e => _eqEsDeClub(e)), misEsc = (DB.escuelas || []).filter(e => e.clubId === sesion.user);
   return (DB.jugadores || []).filter(j => misEq.some(e => e.id === j.equipoId) || misEsc.some(e => (j.escuelaIds || []).includes(e.id)) ||
     (!j.equipoId && !(j.escuelaIds && j.escuelaIds.length) && j.clubId === sesion.user));
 }
@@ -4491,7 +4521,7 @@ function renderJugadores() {
   const isArbitro = sesion.rol==='arbitro';
   if (!DB.jugadores) DB.jugadores=[];
 
-  const misEquipos = (isAdmin||isArbitro) ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEquipos = (isAdmin||isArbitro) ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   const misEscuelas = (isAdmin||isArbitro) ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
   const lista = (isAdmin||isArbitro) ? DB.jugadores : DB.jugadores.filter(j=>
     misEquipos.some(e=>e.id===j.equipoId) || misEscuelas.some(e=>(j.escuelaIds||[]).includes(e.id)) ||
@@ -4681,7 +4711,7 @@ function renderJugadores() {
     }).forEach(([eid,jugs])=>{
       const eq=(DB.equipos||[]).find(e=>e.id===eid);
       const eNom=eq?.nombre||'Sin equipo';
-      const esPropio=eq?.clubId===sesion.user;
+      const esPropio=_eqEsDeClub(eq);
       const puedeEditar=isClub&&esPropio;
       out+=`<div style="margin-bottom:20px;">
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} jugador${jugs.length===1?'':'es'})</span></div>
@@ -4806,7 +4836,7 @@ function toggleVistaNotas() {
 function _notasJugadoresVisibles() {
   const isAdmin = sesion.rol === 'admin';
   if (isAdmin) return DB.jugadores||[];
-  const misEquipos = new Set((DB.equipos||[]).filter(e=>e.clubId===sesion.user).map(e=>e.id));
+  const misEquipos = new Set((DB.equipos||[]).filter(e=>_eqEsDeClub(e)).map(e=>e.id));
   return (DB.jugadores||[]).filter(j=>misEquipos.has(j.equipoId));
 }
 
@@ -5476,7 +5506,7 @@ function mostrarSugerenciasJugador(texto) {
   if (!drop) return;
   if (!q) { drop.style.display = 'none'; return; }
   const isAdmin = sesion.rol === 'admin';
-  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   const idsEquipos = new Set(misEquipos.map(e=>e.id));
   const resultados = (DB.jugadores||[]).filter(j => {
     if (!isAdmin && !idsEquipos.has(j.equipoId)) return false;
@@ -5517,7 +5547,7 @@ function abrirModalJugador() {
   if (btnExpFicha) btnExpFicha.style.display = 'none';
   const btnDup = document.getElementById('btnDuplicarJugador');
   if (btnDup) btnDup.style.display = 'none';
-  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
 
   _jEquipoPreparar(misEquipos, '', isAdmin);
@@ -5562,7 +5592,7 @@ let _jEqLista = [], _jEqOrig = '';
 function _jNorm(s) { return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
 function _jEquipoPreparar(equipos, selId, isAdmin) {
   const cnt = {}; (DB.jugadores||[]).forEach(x => { cnt[x.equipoId] = (cnt[x.equipoId]||0) + 1; });
-  _jEqLista = equipos.map(e => ({ id: e.id, txt: `${e.nombre} (${cnt[e.id]||0})${isAdmin?' · '+(e.clubId||'cbedadmin'):''}` }))
+  _jEqLista = equipos.map(e => ({ id: e.id, txt: `${e.nombre} (${cnt[e.id]||0})${isAdmin?' · '+_eqClubs(e).join('+'):''}` }))
     .sort((a,b) => a.txt.localeCompare(b.txt, 'es', { sensitivity:'base', numeric:true }));
   _jEqOrig = selId || '';
   const b = document.getElementById('jEquipoBuscar'); if (b) b.value = '';
@@ -5588,7 +5618,7 @@ function editarJugador(id) {
   const isClub  = sesion.rol === 'club';
 
   // Equipos
-  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEquipos = isAdmin ? (DB.equipos||[]) : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   _jEquipoPreparar(misEquipos, j.equipoId || '', isAdmin);
 
   // Escuelas (checkboxes, "Sin escuela" excluyente con el resto)
@@ -5638,7 +5668,7 @@ function editarJugador(id) {
 
   // Notas: admin siempre las ve; club solo si tiene puedeEvaluar y es su propio equipo
   const eq = (DB.equipos||[]).find(e=>e.id===j.equipoId);
-  const puedeVerNotas = isAdmin || (isClub && puedeEvaluar() && eq && eq.clubId===sesion.user);
+  const puedeVerNotas = isAdmin || (isClub && puedeEvaluar() && eq && _eqEsDeClub(eq));
   const seccionNotas = document.getElementById('seccionNotas');
   if (seccionNotas) seccionNotas.style.display = puedeVerNotas ? '' : 'none';
   if (puedeVerNotas) {
@@ -5987,7 +6017,7 @@ function renderCalendario() {
                   <div class="partido-actions">
                     ${esAdmin ? `<button class="btn btn-outline btn-xs" onclick="editarPartido('${p.id}')">✏️ Editar</button>` : ''}
                     ${esAdmin && !_avisoActivo(p) && p.estado!=='jugado' ? `<button class="btn btn-outline btn-xs" onclick="suspenderPartido('${p.id}')">⚠️ Suspender</button>` : ''}
-                    ${(esAdmin||esArb) ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">📋 Acta</button>` : ''}
+                    ${(esAdmin||esArb) ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">📋 Acta</button>` : (_permisoActa(p) === 'club' ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">⚽ Goleadores</button>` : '')}
                     ${esAdmin ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarPartido('${p.id}')">🗑️</button>` : ''}
                   </div>
                 </div>
@@ -6901,10 +6931,7 @@ function abrirModalGol(equipoFijo) {
 
   if (equipoFijo) {
     sel.value = equipoFijo; sel.disabled = true;
-    const jugs = (DB.jugadores||[]).filter(j=>j.equipoId===equipoFijo
-      && j.activo!==false && j.activo!=='false'
-      && (j.convocado===true||j.convocado==='true'))
-      .sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99));
+    const jugs = _jugadoresGol(equipoFijo);
     if (jugs.length) {
       wrap.innerHTML = `<label>Jugador</label><select id="golJugador">
         ${jugs.map(j=>`<option value="${j.nombre}${j.apellidos?' '+j.apellidos:''}">${j.dorsal?'#'+j.dorsal+' ':''}${j.nombre} ${j.apellidos||''}</option>`).join('')}
@@ -6987,6 +7014,7 @@ function renderActas() {
             </div>
             <div style="font-size:12px;color:var(--gris-suave);margin-bottom:10px">📅 ${_limpiarFecha(p.fecha)||'—'} ${_limpiarHora(p.hora)?'· 🕐 '+_limpiarHora(p.hora):''} · ${p.campo||''}  · J${p.jornada}</div>
             ${isFamilia ? '' : (p.acta ? `<div style="font-size:13px;color:var(--gris-texto);line-height:1.6;white-space:pre-line">${p.acta}</div>` : '<div class="info-box">Acta pendiente de redactar.</div>')}
+            ${_permisoActa(p) === 'club' ? `<div style="margin-top:12px"><button class="btn btn-rojo btn-sm" onclick="abrirActaPartido('${p.id}')">⚽ Anotar goleadores</button></div>` : ''}
             ${(sesion.rol==='admin'||sesion.rol==='arbitro') ? `<div style="margin-top:12px"><button class="btn btn-outline btn-sm" onclick="abrirActaPartido('${p.id}')">✏️ Redactar / editar acta</button></div>` : ''}
           </div>`;
         }).join('')}
@@ -7047,9 +7075,26 @@ function exportarActasPDF(soloCompId) {
   w.print();
 }
 
+// Quién puede abrir el acta: 'total' (admin/árbitro) · 'club' (club con permiso de evaluar, solo partidos de sus equipos y solo goleadores de su equipo)
+function _equiposClub() { return new Set((DB.equipos || []).filter(e => _eqEsDeClub(e)).map(e => e.id)); }
+function _permisoActa(p) {
+  if (!p || !sesion) return false;
+  if (sesion.rol === 'admin' || sesion.rol === 'arbitro') return 'total';
+  if (sesion.rol === 'club' && !sesion.esFamilia && puedeEvaluar()) { const m = _equiposClub(); if (m.has(p.localId) || m.has(p.visitanteId)) return 'club'; }
+  return false;
+}
+// Jugadores que pueden marcar gol: convocados; si el equipo no tiene ninguno convocado, todos los activos
+function _jugadoresGol(equipoId) {
+  const act = (DB.jugadores || []).filter(j => j.equipoId === equipoId && j.activo !== false && j.activo !== 'false');
+  const conv = act.filter(j => j.convocado === true || j.convocado === 'true');
+  return (conv.length ? conv : act).sort((a, b) => Number(a.dorsal || 99) - Number(b.dorsal || 99));
+}
 function abrirActaPartido(partidoId) {
   DB.actaEditId = partidoId;
   const p = DB.partidos.find(x=>x.id===partidoId); if (!p) return;
+  const permiso = _permisoActa(p); if (!permiso) { toast('No tienes permiso para este acta'); return; }
+  const esClub = permiso === 'club', resFijo = esClub && p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
+  window._actaModoClub = esClub;
   const local = DB.equipos.find(e=>e.id===p.localId);
   const visit = DB.equipos.find(e=>e.id===p.visitanteId);
 
@@ -7070,17 +7115,18 @@ function abrirActaPartido(partidoId) {
       <div style="flex:1;min-width:200px;" id="actaTeamBlock_${local?.id||'local'}"></div>
       <div style="flex:1;min-width:200px;" id="actaTeamBlock_${visit?.id||'visit'}"></div>
     </div>
-    <div class="form-field">
+    ${esClub ? `<div class="info-box" style="margin-bottom:10px;">⚽ Como club, puedes anotar los <b>goleadores de tu equipo</b>${resFijo ? '' : ' y el resultado si aún no está puesto'}. El texto del acta lo redacta la organización.</div>` : ''}
+    <div class="form-field" style="${esClub ? 'display:none;' : ''}">
       <label>Texto del acta</label>
       <textarea id="actaTexto" style="min-height:140px" placeholder="Redacta aquí el acta del partido: incidencias, tarjetas, goles, observaciones…">${p.acta||''}</textarea>
     </div>
     <div class="form-grid" style="margin-top:12px">
-      <div class="form-field"><label>Árbitro</label><input id="actaArbitro" value="${p.arbitro||''}" placeholder="Nombre del árbitro"></div>
+      <div class="form-field" style="${esClub ? 'display:none;' : ''}"><label>Árbitro</label><input id="actaArbitro" value="${p.arbitro||''}" placeholder="Nombre del árbitro"></div>
       <div class="form-field"><label>Resultado final</label>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="number" id="actaGL" value="${p.golesLocal??''}" min="0" style="width:70px;text-align:center" oninput="actualizarLiveGolesActa()">
+          <input type="number" id="actaGL" value="${p.golesLocal??''}" min="0" style="width:70px;text-align:center" oninput="actualizarLiveGolesActa()" ${resFijo ? 'disabled' : ''}>
           <span>–</span>
-          <input type="number" id="actaGV" value="${p.golesVisitante??''}" min="0" style="width:70px;text-align:center" oninput="actualizarLiveGolesActa()">
+          <input type="number" id="actaGV" value="${p.golesVisitante??''}" min="0" style="width:70px;text-align:center" oninput="actualizarLiveGolesActa()" ${resFijo ? 'disabled' : ''}>
         </div>
       </div>
     </div>`;
@@ -7103,10 +7149,8 @@ function actualizarLiveGolesActa() {
     if (!cont) return;
     if (!equipo) { cont.innerHTML = '<div style="font-size:12px;color:var(--gris-suave);">—</div>'; return; }
 
-    const jugs = (DB.jugadores||[]).filter(j=>j.equipoId===equipo.id
-      && j.activo!==false && j.activo!=='false'
-      && (j.convocado===true||j.convocado==='true'))
-      .sort((a,b)=>Number(a.dorsal||99)-Number(b.dorsal||99));
+    const editable = !window._actaModoClub || _equiposClub().has(equipo.id);
+    const jugs = editable ? _jugadoresGol(equipo.id) : [];
     const nombresConvocados = new Set(jugs.map(j=>j.nombre + (j.apellidos?' '+j.apellidos:'')));
 
     const golesPorJugador = {};
@@ -7132,10 +7176,10 @@ function actualizarLiveGolesActa() {
               background:${goles>0?'#D5F5E3':'#F2F3F4'};
               color:${goles>0?'#1E8449':'inherit'};
               font-weight:${goles>0?'700':'400'};">${j.dorsal?'#'+j.dorsal+' ':''}${nombreCompleto}${goles>0?' ('+goles+(goles===1?' gol':' goles')+')':''}
-              ${goles>0?`<span style="cursor:pointer;color:var(--rojo);font-weight:700;" onclick="quitarGolSesion('${equipo.id}','${esc(nombreCompleto)}')" title="Quitar gol">✕</span>`:''}</span>`;
+              ${goles>0&&editable?`<span style="cursor:pointer;color:var(--rojo);font-weight:700;" onclick="quitarGolSesion('${equipo.id}','${esc(nombreCompleto)}')" title="Quitar gol">✕</span>`:''}</span>`;
         }).join('')}
-      </div>` : `<div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">Sin jugadores convocados.</div>`}
-      ${huerfanos.length ? `<div style="margin-bottom:6px;">
+      </div>` : `<div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${editable ? 'Sin jugadores activos.' : 'Equipo rival: sus goleadores los anota su club o la organización.'}</div>`}
+      ${huerfanos.length && editable ? `<div style="margin-bottom:6px;">
         <div style="font-size:11px;color:var(--rojo);font-weight:700;margin-bottom:3px;">⚠️ Con gol asignado pero ya no convocado:</div>
         ${huerfanos.map(nom => `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;background:#FDEDEC;padding:4px 8px;border-radius:6px;margin-bottom:3px;">
           <span>${nom} (${golesPorJugador[nom]} gol${golesPorJugador[nom]>1?'es':''})</span>
@@ -7145,7 +7189,7 @@ function actualizarLiveGolesActa() {
       <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:${colorContador};">
         ⚽ Goles registrados: ${totalEquipo}${objetivo!=null?' / '+objetivo:''}${coincide===false?' ⚠️ no coincide':''}
       </div>
-      <button class="btn btn-outline btn-xs" onclick="abrirModalGol('${equipo.id}')">⚽ Añadir goleador</button>
+      ${editable ? `<button class="btn btn-outline btn-xs" onclick="abrirModalGol('${equipo.id}')">⚽ Añadir goleador</button>` : ''}
     `;
   });
 }
@@ -7187,11 +7231,22 @@ async function guardarActa() {
   if (sesionGoles.length && ctx) {
     const totalLocal = sesionGoles.filter(g=>g.equipoId===ctx.localId).reduce((s,g)=>s+g.goles,0);
     const totalVisit = sesionGoles.filter(g=>g.equipoId===ctx.visitId).reduce((s,g)=>s+g.goles,0);
-    if (totalLocal !== gl || totalVisit !== gv) {
+    const mios = window._actaModoClub ? _equiposClub() : null;
+    const descL = totalLocal !== gl && (!mios || mios.has(ctx.localId)), descV = totalVisit !== gv && (!mios || mios.has(ctx.visitId));
+    if (descL || descV) {
       avisoDescuadre = ' (aviso: goleadores ' + totalLocal + '-' + totalVisit + ' no coinciden con el resultado)';
     }
   }
 
+  if (window._actaModoClub) {
+    // Club: solo goleadores (y resultado si no estaba puesto). No toca texto, árbitro ni cierre del acta.
+    const P = DB.partidos[idx], glTxt = document.getElementById('actaGL').value, gvTxt = document.getElementById('actaGV').value;
+    if (!(P.estado === 'jugado' && P.golesLocal !== '' && P.golesLocal != null) && glTxt !== '' && gvTxt !== '') { P.golesLocal = gl; P.golesVisitante = gv; P.estado = 'jugado'; }
+    P.golesAsignados = JSON.stringify(sesionGoles);
+    window._actaContextoGol = null; window._actaSesionGoles = []; window._actaModoClub = false;
+    await saveCols(['goleadores','partidos']); cerrarModal('modalActa'); toast('⚽ Goleadores guardados' + avisoDescuadre); renderAll();
+    return;
+  }
   DB.partidos[idx].acta     = document.getElementById('actaTexto').value.trim();
   DB.partidos[idx].arbitro  = document.getElementById('actaArbitro').value.trim();
   DB.partidos[idx].golesLocal     = gl;
@@ -8772,7 +8827,7 @@ function _rellenarSelectClubPersonal(clubIdActual) {
 
 function _rellenarSelectsPersonal(equipoIdSel, escuelaIdSel) {
   const isAdmin = sesion.rol === 'admin';
-  const misEquipos  = isAdmin ? (DB.equipos||[])  : (DB.equipos||[]).filter(e=>e.clubId===sesion.user);
+  const misEquipos  = isAdmin ? (DB.equipos||[])  : (DB.equipos||[]).filter(e=>_eqEsDeClub(e));
   const misEscuelas = isAdmin ? (DB.escuelas||[]) : (DB.escuelas||[]).filter(e=>e.clubId===sesion.user);
   const selEq = document.getElementById('perEquipo');
   selEq.innerHTML = '<option value="">— Sin equipo —</option>' + misEquipos.map(e=>`<option value="${e.id}"${e.id===equipoIdSel?' selected':''}>${e.nombre}</option>`).join('');
@@ -9318,7 +9373,7 @@ window._convBusca = ''; window._convEq = ''; window._convAnio = '';
 
 function _convJugadoresDisponibles() {
   if (sesion.rol === 'admin') return DB.jugadores || [];
-  const eqs = new Set((DB.equipos||[]).filter(e => e.clubId === sesion.user).map(e => e.id));
+  const eqs = new Set((DB.equipos||[]).filter(e => _eqEsDeClub(e)).map(e => e.id));
   return (DB.jugadores||[]).filter(j => j.clubId === sesion.user || eqs.has(j.equipoId));
 }
 function _convVisibles() {
@@ -10368,7 +10423,7 @@ function _mjKey() { return 'clubos_ed_misequipos_' + (sesion?.user || ''); }
 function _mjEquiposDisp() {
   const l = (DB.equipos || []).filter(e => e.competicionId);
   if (sesion.rol === 'admin') return l;
-  if (sesion.rol === 'club' && !sesion.esFamilia) return l.filter(e => e.clubId === sesion.user);
+  if (sesion.rol === 'club' && !sesion.esFamilia) return l.filter(e => _eqEsDeClub(e));
   // Familias: cualquier equipo con partidos en el calendario
   const conP = new Set(); (DB.partidos || []).forEach(p => { conP.add(p.localId); conP.add(p.visitanteId); });
   return l.filter(e => conP.has(e.id));
