@@ -2340,7 +2340,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.1.1';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.1.2';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -4933,7 +4933,7 @@ function renderJugadores() {
              padding:10px 14px;background:#fff;border-radius:8px;border:1px solid var(--rojo-suave);box-shadow:0 1px 4px rgba(0,0,0,.05);">
           <span><span id="${contId}_icon">▶</span> ${eNom} <span style="color:var(--gris-suave);font-weight:400;text-transform:none;letter-spacing:0;">(${jugs.length} jugadores)</span></span>
           <span style="display:flex;gap:6px;">
-            <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();irAListadoFiltrado('${eid}')">📋 Listado</button>
+            <button class="btn btn-outline btn-xs" title="Abrir este equipo en la vista Listado (tutores, teléfonos, socio, imagen…)" onclick="event.stopPropagation();irAListadoFiltrado('${eid}')">📋 Ver en listado</button>
             <button class="btn btn-outline btn-xs" onclick="event.stopPropagation();exportarJugadoresPDF('equipo','${eid}')">📄 Exportar</button>
           </span>
         </div>
@@ -5057,6 +5057,7 @@ function _fechaNacTxt(j) {
 }
 
 function irAListadoFiltrado(equipoId) {
+  if (typeof _popCerrar === 'function') _popCerrar(); // la ventana emergente del equipo tapaba el listado
   window._listadoFiltroAnio = 'todos';
   window._listadoFiltroEquipos = new Set([equipoId]);
   window._listadoFiltroSocio = 'todos';
