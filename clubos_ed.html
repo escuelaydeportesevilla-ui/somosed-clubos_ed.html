@@ -1184,6 +1184,16 @@ body.cal-pop-on{overflow:hidden;}
 .ch-tabla tbody .ch-nom{background:#fff;}
 .ch-x{color:#ccc;} .ch-t{font-weight:800;}
 .ch-pie td{background:#F6F3F4;font-weight:800;font-size:12px;}
+.ag-dia{background:#fff;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:12px;overflow:hidden;}
+.ag-fecha{display:flex;justify-content:space-between;align-items:center;background:#1F1A1C;color:#fff;font-weight:800;font-size:14px;padding:10px 14px;text-transform:capitalize;}
+.ag-fecha span{font-size:11px;font-weight:700;opacity:.8;text-transform:none;}
+.ag-fila{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;border-top:1px solid #f0eaec;}
+.ag-fila:first-of-type{border-top:0;}
+.ag-hora{flex:none;width:56px;font-family:'Barlow Condensed',sans-serif;font-size:1.35rem;font-weight:900;color:var(--rojo);line-height:1.1;}
+.ag-info{flex:1;min-width:0;}
+.ag-eqs{font-size:14px;font-weight:700;margin-top:4px;line-height:1.3;}
+.ag-eqs b{color:var(--rojo);margin:0 4px;}
+.ag-sub{font-size:12px;color:var(--gris-suave);margin-top:2px;}
 </style>
 </head>
 <body>
@@ -2330,7 +2340,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.1.0';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.1.1';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -4545,6 +4555,93 @@ function _toggleEscuelaCheck(chk) {
 }
 
 // ══════════════════════════════════════════════════════
+//  SEDES: buscador y agenda de partidos por lugar
+// ══════════════════════════════════════════════════════
+// Nombre de sede de un partido: sede dada de alta (+ pista) o el texto del campo, sin dirección
+function _sedeDe(p) {
+  if (p.sedeId) { const s = (DB.sedes || []).find(x => x.id === p.sedeId); if (s) return s.nombre; }
+  let t = String(p.campo || p.campoNombre || '').trim();
+  t = t.replace(/\s*-\s*(C\/|AVDA|AVENIDA|CALLE|C\.|PLAZA|PZA|CTRA|CAMINO|BDA|URB)\b.*$/i, '').replace(/\s+-\s+.*$/, '').replace(/,\s*\d.*$/, '').replace(/\s{2,}/g, ' ').trim();
+  return t ? t.toUpperCase() : '';
+}
+function _sedeClave(n) { return _calNorm(n).replace(/[^a-z0-9]+/g, ' ').trim(); }
+function _sedesLista() {
+  const m = {};
+  (DB.partidos || []).forEach(p => { const n = _sedeDe(p); if (!n) return; const k = _sedeClave(n); (m[k] = m[k] || { k, nombre: n, ps: [] }).ps.push(p); });
+  const hoy = new Date().toISOString().slice(0, 10);
+  return Object.values(m).map(s => {
+    s.prox = s.ps.filter(p => p.estado !== 'jugado' && _limpiarFecha(p.fecha) >= hoy).length;
+    s.siguiente = s.ps.filter(p => p.estado !== 'jugado' && _limpiarFecha(p.fecha) >= hoy).map(p => _limpiarFecha(p.fecha)).sort()[0] || '';
+    s.comps = [...new Set(s.ps.map(p => p.competicionId))];
+    return s;
+  }).sort((a, b) => b.prox - a.prox || b.ps.length - a.ps.length || a.nombre.localeCompare(b.nombre, 'es'));
+}
+window._sedeEst = window._sedeEst || { q: '', sel: '', ver: 'prox' };
+function sedesAbrir() {
+  document.getElementById('sedesPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'sedesPop'; pop.style.display = 'none';
+  pop.onclick = e => { if (e.target === pop) _popCerrar(); };
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" style="--c:#1F1A1C;">
+      <div style="min-width:0;"><div class="cal-pop-cat">📍 Sedes</div><div class="cal-pop-nom" id="sedesSub">Elige un campo para ver su agenda</div></div>
+      <span style="display:flex;gap:6px;align-items:center;"><button class="btn btn-outline btn-xs" id="sedesVolver" style="display:none;" onclick="window._sedeEst.sel='';_sedesPintar()">← Sedes</button><button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span></div>
+    <div class="cal-pop-cuerpo" id="sedesCuerpo"></div></div>`;
+  document.body.appendChild(pop);
+  _sedesPintar(); _popAbrir('sedesPop');
+}
+function _sedesPintar() {
+  const E = window._sedeEst, cu = document.getElementById('sedesCuerpo'); if (!cu) return;
+  const lista = _sedesLista(), sel = lista.find(s => s.k === E.sel);
+  document.getElementById('sedesVolver').style.display = sel ? '' : 'none';
+  document.getElementById('sedesSub').textContent = sel ? sel.nombre : `${lista.length} sedes en el calendario · elige una para ver su agenda`;
+  if (!sel) {
+    const q = _calNorm(E.q).trim(), vis = lista.filter(s => !q || _calNorm(s.nombre).includes(q));
+    cu.innerHTML = `<div class="calb-q"><input id="sedesQ" type="search" autocomplete="off" placeholder="🔎 Buscar sede (p. ej. Labradores, Maristas…)" value="${_escHtml(E.q)}" oninput="window._sedeEst.q=this.value;_sedesFiltrar()"></div>
+      <div class="cal-tiles" id="sedesTiles">${vis.map(s => `<button type="button" class="cal-tile sede-tile" style="--c:#2E4057" data-n="${_escHtml(_calNorm(s.nombre))}" onclick="window._sedeEst.sel='${s.k}';_sedesPintar()">
+        <span class="cal-tile-cat" style="font-size:1.25rem;">📍 ${_escHtml(s.nombre)}</span>
+        <span class="cal-tile-nums"><span><b>${s.ps.length}</b>partidos</span><span><b>${s.prox}</b>próximos</span><span><b>${s.comps.length}</b>categorías</span></span>
+        ${s.siguiente ? `<span class="cal-tile-pie">🗓️ Próximo: ${_escHtml(_mjFechaTxt(s.siguiente))}</span>` : '<span class="cal-tile-pie">Sin partidos próximos</span>'}
+        <span class="cal-tile-ir">Ver agenda →</span></button>`).join('') || '<div class="empty-state"><p>Ninguna sede coincide.</p></div>'}</div>`;
+    return;
+  }
+  // Agenda de la sede
+  const hoy = new Date().toISOString().slice(0, 10);
+  let ps = sel.ps.slice();
+  if (E.ver === 'prox') ps = ps.filter(p => _limpiarFecha(p.fecha) >= hoy || !_limpiarFecha(p.fecha));
+  if (E.ver === 'pas') ps = ps.filter(p => _limpiarFecha(p.fecha) && _limpiarFecha(p.fecha) < hoy);
+  ps.sort((a, b) => (_limpiarFecha(a.fecha) + _limpiarHora(a.hora)).localeCompare(_limpiarFecha(b.fecha) + _limpiarHora(b.hora)));
+  if (E.ver === 'pas') ps.reverse();
+  const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const porDia = {}; ps.forEach(p => { const f = _limpiarFecha(p.fecha) || 'sin'; (porDia[f] = porDia[f] || []).push(p); });
+  const seg = (v, l) => `<button class="${E.ver === v ? 'on' : ''}" onclick="window._sedeEst.ver='${v}';_sedesPintar()">${l}</button>`;
+  cu.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+      <div class="jb-seg" style="margin:0;">${seg('prox', '🟢 Próximos')}${seg('todos', 'Todos')}${seg('pas', 'Jugados')}</div>
+      <button class="btn btn-outline btn-sm" onclick="_sedesCopiar()">📋 Copiar agenda</button></div>
+    ${Object.keys(porDia).length ? Object.entries(porDia).map(([f, lst]) => `<div class="ag-dia"><div class="ag-fecha">${f === 'sin' ? 'Fecha por confirmar' : '🗓️ ' + _escHtml(_mjFechaTxt(f))}<span>${lst.length} partido${lst.length === 1 ? '' : 's'}</span></div>
+      ${lst.map(p => { const c = (DB.competiciones || []).find(x => x.id === p.competicionId), jug = p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
+        return `<div class="ag-fila" ${sesion.rol === 'admin' ? `onclick="editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
+          <div class="ag-hora">${_escHtml(_limpiarHora(p.hora) || '--:--')}</div>
+          <div class="ag-info"><span class="cat-chip" style="--c:${p.competicionId ? _calColorComp(p.competicionId) : '#6B7280'}">${_escHtml(c ? (_compPartes(c).cat || c.nombre) : '—')}${c && _calModalidad(c) === 'Fútbol 7' ? ' · F7' : ''}</span>
+            <div class="ag-eqs">${_escHtml(mE[p.localId]?.nombre || '—')} <b>${jug ? _escHtml(p.golesLocal) + ' – ' + _escHtml(p.golesVisitante) : 'vs'}</b> ${_escHtml(mE[p.visitanteId]?.nombre || '—')}</div>
+            <div class="ag-sub">J${_escHtml(p.jornada)}${p.campo && _sedeDe(p) !== String(p.campo).toUpperCase() ? ' · ' + _escHtml(p.campo) : ''}${_avisoActivo(p) ? ' · ⚠️ ' + _escHtml(_avisoTexto(p)) : ''}</div></div>
+        </div>`; }).join('')}</div>`).join('') : '<div class="empty-state"><p>No hay partidos en esta selección.</p></div>'}`;
+}
+function _sedesFiltrar() {
+  const q = _calNorm(window._sedeEst.q).trim();
+  document.querySelectorAll('#sedesTiles .sede-tile').forEach(t => { t.parentElement.style.display = ''; t.style.display = !q || t.dataset.n.includes(q) ? '' : 'none'; });
+}
+function _sedesCopiar() {
+  const E = window._sedeEst, s = _sedesLista().find(x => x.k === E.sel); if (!s) return;
+  const hoy = new Date().toISOString().slice(0, 10), mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const ps = s.ps.filter(p => E.ver !== 'prox' || _limpiarFecha(p.fecha) >= hoy).filter(p => E.ver !== 'pas' || _limpiarFecha(p.fecha) < hoy)
+    .sort((a, b) => (_limpiarFecha(a.fecha) + _limpiarHora(a.hora)).localeCompare(_limpiarFecha(b.fecha) + _limpiarHora(b.hora)));
+  let t = `📍 ${s.nombre}`, dia = '';
+  ps.forEach(p => { const f = _limpiarFecha(p.fecha); if (f !== dia) { dia = f; t += `\n\n🗓️ ${_mjFechaTxt(f)}`; }
+    const c = (DB.competiciones || []).find(x => x.id === p.competicionId);
+    t += `\n${_limpiarHora(p.hora) || '--:--'} · ${c ? (_compPartes(c).cat || '') : ''} · ${mE[p.localId]?.nombre || '—'} vs ${mE[p.visitanteId]?.nombre || '—'}${p.estado === 'jugado' ? ` (${p.golesLocal}-${p.golesVisitante})` : ''}`; });
+  navigator.clipboard.writeText(t).then(() => toast('📋 Agenda copiada'), () => toast('No se pudo copiar'));
+}
+
+// ══════════════════════════════════════════════════════
 //  ACORDEONES → PASTILLAS DE COLOR + VENTANA EMERGENTE (esquema común)
 // ══════════════════════════════════════════════════════
 // info(contId) → { cat, sub, color, nums:[[n,'etiqueta'],…], pie, ir }
@@ -6334,7 +6431,8 @@ function _calBarraGlobal() {
   const g = window._calBus;
   const js = [...new Set((DB.partidos || []).map(p => String(p.jornada)))].sort(_ordenarJornadas);
   return _calStats() + `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
-    <div style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);margin-bottom:8px;">🔎 Buscar partidos (todas las competiciones)</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);">🔎 Buscar partidos (todas las competiciones)</span>
+      <button class="btn btn-rojo btn-sm" onclick="sedesAbrir()">📍 Buscar por sede</button></div>
     <div class="calb-q"><input id="calB_q" type="search" autocomplete="off" placeholder="🔎 Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()"><button type="button" id="calB_x" class="calb-x" style="${g.q ? '' : 'display:none'}" onclick="calBusLimpiarTexto()" aria-label="Borrar">✕</button></div>
     <div id="calB_sel" class="calb-sel">${_calBusResumen()}</div>
     <div id="calB_chips">${_calBusChips()}</div>
