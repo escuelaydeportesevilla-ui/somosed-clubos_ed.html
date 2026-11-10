@@ -1194,6 +1194,14 @@ body.cal-pop-on{overflow:hidden;}
 .ag-eqs{font-size:14px;font-weight:700;margin-top:4px;line-height:1.3;}
 .ag-eqs b{color:var(--rojo);margin:0 4px;}
 .ag-sub{font-size:12px;color:var(--gris-suave);margin-top:2px;}
+.fb-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px;background:#F4F7FC;border:1px solid #DCE6F5;border-radius:12px;padding:10px;margin:0 0 10px;}
+.fb-lbl{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#1D5FB0;width:100%;}
+.fb-f{display:flex!important;flex-direction:column;gap:2px;margin:0!important;}
+.fb-f span{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--gris-suave);}
+.fb-f input{padding:8px 10px;border:1px solid #ccd6e6;border-radius:10px;font-size:14px;background:#fff;}
+.fb-rap{display:flex;flex-wrap:wrap;gap:6px;}
+.fb-rap .jb-chip{font-size:12.5px;padding:6px 11px;}
+@media (max-width:768px){.fb-f{flex:1;min-width:130px;}.fb-f input{width:100%;box-sizing:border-box;}.fb-row>.btn{width:100%;justify-content:center;}}
 </style>
 </head>
 <body>
@@ -2340,7 +2348,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.1.2';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.1.3';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -4641,6 +4649,57 @@ function _sedesCopiar() {
   navigator.clipboard.writeText(t).then(() => toast('📋 Agenda copiada'), () => toast('No se pudo copiar'));
 }
 
+// ── Buscador por fechas: agenda de todos los partidos entre dos fechas (todas las sedes) ──
+window._fechaBus = window._fechaBus || { d: '', h: '' };
+function _fbISO(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function fechaBusRapida(t) {
+  const hoy = new Date(); hoy.setHours(12, 0, 0, 0); let d = new Date(hoy), h = new Date(hoy);
+  if (t === '7') h.setDate(h.getDate() + 7);
+  if (t === 'finde' || t === 'sig') {               // viernes a domingo
+    const dw = hoy.getDay(), aV = dw === 0 ? -2 : (dw === 6 ? -1 : 5 - dw);
+    d.setDate(hoy.getDate() + aV + (t === 'sig' ? 7 : 0)); h = new Date(d); h.setDate(d.getDate() + 2);
+    if (t === 'finde' && d < hoy) d = new Date(hoy);
+  }
+  document.getElementById('fbDesde').value = _fbISO(d); document.getElementById('fbHasta').value = _fbISO(h);
+  fechaBusAbrir();
+}
+function fechaBusAbrir() {
+  let d = (document.getElementById('fbDesde') || {}).value || '', h = (document.getElementById('fbHasta') || {}).value || '';
+  if (!d && !h) { toast('Elige una fecha'); return; }
+  if (!d) d = h; if (!h) h = d; if (h < d) [d, h] = [h, d];
+  window._fechaBus = { d, h };
+  document.getElementById('fechasPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'fechasPop'; pop.style.display = 'none';
+  pop.onclick = e => { if (e.target === pop) _popCerrar(); };
+  const ps = (DB.partidos || []).filter(p => { const f = _limpiarFecha(p.fecha); return f && f >= d && f <= h; })
+    .sort((a, b) => (_limpiarFecha(a.fecha) + _limpiarHora(a.hora) + _sedeDe(a)).localeCompare(_limpiarFecha(b.fecha) + _limpiarHora(b.hora) + _sedeDe(b)));
+  const mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const porDia = {}; ps.forEach(p => (porDia[_limpiarFecha(p.fecha)] = porDia[_limpiarFecha(p.fecha)] || []).push(p));
+  const rango = d === h ? _mjFechaTxt(d) : _mjFechaTxt(d) + ' → ' + _mjFechaTxt(h);
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" style="--c:#1D5FB0;">
+      <div style="min-width:0;"><div class="cal-pop-cat">🗓️ Agenda</div><div class="cal-pop-nom">${_escHtml(rango)} · ${ps.length} partido${ps.length === 1 ? '' : 's'}</div></div>
+      <span style="display:flex;gap:6px;align-items:center;">${ps.length ? '<button class="btn btn-outline btn-xs" onclick="_fechaBusCopiar()">📋 Copiar</button>' : ''}<button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span></div>
+    <div class="cal-pop-cuerpo">${ps.length ? Object.entries(porDia).map(([f, lst]) => `<div class="ag-dia"><div class="ag-fecha">🗓️ ${_escHtml(_mjFechaTxt(f))}<span>${lst.length} partido${lst.length === 1 ? '' : 's'}</span></div>
+      ${lst.map(p => { const c = (DB.competiciones || []).find(x => x.id === p.competicionId), jug = p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
+        return `<div class="ag-fila" ${sesion.rol === 'admin' ? `onclick="_popCerrar();editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
+          <div class="ag-hora">${_escHtml(_limpiarHora(p.hora) || '--:--')}</div>
+          <div class="ag-info"><span class="cat-chip" style="--c:${p.competicionId ? _calColorComp(p.competicionId) : '#6B7280'}">${_escHtml(c ? (_compPartes(c).cat || c.nombre) : '—')}${c && _calModalidad(c) === 'Fútbol 7' ? ' · F7' : ''}</span>
+            <div class="ag-eqs">${_escHtml(mE[p.localId]?.nombre || '—')} <b>${jug ? _escHtml(p.golesLocal) + ' – ' + _escHtml(p.golesVisitante) : 'vs'}</b> ${_escHtml(mE[p.visitanteId]?.nombre || '—')}</div>
+            <div class="ag-sub">📍 ${_escHtml(_sedeDe(p) || 'Lugar por confirmar')} · J${_escHtml(p.jornada)}${_avisoActivo(p) ? ' · ⚠️ ' + _escHtml(_avisoTexto(p)) : ''}</div></div>
+        </div>`; }).join('')}</div>`).join('') : '<div class="empty-state"><div class="ei">🗓️</div><p>No hay partidos en esas fechas.</p></div>'}</div></div>`;
+  document.body.appendChild(pop); _popAbrir('fechasPop');
+}
+function _fechaBusCopiar() {
+  const { d, h } = window._fechaBus, mE = {}; (DB.equipos || []).forEach(e => mE[e.id] = e);
+  const ps = (DB.partidos || []).filter(p => { const f = _limpiarFecha(p.fecha); return f && f >= d && f <= h; })
+    .sort((a, b) => (_limpiarFecha(a.fecha) + _limpiarHora(a.hora)).localeCompare(_limpiarFecha(b.fecha) + _limpiarHora(b.hora)));
+  let t = '🗓️ Agenda de partidos', dia = '';
+  ps.forEach(p => { const f = _limpiarFecha(p.fecha); if (f !== dia) { dia = f; t += `\n\n🗓️ ${_mjFechaTxt(f)}`; }
+    const c = (DB.competiciones || []).find(x => x.id === p.competicionId);
+    t += `\n${_limpiarHora(p.hora) || '--:--'} · ${c ? (_compPartes(c).cat || '') : ''} · ${mE[p.localId]?.nombre || '—'} vs ${mE[p.visitanteId]?.nombre || '—'}${p.estado === 'jugado' ? ` (${p.golesLocal}-${p.golesVisitante})` : ''} · 📍 ${_sedeDe(p) || '¿?'}`; });
+  navigator.clipboard.writeText(t).then(() => toast('📋 Agenda copiada'), () => toast('No se pudo copiar'));
+}
+
 // ══════════════════════════════════════════════════════
 //  ACORDEONES → PASTILLAS DE COLOR + VENTANA EMERGENTE (esquema común)
 // ══════════════════════════════════════════════════════
@@ -6434,6 +6493,13 @@ function _calBarraGlobal() {
   return _calStats() + `<div style="background:white;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(60,20,30,.07);">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;"><span style="font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);">🔎 Buscar partidos (todas las competiciones)</span>
       <button class="btn btn-rojo btn-sm" onclick="sedesAbrir()">📍 Buscar por sede</button></div>
+    <div class="fb-row">
+      <span class="fb-lbl">🗓️ Buscar por fecha</span>
+      <label class="fb-f"><span>Desde</span><input type="date" id="fbDesde" value="${_escHtml(window._fechaBus.d || '')}"></label>
+      <label class="fb-f"><span>Hasta</span><input type="date" id="fbHasta" value="${_escHtml(window._fechaBus.h || '')}"></label>
+      <button class="btn btn-rojo btn-sm" onclick="fechaBusAbrir()">Ver agenda</button>
+      <span class="fb-rap"><button class="jb-chip" onclick="fechaBusRapida('hoy')">Hoy</button><button class="jb-chip" onclick="fechaBusRapida('finde')">Este finde</button><button class="jb-chip" onclick="fechaBusRapida('7')">Próx. 7 días</button><button class="jb-chip" onclick="fechaBusRapida('sig')">Finde siguiente</button></span>
+    </div>
     <div class="calb-q"><input id="calB_q" type="search" autocomplete="off" placeholder="🔎 Club o equipo (p. ej. Labradores)…" value="${_escHtml(g.q)}" oninput="calBusTexto()"><button type="button" id="calB_x" class="calb-x" style="${g.q ? '' : 'display:none'}" onclick="calBusLimpiarTexto()" aria-label="Borrar">✕</button></div>
     <div id="calB_sel" class="calb-sel">${_calBusResumen()}</div>
     <div id="calB_chips">${_calBusChips()}</div>
