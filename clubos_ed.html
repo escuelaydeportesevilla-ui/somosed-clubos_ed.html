@@ -1250,6 +1250,8 @@ body.cal-pop-on{overflow:hidden;}
 .ia-hist{background:#fff;border-radius:14px;padding:14px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
 .ia-h{display:flex;align-items:center;gap:8px;padding:9px 6px;border-top:1px solid #f0ecee;flex-wrap:wrap;} .ia-h.on{background:#FFF7E6;border-radius:10px;}
 .ia-hm{font-size:12px;font-weight:800;background:#f3eef0;border-radius:20px;padding:4px 10px;white-space:nowrap;}
+.ia-chk{display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:10px 12px;margin:4px 0 8px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;font-size:14px;}
+.ia-chk input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--rojo);} .ia-chk small{color:var(--gris-suave);font-size:12px;}
 </style>
 </head>
 <body>
@@ -2410,7 +2412,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.2.5';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.2.7';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.6';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -9680,7 +9682,7 @@ function _iaLS(eq, v) {
   const el = document.getElementById('iaEstado'); if (el) el.textContent = '✏️ Guardando…';
   clearTimeout(window._iaTSave); window._iaTSave = setTimeout(async () => { await saveCol('informes'); const e2 = document.getElementById('iaEstado'); if (e2) e2.textContent = '☁️ Guardado ' + ahora.slice(11); }, 2000);
 }
-function _iaPerLabel(per) { if (per === 'TEMP') return 'Temporada completa'; const T = _evalTrimDeKey(per); return T ? T.label.charAt(0).toUpperCase() + T.label.slice(1) : per; }
+function _iaPerLabel(per) { if (per === 'TEMP') return 'Temporada completa'; return _iaRango(per).label; }
 // Progresión por trimestres: media de los jugadores + valoración del equipo en conjunto (estrellas)
 function _iaProg(eq) {
   const jIds = new Set((DB.jugadores || []).filter(j => j.equipoId === eq).map(j => j.id)), keys = new Set();
@@ -9688,15 +9690,15 @@ function _iaProg(eq) {
   (DB.informes || []).forEach(r => { if (r.equipoId === eq && r.periodo && r.periodo !== 'TEMP') keys.add(r.periodo); });
   return [...keys].map(k => _evalTrimDeKey(k)).filter(Boolean).sort((a, b) => a.desde.localeCompare(b.desde)).map(T => {
     const o = { T, cort: 'T' + T.key.slice(-1) + ' ' + T.key.slice(2, 7) }, d = _iaDatos(eq, T.key); o.media = d.tot.media;
-    const r = (DB.informes || []).filter(x => x.equipoId === eq && x.modo === 'fam' && x.periodo === T.key).sort((a, b) => String(b.actualizado || '').localeCompare(String(a.actualizado || '')))[0];
-    let est = _iaEst(r);
+    const ests = (DB.informes || []).filter(x => x.equipoId === eq && x.periodo && x.periodo !== 'TEMP' && (x.periodo === T.key || (() => { const R = _iaRango(x.periodo); return R.tipo !== 'trim' && R.fecha >= T.desde && R.fecha <= T.hasta; })())).map(_iaEst).filter(e => Object.values(e).some(n => Number(n) > 0));
+    let est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { const v = ests.map(e => Number(e[c])).filter(n => n > 0); if (v.length) est[c] = v.reduce((a, b) => a + b, 0) / v.length; });
     if (!Object.values(est).some(n => Number(n) > 0)) { const te = (DB.evaluaciones || []).filter(e => !e.jugadorId && e.equipoId === eq && _limpiarFecha(e.fecha) >= T.desde && _limpiarFecha(e.fecha) <= T.hasta);
       est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { const v = te.map(e => Number(e[c])).filter(n => n > 0); if (v.length) est[c] = v.reduce((a, b) => a + b, 0) / v.length; }); }
     _EG_SERIES.slice(1).forEach(s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); o[s.k] = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; });
     return o; });
 }
 function _iaProgSVG(P) {
-  if (!P.length) return '';
+  P = P.filter(p => p.media != null || p.tec != null || p.fis != null || p.act != null); if (!P.length) return '';
   const SER = [{ k: 'media', l: 'Media jugadores', c: '#1F1A1C', w: 3 }].concat(_EG_SERIES.slice(1).map(s => ({ k: s.k, l: 'Equipo · ' + s.l, c: s.c, w: 2 }))).filter(s => P.some(p => p[s.k] != null));
   const W = 640, H = 240, mL = 28, mR = 130, mT = 16, mB = 30, iw = W - mL - mR, ih = H - mT - mB, n = P.length;
   const X = i => mL + (n === 1 ? iw / 2 : i * iw / (n - 1)), Y = v => mT + ih - (v - 1) / 4 * ih, fx = v => v.toFixed(1).replace('.', ',');
@@ -9718,7 +9720,7 @@ async function iaHistBorrar(id) {
   await saveCol('informes'); iaPintar();
 }
 function _iaGuardarTxt() { const S = window._ia; if (!S.eq || !document.getElementById('iaCom')) return; const o = { com: (document.getElementById('iaCom') || {}).value || '', resp: (document.getElementById('iaResp') || {}).value || '' };
-  if (S.modo === 'fam') { o.est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { if (document.getElementById('iaEQ_' + c)) o.est[c] = _valorEstrellas('iaEQ_' + c); }); }
+  if (document.getElementById('iaEQ_tecControl')) { o.est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { if (document.getElementById('iaEQ_' + c)) o.est[c] = _valorEstrellas('iaEQ_' + c); }); }
   _iaLS(S.eq, o); }
 function iaInformeAbrir() {
   if (!puedeEvaluar()) { toast('No tienes permiso'); return; }
@@ -9737,22 +9739,28 @@ function iaInformeAbrir() {
 function iaPintar() {
   const S = window._ia, cu = document.getElementById('iaCuerpo'); if (!cu) return;
   const eq = (DB.equipos || []).find(e => e.id === S.eq); document.getElementById('iaCab').style.setProperty('--c', eq && eq.competicionId ? _calColorComp(eq.competicionId) : '#2E4057');
-  const g = _iaLS(S.eq), d = _iaDatos(S.eq, S.per), act = _evalTrim(), fam = S.modo === 'fam';
+  if (_iaTipo(S.per) === 'partido') { const p = (DB.partidos || []).find(x => x.id === S.per.slice(2)); if (!p || (p.localId !== S.eq && p.visitanteId !== S.eq)) S.per = _iaPartidoDef(S.eq); }
+  const g = _iaLS(S.eq), d = _iaDatos(S.eq, S.per), act = _evalTrim(), fam = S.modo === 'fam', tp = _iaTipo(S.per), cj = _iaCJ();
+  const segT = (v, l) => `<button type="button" class="${tp === v ? 'on' : ''}" onclick="_iaSetTipo('${v}')">${l}</button>`;
   if (window._iaVoz) { try { window._iaVoz.stop(); } catch (e) {} window._iaVoz = null; }
   const segM = (v, l) => `<button type="button" class="${(S.modo || 'tec') === v ? 'on' : ''}" onclick="_iaGuardarTxt();window._ia.modo='${v}';iaPintar()">${l}</button>`;
   cu.innerHTML = `<div class="jb-seg ia-modo">${segM('fam', '👨‍👩‍👧 Informe para familias')}${segM('tec', '📋 Análisis técnico')}</div>
-    <div class="ia-nota" style="margin:0 0 10px;">${fam ? 'Valoración del <b>equipo en conjunto</b>, sin datos de ningún jugador. Sale una carta para los padres.' : 'Análisis interno con los datos de cada jugador (anonimizados).'}</div>
+    <div class="ia-nota" style="margin:0 0 10px;">${fam ? 'Carta para los padres sobre el <b>equipo en conjunto</b>. Nunca se nombra a ningún niño.' : 'Análisis interno para el cuerpo técnico.'}</div>
     <div class="gx-eqs">${S.equipos.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
       return `<button type="button" class="gx-eq${S.eq === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="_iaGuardarTxt();window._ia.eq='${e.id}';iaPintar()"><span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : '')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span></button>`; }).join('')}</div>
     <div class="jb" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-      <label class="fb-f"><span>Periodo</span><select onchange="_iaGuardarTxt();window._ia.per=this.value;iaPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">
-        <option value="TEMP" ${S.per === 'TEMP' ? 'selected' : ''}>Toda la temporada ${act.key.slice(0, 7)}</option>${_evalTrimOpciones(S.per === 'TEMP' ? '' : S.per).replace(/ selected/g, S.per === 'TEMP' ? '' : ' selected')}</select></label>
-      <div class="ia-res">📊 ${d.partidos.length} partidos · ${d.jug.filter(j => j.n).length}/${d.jug.length} jugadores evaluados · ${d.nEval} evaluaciones</div>
+      <div><div class="fb-lbl" style="color:var(--gris-suave);margin-bottom:4px;">Tipo de evaluación</div><div class="jb-seg" style="margin:0;">${segT('fecha', '📅 Fecha libre')}${segT('trim', '📊 Trimestral')}${segT('partido', '⚽ Partido')}</div></div>
+      ${tp === 'fecha' ? `<label class="fb-f"><span>Fecha</span><input type="date" value="${S.per.slice(2)}" onchange="_iaGuardarTxt();window._ia.per='F:'+(this.value||new Date().toISOString().slice(0,10));iaPintar()"></label>` : ''}
+      ${tp === 'partido' ? `<label class="fb-f" style="flex:1;min-width:240px;"><span>Partido</span><select onchange="_iaGuardarTxt();window._ia.per='P:'+this.value;iaPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">${_evalOptsPartido(S.eq, S.per.slice(2))}</select></label>` : ''}
+      ${tp === 'trim' ? `<label class="fb-f"><span>Trimestre</span><select onchange="_iaGuardarTxt();window._ia.per=this.value;iaPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">
+        <option value="TEMP" ${S.per === 'TEMP' ? 'selected' : ''}>Toda la temporada ${act.key.slice(0, 7)}</option>${_evalTrimOpciones(S.per === 'TEMP' ? '' : S.per).replace(/ selected/g, S.per === 'TEMP' ? '' : ' selected')}</select></label>` : ''}
     </div>
+    <label class="ia-chk"><input type="checkbox" ${cj ? 'checked' : ''} onchange="_iaSetConJug(this.checked)"><span><b>👥 Unir a la evaluación de los jugadores</b><br><small>${cj ? (fam ? 'Se usan las medias de las evaluaciones individuales, siempre en conjunto y sin nombres.' : 'Incluye la tabla de cada jugador (anonimizada para la IA) y sus goles.') : 'Solo tu valoración del equipo y sus resultados. No se usa nada de cada jugador.'}</small></span></label>
+    <div class="ia-res">📊 ${_escHtml(d.R.label)} · ${d.partidos.length} partido${d.partidos.length === 1 ? '' : 's'}${cj ? ` · ${d.jug.filter(j => j.n).length}/${d.jug.length} jugadores evaluados · ${d.nEval} evaluaciones` : ''}</div>
     <div class="ia-paso"><b>1</b><div style="flex:1;min-width:0;"><div class="ia-pt" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">${fam ? 'Tu valoración del equipo' : 'Tu comentario general del equipo'}
         <button type="button" class="btn btn-outline btn-sm" id="iaMic" onclick="iaDictar()">🎤 Dictar</button></div>
       <textarea id="iaCom" rows="${fam ? 7 : 5}" oninput="_iaGuardarTxt()" placeholder="${fam ? 'Escribe o dicta: cómo ha ido el equipo, ambiente, compromiso, qué hemos trabajado, qué toca ahora, cómo pueden ayudar las familias…' : 'Cómo ves al equipo, qué ha pasado este periodo, qué te preocupa, objetivos…'}">${_escHtml(g.com || '')}</textarea>
-      ${fam ? `<details class="ev-eqconj" style="margin-top:10px;" ${g.est && Object.values(g.est).some(n => n > 0) ? 'open' : ''}><summary>⭐ Valoración del equipo con estrellas <span style="font-weight:600;color:var(--gris-suave);">(opcional)</span></summary>
+      ${true ? `<details class="ev-eqconj" style="margin-top:10px;" ${g.est && Object.values(g.est).some(n => n > 0) ? 'open' : ''}><summary>⭐ Valoración del equipo con estrellas <span style="font-weight:600;color:var(--gris-suave);">(opcional)</span></summary>
         <div class="ev-card" style="border:0;box-shadow:none;padding:8px 0 0;">${_EVAL_GRUPOS.map(([gr, ...as]) => `<div class="ev-grp"><div class="ev-gt">${gr}</div>${as.map(([c, l]) => `<div class="ev-asp"><span>${l}</span><div id="iaEQ_${c}" class="ev-st" onclick="setTimeout(_iaGuardarTxt,0)"></div></div>`).join('')}</div>`).join('')}</div></details>` : ''}</div></div>
     <div class="ia-paso"><b>2</b><div style="flex:1;min-width:0;"><div class="ia-pt">Genera el prompt y pégalo en la IA</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;"><button class="btn btn-rojo btn-sm" onclick="iaCopiar()">✨ Generar y copiar prompt</button>
@@ -9760,7 +9768,7 @@ function iaPintar() {
       <div id="iaPromptBox" style="display:none;margin-top:10px;"><div class="ia-nota" style="margin:0 0 6px;">✅ Prompt generado y copiado. Pégalo en Claude. Si no se copió, pulsa dentro, selecciona todo y copia:</div>
         <textarea id="iaPrompt" rows="10" readonly onclick="this.select()" style="font-size:12px;background:#FAF7F8;"></textarea>
         <button type="button" class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="iaCopiar()">📋 Copiar de nuevo</button></div>
-      <div class="ia-nota">${fam ? '🔒 No se envía ningún dato de jugadores. Si nombras a alguien en tu texto, se cambia por un código.' : '🔒 Los nombres se envían como J1, J2… La IA no ve nombres reales; el informe los recupera.'}</div></div></div>
+      <div class="ia-nota">🔒 ${!cj || fam ? 'No se envía ningún dato individual de jugadores.' : 'Los nombres se envían como J1, J2…; el informe los recupera.'} Si nombras a alguien en tu texto, se cambia por un código.</div></div></div>
     <div class="ia-paso"><b>3</b><div style="flex:1;min-width:0;"><div class="ia-pt">Pega aquí la respuesta de la IA</div>
       <textarea id="iaResp" rows="7" oninput="_iaGuardarTxt()" placeholder="Pega la respuesta completa…">${_escHtml(g.resp || '')}</textarea>
       <div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:10px;">
@@ -9768,7 +9776,7 @@ function iaPintar() {
         <button class="btn btn-rojo" onclick="_iaGuardarTxt();iaInforme()">📄 Generar informe</button></div></div></div>
     <div class="ia-nota" id="iaEstado" style="text-align:right;">${g.rec ? '☁️ Guardado en el Sheet · ' + _escHtml(g.rec.actualizado || '') : 'Se guarda solo en el Sheet al escribir'}</div>
     ${_iaHistHtml(S.eq)}`;
-  if (fam) CAMPOS_ASPECTOS_EVAL.forEach(c => _pintarEstrellas('iaEQ_' + c, (g.est || {})[c] || 0));
+  CAMPOS_ASPECTOS_EVAL.forEach(c => _pintarEstrellas('iaEQ_' + c, (g.est || {})[c] || 0));
 }
 function _iaHistHtml(eq) {
   const P = _iaProg(eq), hist = (DB.informes || []).filter(r => r.equipoId === eq)
@@ -9776,7 +9784,7 @@ function _iaHistHtml(eq) {
   const S = window._ia, tend = P.filter(p => p.media != null);
   let txt = ''; if (tend.length > 1) { const dv = tend[tend.length - 1].media - tend[0].media; txt = `Media de jugadores: <b>${tend[0].media.toFixed(1).replace('.', ',')}</b> (${tend[0].cort}) → <b>${tend[tend.length - 1].media.toFixed(1).replace('.', ',')}</b> (${tend[tend.length - 1].cort}) · ${dv > 0.05 ? '▲ sube' : (dv < -0.05 ? '▼ baja' : '= estable')}`; }
   return `<div class="ia-hist"><div class="ia-pt">📈 Progresión del equipo</div>
-    ${P.length ? `<div class="eg-caja" style="padding:8px;">${_iaProgSVG(P)}</div><div class="ia-nota">${txt || 'Con dos o más trimestres verás la evolución.'} · Las líneas "Equipo" salen de las estrellas del informe para familias.</div>` : '<div class="ia-nota">Aún no hay evaluaciones de este equipo.</div>'}
+    ${P.length ? `<div class="eg-caja" style="padding:8px;">${_iaProgSVG(P)}</div><div class="ia-nota">${txt || 'Con dos o más trimestres verás la evolución.'} · Las líneas "Equipo" salen de las estrellas que pones al equipo en cada informe.</div>` : '<div class="ia-nota">Aún no hay evaluaciones de este equipo.</div>'}
     <div class="ia-pt" style="margin-top:14px;">📚 Informes guardados</div>
     ${hist.length ? hist.map(r => `<div class="ia-h${r.modo === S.modo && r.periodo === S.per ? ' on' : ''}"><span class="ia-hm">${r.modo === 'fam' ? '👨‍👩‍👧 Familias' : '📋 Técnico'}</span>
       <div style="flex:1;min-width:0;"><b>${_escHtml(_iaPerLabel(r.periodo))}</b><div class="ia-nota" style="margin:0;">${_escHtml(r.autor || '')} · ${_escHtml(r.actualizado || '')}${r.respuesta ? ' · con análisis' : ' · borrador'}${r.publicadoId ? ' · ✅ publicado' : ''}</div></div>
@@ -9799,25 +9807,24 @@ function iaDictar() {
 function _iaPromptFam() {
   const S = window._ia, d = _iaDatos(S.eq, S.per), g = _iaLS(S.eq), f = n => n == null ? '-' : n.toFixed(1);
   const com = (document.getElementById('iaCom') || {}).value || g.com || '', cat = d.comp ? (_compPartes(d.comp).cat || '') : '', mod = d.comp ? _calModalidad(d.comp) : '';
-  const est = g.est || {}, blo = s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const cj = _iaCJ(), esP = d.R.tipo === 'partido';
   const L = [];
-  L.push('Eres el entrenador de un equipo de fútbol base de una escuela deportiva. Con mi valoración y los datos del equipo, redacta un informe para las familias del equipo, en español.');
-  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''} · periodo: ${d.R.label}`);
-  if (d.tot.pj) L.push(`RESULTADOS: ${d.tot.pj} partidos · ${d.tot.g} ganados, ${d.tot.e} empatados, ${d.tot.p} perdidos · goles a favor ${d.tot.gf}, en contra ${d.tot.gc}`);
-  const eb = _EG_SERIES.slice(1).map(s => [s.l, blo(s)]).filter(x => x[1] != null);
-  if (eb.length) L.push('VALORACIÓN DEL EQUIPO EN CONJUNTO (1 a 5): ' + eb.map(x => x[0].toLowerCase() + ' ' + f(x[1])).join(' · '));
-  else if (d.tot.media != null) L.push(`VALORACIÓN MEDIA DEL EQUIPO (1 a 5): técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
+  L.push(`Eres el entrenador de un equipo de fútbol base de una escuela deportiva. Con mi valoración y los datos del equipo, redacta ${esP ? 'la crónica de un partido' : 'un informe'} para las familias del equipo, en español.`);
+  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''}`, _iaLineaTipo(d));
+  _iaLineasComunes(d, L, false);
+  if (cj && d.tot.media != null) { L.push(`MEDIA DE LAS EVALUACIONES INDIVIDUALES (toda la plantilla en conjunto, ${d.nEval} evaluaciones, de 1 a 5): media ${f(d.tot.media)} · técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
+    if (d.evol.length > 1) L.push('Evolución mensual de esa media: ' + d.evol.map(e => e.k + ' ' + f(e.v)).join(' · ')); }
   L.push('', 'MI VALORACIÓN DEL EQUIPO:', com.trim() ? _iaAnon(com.trim(), d.jug) : '(sin comentario)');
   L.push('', 'INSTRUCCIONES:', '- Es un texto para TODAS las familias: habla del grupo en conjunto. No nombres ni compares a ningún niño o niña; si aparece un código (J1, J2…) no lo uses.',
     '- Tono cercano, positivo y honesto: reconoce lo bueno y explica con naturalidad lo que hay que mejorar. Que se note que lo escribe el entrenador, sin frases de manual.',
     '- No inventes datos. El resultado deportivo no es lo principal: prioriza aprendizaje, compañerismo y esfuerzo.',
     '- Responde exactamente con estos apartados, cada uno empezando por "## ":',
-    '## Cómo va el equipo', '## Lo que estamos trabajando', '## Lo que vamos a mejorar', '## Cómo podéis ayudar desde casa', '## Despedida',
+    ...(esP ? ['## Crónica del partido', '## Lo mejor del equipo', '## Lo que seguimos trabajando', '## Próximo reto', '## Despedida'] : ['## Cómo va el equipo', '## Lo que estamos trabajando', '## Lo que vamos a mejorar', '## Cómo podéis ayudar desde casa', '## Despedida']),
     '- Párrafos cortos o viñetas "- ". Máximo 350 palabras. Sin tablas ni emojis.');
   return L.join('\n');
 }
 function _iaTextoPlano(txt) {
-  const d = _iaDatos(window._ia.eq, window._ia.per); let t = String(txt || '').replace(/\r/g, '');
+  const d = _iaDatos(window._ia.eq, window._ia.per); let t = _iaLimpiar(txt);
   t = t.replace(/\b(?:los |las |el |la )?J\d+\b/g, window._ia.modo === 'fam' ? 'el grupo' : '$&'); if (window._ia.modo !== 'fam') d.jug.forEach(x => { t = t.replace(new RegExp('\\b' + x.cod + '\\b', 'g'), x.j.nombre || x.cod); });
   return t.split('\n').map(l => { const h = l.trim().match(/^#{1,4}\s*(.+)$/); return h ? '*' + h[1].replace(/\*\*/g, '').trim() + '*' : l.replace(/\*\*(.+?)\*\*/g, '*$1*').replace(/^\s*[-•]\s+/, '• '); }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
@@ -9830,8 +9837,8 @@ async function iaPublicar() {
   const S = window._ia, g = _iaLS(S.eq), txt = _iaTextoPlano(g.resp || '').replace(/\*/g, '');
   if (!txt.trim()) { toast('Pega primero la respuesta de la IA'); return; }
   if (!confirm('Se guardará como evaluación del equipo y la verán todas las familias del equipo en la app. ¿Publicar?')) return;
-  const hoy = new Date().toISOString().slice(0, 10), R = _iaRango(S.per), per = S.per === 'TEMP' ? '' : S.per;
-  const r = { id: uid(), tipo: 'equipo', jugadorId: '', equipoId: S.eq, partidoId: '', periodo: per, fecha: R.hasta < hoy ? R.hasta : hoy, evaluador: sesion.nombre || '', aspectosTecnicos: '', aspectosFisicos: '', actitud: '' };
+  const hoy = new Date().toISOString().slice(0, 10), R = _iaRango(S.per), per = _evalTrimDeKey(S.per) ? S.per : '';
+  const r = { id: uid(), tipo: 'equipo', jugadorId: '', equipoId: S.eq, partidoId: R.partidoId || '', periodo: per, fecha: R.fecha || (R.hasta < hoy ? R.hasta : hoy), evaluador: sesion.nombre || '', aspectosTecnicos: '', aspectosFisicos: '', actitud: '' };
   CAMPOS_ASPECTOS_EVAL.forEach(c => r[c] = Number((g.est || {})[c]) || 0);
   const v = CAMPOS_ASPECTOS_EVAL.map(c => r[c]).filter(n => n > 0);
   r.valoracionGeneral = v.length ? (NIVELES_VALORACION[Math.round(v.reduce((s, n) => s + n, 0) / v.length) - 1] || '') : '';
@@ -9840,20 +9847,30 @@ async function iaPublicar() {
   await saveCol('evaluaciones'); const ri = _iaRec(S.eq, 'fam', S.per); if (ri) { ri.publicadoId = r.id; await saveCol('informes'); }
   toast('✅ Publicado para las familias del equipo'); iaPintar(); if (typeof renderEvaluaciones === 'function') renderEvaluaciones();
 }
+function _iaTipo(per) { per = String(per || ''); return per.startsWith('F:') ? 'fecha' : (per.startsWith('P:') ? 'partido' : 'trim'); }
+function _iaCJ() { const m = window._ia.modo || 'tec'; try { const v = localStorage.getItem('clubos_ed_ia_conjug_' + m); if (v !== null) return v === '1'; } catch (e) {} return m !== 'fam'; }
+function _iaSetConJug(v) { _iaGuardarTxt(); try { localStorage.setItem('clubos_ed_ia_conjug_' + (window._ia.modo || 'tec'), v ? '1' : '0'); } catch (e) {} iaPintar(); }
+function _iaPartidoDef(eq) { const hoy = new Date().toISOString().slice(0, 10), ps = _evalPartidosDe(eq), p = ps.find(x => _limpiarFecha(x.fecha) <= hoy) || ps[0]; return 'P:' + (p ? p.id : ''); }
+function _iaSetTipo(t) { _iaGuardarTxt(); const S = window._ia; S.per = t === 'fecha' ? 'F:' + new Date().toISOString().slice(0, 10) : (t === 'partido' ? _iaPartidoDef(S.eq) : _evalTrim().key); iaPintar(); }
 function _iaRango(per) {
+  per = String(per || ''); const hoy = new Date().toISOString().slice(0, 10), mE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
+  if (per.startsWith('F:')) { const f = per.slice(2) || hoy, T = _evalTrim(f); return { desde: T.desde, hasta: f, fecha: f, tipo: 'fecha', label: 'Evaluación del ' + _convFmtFecha(f) }; }
+  if (per.startsWith('P:')) { const p = (DB.partidos || []).find(x => x.id === per.slice(2)), f = _limpiarFecha(p && p.fecha) || hoy;
+    return { desde: f, hasta: f, fecha: f, tipo: 'partido', partidoId: p ? p.id : '', p, label: p ? `Partido J${p.jornada} · ${mE(p.localId)} – ${mE(p.visitanteId)} (${_convFmtFecha(f)})` : 'Partido sin elegir' }; }
   if (per === 'TEMP') { const a = _evalTrim(), ini = +a.key.slice(0, 4); return { desde: ini + '-09-01', hasta: (ini + 1) + '-08-31', label: 'Temporada ' + a.key.slice(0, 7) }; }
   const T = _evalTrimDeKey(per) || _evalTrim(); return { desde: T.desde, hasta: T.hasta, label: T.label.charAt(0).toUpperCase() + T.label.slice(1) };
 }
 function _iaDatos(eqId, per) {
   const R = _iaRango(per), en = f => { f = _limpiarFecha(f || ''); return f && f >= R.desde && f <= R.hasta; }, mE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
   const eq = (DB.equipos || []).find(e => e.id === eqId) || {}, comp = (DB.competiciones || []).find(c => c.id === eq.competicionId);
-  const partidos = (DB.partidos || []).filter(p => (p.localId === eqId || p.visitanteId === eqId) && en(p.fecha) && p.golesLocal !== '' && p.golesLocal != null && p.golesVisitante !== '' && p.golesVisitante != null && !isNaN(Number(p.golesLocal)))
+  const enEv = e => R.tipo === 'partido' ? (!!R.partidoId && (e.partidoId === R.partidoId || _limpiarFecha(e.fecha) === R.fecha)) : en(e.fecha);
+  const partidos = (DB.partidos || []).filter(p => (p.localId === eqId || p.visitanteId === eqId) && (R.tipo === 'partido' ? p.id === R.partidoId : en(p.fecha)) && p.golesLocal !== '' && p.golesLocal != null && p.golesVisitante !== '' && p.golesVisitante != null && !isNaN(Number(p.golesLocal)))
     .sort((a, b) => String(_limpiarFecha(a.fecha)).localeCompare(String(_limpiarFecha(b.fecha)))).map(p => { const loc = p.localId === eqId, gf = Number(loc ? p.golesLocal : p.golesVisitante), gc = Number(loc ? p.golesVisitante : p.golesLocal);
       let goles = []; try { goles = JSON.parse(p.golesAsignados || '[]'); } catch (e) {}
       return { p, fecha: _limpiarFecha(p.fecha), j: p.jornada, rival: mE(loc ? p.visitanteId : p.localId), loc, gf, gc, r: gf > gc ? 'G' : (gf < gc ? 'P' : 'E'), goles: (Array.isArray(goles) ? goles : []).filter(g => g && g.equipoId === eqId) }; });
   const norm = s => _calNorm(String(s || '')).trim();
   const jug = (DB.jugadores || []).filter(j => j.equipoId === eqId && j.activo !== false && j.activo !== 'false').sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
-    .map((j, i) => { const evs = (DB.evaluaciones || []).filter(e => e.jugadorId === j.id && en(e.fecha)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+    .map((j, i) => { const evs = (DB.evaluaciones || []).filter(e => e.jugadorId === j.id && enEv(e)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
       const o = { j, cod: 'J' + (i + 1), nombre: ((j.nombre || '') + ' ' + (j.apellidos || '')).trim(), n: evs.length, evs, goles: 0 };
       _EG_SERIES.forEach(s => { const v = evs.map(e => _egMedia(e, s.campos)).filter(x => x != null); o[s.k] = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; });
       const v1 = evs.map(e => _egMedia(e, CAMPOS_ASPECTOS_EVAL)).filter(x => x != null); o.prim = v1[0]; o.ult = v1[v1.length - 1];
@@ -9861,7 +9878,7 @@ function _iaDatos(eqId, per) {
       partidos.forEach(p => p.goles.forEach(g => { const gn = norm(g.jugador); if (gn && (gn === fn || gn === n1 || fn.startsWith(gn) || gn.startsWith(fn))) o.goles += Number(g.goles) || 0; }));
       return o; });
   const nEval = jug.reduce((s, x) => s + x.n, 0);
-  const eqEvs = (DB.evaluaciones || []).filter(e => !e.jugadorId && e.equipoId === eqId && en(e.fecha));
+  const eqEvs = (DB.evaluaciones || []).filter(e => !e.jugadorId && e.equipoId === eqId && enEv(e));
   const meses = {}; jug.forEach(x => x.evs.forEach(e => { const m = _egMedia(e, CAMPOS_ASPECTOS_EVAL); if (m == null) return; const k = _limpiarFecha(e.fecha).slice(0, 7); (meses[k] = meses[k] || []).push(m); }));
   const evol = Object.keys(meses).sort().map(k => ({ k, v: meses[k].reduce((a, b) => a + b, 0) / meses[k].length, n: meses[k].length }));
   const med = k => { const v = jug.map(x => x[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
@@ -9874,26 +9891,45 @@ function _iaAnon(txt, jug) {
   jug.slice().sort((a, b) => b.nombre.length - a.nombre.length).forEach(x => { [x.nombre, x.j.nombre].filter(n => n && n.length > 2).forEach(n => { t = t.replace(new RegExp('\\b' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi'), x.cod); }); });
   return t;
 }
+// Línea que explica qué tipo de evaluación es
+function _iaLineaTipo(d) {
+  const R = d.R; if (R.tipo === 'partido') return `TIPO: evaluación de un partido concreto · ${R.p ? 'jornada ' + R.p.jornada + ', ' + _convFmtFecha(R.fecha) : 'partido sin elegir'}`;
+  if (R.tipo === 'fecha') return `TIPO: evaluación puntual a fecha ${_convFmtFecha(R.fecha)} (datos desde ${_convFmtFecha(R.desde)})`;
+  return `TIPO: evaluación ${String(window._ia.per) === 'TEMP' ? 'de toda la temporada' : 'trimestral'} · ${R.label} (${_convFmtFecha(R.desde)} a ${_convFmtFecha(R.hasta)})`;
+}
+// Resultados + estrellas del equipo en conjunto (comunes a los dos prompts)
+function _iaLineasComunes(d, L, conGoleadores) {
+  const f = n => n == null ? '-' : n.toFixed(1), est = _iaLS(window._ia.eq).est || {};
+  if (d.R.tipo === 'partido' && d.partidos[0]) { const p = d.partidos[0];
+    L.push('', `PARTIDO: contra ${p.rival} · ${p.loc ? 'en casa' : 'fuera'} · resultado ${p.gf}-${p.gc} (${p.r === 'G' ? 'ganado' : (p.r === 'P' ? 'perdido' : 'empate')})`);
+    if (conGoleadores && p.goles.length) L.push('Goleadores: ' + p.goles.map(g => _iaAnon(g.jugador, d.jug) + ' (' + (g.goles || 1) + ')').join(', '));
+  } else if (d.R.tipo === 'partido') L.push('', 'PARTIDO: todavía sin resultado registrado.');
+  else if (d.tot.pj) { L.push('', `RESULTADOS: ${d.tot.pj} partidos · ${d.tot.g} ganados, ${d.tot.e} empatados, ${d.tot.p} perdidos · goles a favor ${d.tot.gf}, en contra ${d.tot.gc}`);
+    d.partidos.forEach(p => L.push(`- ${p.fecha} jornada ${p.j} ${p.loc ? 'en casa' : 'fuera'}: ${p.gf}-${p.gc} (${p.r})`)); }
+  const eb = _EG_SERIES.slice(1).map(s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return [s.l, v.length ? v.reduce((a, b) => a + b, 0) / v.length : null]; }).filter(x => x[1] != null);
+  if (eb.length) L.push('', 'MI VALORACIÓN DEL EQUIPO EN CONJUNTO (estrellas de 1 a 5): ' + eb.map(x => x[0].toLowerCase() + ' ' + f(x[1])).join(' · '));
+}
 function _iaPrompt() {
   const S = window._ia, d = _iaDatos(S.eq, S.per), f = n => n == null ? '-' : n.toFixed(1), com = (document.getElementById('iaCom') || {}).value || '';
-  const cat = d.comp ? (_compPartes(d.comp).cat || '') : '', mod = d.comp ? _calModalidad(d.comp) : '';
+  const cat = d.comp ? (_compPartes(d.comp).cat || '') : '', mod = d.comp ? _calModalidad(d.comp) : '', cj = _iaCJ(), esP = d.R.tipo === 'partido';
   const L = [];
-  L.push('Eres un analista de fútbol base y coordinador de una escuela deportiva. Analiza los datos de mi equipo y mi comentario y redacta un análisis útil para el cuerpo técnico, en español, con tono constructivo y adecuado a niños y niñas.');
-  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''} · periodo: ${d.R.label} (${d.R.desde} a ${d.R.hasta})`);
+  L.push(`Eres un analista de fútbol base y coordinador de una escuela deportiva. Analiza ${esP ? 'este partido de' : 'los datos de'} mi equipo y mi comentario y redacta un análisis útil para el cuerpo técnico, en español, con tono constructivo y adecuado a niños y niñas.`);
+  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''}`, _iaLineaTipo(d));
   L.push('Las valoraciones van de 1 (necesita refuerzo) a 5 (excelente). Técnico = control, pase, tiro. Físico = velocidad, resistencia, fuerza. Actitud = esfuerzo, trabajo en equipo, disciplina.');
-  L.push('', `RESULTADOS: ${d.tot.pj} partidos · ${d.tot.g} ganados, ${d.tot.e} empatados, ${d.tot.p} perdidos · goles a favor ${d.tot.gf}, en contra ${d.tot.gc}`);
-  d.partidos.forEach(p => L.push(`- ${p.fecha} jornada ${p.j} ${p.loc ? 'en casa' : 'fuera'}: ${p.gf}-${p.gc} (${p.r})`));
-  L.push('', `MEDIAS DEL EQUIPO: media ${f(d.tot.media)} · técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
+  _iaLineasComunes(d, L, cj);
+  if (cj) { L.push('', `MEDIAS DEL EQUIPO: media ${f(d.tot.media)} · técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
   if (d.evol.length > 1) L.push('Evolución mensual de la media: ' + d.evol.map(e => e.k + ' ' + f(e.v)).join(' · '));
   L.push('', 'JUGADORES (código | nº evaluaciones | media | técnico | físico | actitud | primera→última | goles):');
   d.jug.forEach(x => L.push(`${x.cod} | ${x.n} | ${f(x.media)} | ${f(x.tec)} | ${f(x.fis)} | ${f(x.act)} | ${x.n > 1 ? f(x.prim) + '→' + f(x.ult) : '-'} | ${x.goles}`));
   const obs = []; d.jug.forEach(x => x.evs.forEach(e => { const t = [e.aspectosTecnicos, e.aspectosFisicos, e.actitud, e.observacionesParaFamilia].filter(Boolean).join(' / '); if (t) obs.push(`${x.cod}: ${_iaAnon(t, d.jug)}`); }));
   if (obs.length) { L.push('', 'OBSERVACIONES DE LAS EVALUACIONES:'); obs.slice(-40).forEach(o => L.push('- ' + o.replace(/\s+/g, ' '))); }
-  d.eqEvs.forEach(e => { const t = [e.valoracionGeneral, e.observacionesParaFamilia].filter(Boolean).join(' / '); if (t) L.push('', 'VALORACIÓN DEL EQUIPO (' + _limpiarFecha(e.fecha) + '): ' + _iaAnon(t, d.jug)); });
+  }
+  d.eqEvs.forEach(e => { const t = [e.valoracionGeneral, e.observacionesParaFamilia].filter(Boolean).join(' / '); if (t) L.push('', 'VALORACIÓN DEL EQUIPO ANTERIOR (' + _limpiarFecha(e.fecha) + '): ' + _iaAnon(t, d.jug).replace(/\s+/g, ' ').slice(0, 600)); });
   L.push('', 'COMENTARIO DEL ENTRENADOR:', com.trim() ? _iaAnon(com.trim(), d.jug) : '(sin comentario)');
-  L.push('', 'INSTRUCCIONES DE RESPUESTA:', '- Refiérete a los jugadores SOLO por su código (J1, J2…). No inventes datos que no estén aquí.',
-    '- Responde exactamente con estos 6 apartados, cada uno empezando por "## " y con viñetas "- " breves:',
-    '## Resumen', '## Fortalezas', '## Áreas de mejora', '## Jugadores a seguir', '## Plan de trabajo', '## Mensaje para las familias',
+  const ap = esP ? ['## Resumen del partido', '## Lo que funcionó', '## Lo que hay que corregir', ...(cj ? ['## Jugadores a destacar'] : []), '## Ajustes para el próximo partido', '## Mensaje para las familias']
+    : ['## Resumen', '## Fortalezas', '## Áreas de mejora', ...(cj ? ['## Jugadores a seguir'] : []), '## Plan de trabajo', '## Mensaje para las familias'];
+  L.push('', 'INSTRUCCIONES DE RESPUESTA:', cj ? '- Refiérete a los jugadores SOLO por su código (J1, J2…). No inventes datos que no estén aquí.' : '- Analiza al equipo en conjunto, sin hablar de jugadores concretos. No inventes datos que no estén aquí.',
+    `- Responde exactamente con estos ${ap.length} apartados, cada uno empezando por "## " y con viñetas "- " breves:`, ...ap,
     '- En "Mensaje para las familias" escribe un párrafo corto y positivo, sin nombrar a ningún jugador.', '- Máximo 450 palabras en total. Sin tablas.');
   return L.join('\n');
 }
@@ -9905,8 +9941,16 @@ async function iaCopiar() {
   try { await navigator.clipboard.writeText(t); toast('📋 Copiado. Pégalo en la IA'); }
   catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado. Pégalo en la IA'); } catch (e2) { toast('No se pudo copiar'); } ta.remove(); }
 }
+function _iaLimpiar(txt) {
+  let L = String(txt || '').replace(/\r/g, '').split('\n').filter(l => !/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l));
+  const charla = /^\s*(\*\*)?\s*(te propongo|aqu[ií] (tienes|va|est[aá])|claro|perfecto|por supuesto|he (corregido|preparado|redactado)|espero que|si (quieres|necesitas|la|lo|te)\b|¿(quieres|te|necesitas)|puedo (hacerte|prepararte|adaptar)|dime si|cualquier (cambio|cosa))/i;
+  const i0 = L.findIndex(l => /^\s*#{1,4}\s/.test(l)); if (i0 > 0) L = L.slice(i0);
+  while (L.length && (!L[0].trim() || charla.test(L[0]))) L.shift();
+  while (L.length && (!L[L.length - 1].trim() || charla.test(L[L.length - 1]))) L.pop();
+  return L.join('\n');
+}
 function _iaMd(txt, jug) {
-  let t = _escHtml(String(txt || '').replace(/\r/g, ''));
+  let t = _escHtml(_iaLimpiar(txt));
   jug.forEach(x => { t = t.replace(new RegExp('\\b' + x.cod + '\\b', 'g'), '<b>' + _escHtml(x.nombre) + '</b>'); });
   const out = []; let ul = false;
   t.split('\n').forEach(l => {
@@ -9924,6 +9968,7 @@ function _iaMd(txt, jug) {
 function iaInforme() {
   const S = window._ia, d = _iaDatos(S.eq, S.per), g = _iaLS(S.eq), f = n => n == null ? '—' : n.toFixed(1).replace('.', ',');
   if (!String(g.resp || '').trim() && !confirm('No has pegado la respuesta de la IA. ¿Generar el informe solo con datos y gráficas?')) return;
+  if (String(g.resp || '').trim() && !/^\s*#{1,4}\s/m.test(g.resp) && !confirm('La respuesta pegada no tiene los apartados que pide el prompt (parece que a la IA no le llegó el prompt generado en el paso 2).\n\n¿Generar el informe igualmente?')) return;
   const col = d.eq.competicionId ? _calColorComp(d.eq.competicionId) : '#2E4057', cat = d.comp ? (_compPartes(d.comp).cat || '') : '';
   const C = { fav: '#2a78d6', con: '#eb6834', tec: '#2a78d6', fis: '#eb6834', act: '#1baf7a', ink: '#1F1A1C', grid: '#ece6e8', mut: '#8a8086' };
   // Gráfica 1: goles a favor / en contra por partido (barras agrupadas)
@@ -9940,7 +9985,7 @@ function iaInforme() {
   }
   // Gráfica 2: evolución mensual de la media del equipo
   let g2 = '';
-  if (d.evol.length) {
+  if (d.evol.length > 1) {
     const W = 380, H = 220, mL = 26, mR = 18, mT = 20, mB = 30, iw = W - mL - mR, ih = H - mT - mB, n = d.evol.length;
     const X = i => mL + (n === 1 ? iw / 2 : i * iw / (n - 1)), Y = v => mT + ih - (v - 1) / 4 * ih, MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     g2 = `<svg viewBox="0 0 ${W} ${H}" class="ch">`;
@@ -9953,8 +9998,9 @@ function iaInforme() {
   const blo = [['Técnico', d.tot.tec, C.tec], ['Físico', d.tot.fis, C.fis], ['Actitud', d.tot.act, C.act]];
   const g3 = blo.some(x => x[1] != null) ? blo.map(([l, v, c]) => `<div class="hb"><span class="hl">${l}</span><span class="ht"><span class="hf" style="width:${v == null ? 0 : v / 5 * 100}%;background:${c};"></span></span><b>${f(v)}</b></div>`).join('') : '';
   const kpi = (v, l) => `<div class="k"><b>${v}</b><span>${l}</span></div>`;
-  const fam = S.modo === 'fam';
-  if (fam) { const est = g.est || {}, bv = s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const fam = S.modo === 'fam', cj = _iaCJ();
+  if (!cj) { g2 = ''; blo.forEach(x => x[1] = null); }
+  { const est = g.est || {}, bv = s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
     const bl = _EG_SERIES.slice(1).map(s => [s.l, bv(s), s.c]); if (bl.some(x => x[1] != null)) { blo.splice(0, 3, ...bl); } }
   const g3f = blo.some(x => x[1] != null) ? blo.map(([l, v, c]) => `<div class="hb"><span class="hl">${l}</span><span class="ht"><span class="hf" style="width:${v == null ? 0 : v / 5 * 100}%;background:${c};"></span></span><b>${f(v)}</b></div>`).join('') : '';
   const filas = d.jug.slice().sort((a, b) => (b.media || 0) - (a.media || 0)).map(x => { const dv = x.n > 1 ? x.ult - x.prim : null;
@@ -9980,12 +10026,13 @@ function iaInforme() {
     @media print{.bar{display:none;} body{background:#fff;} .pg{max-width:none;} .sec{break-inside:avoid;} *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
   </style></head><body><div class="bar"><button onclick="print()">🖨️ Imprimir / Guardar PDF</button></div><div class="pg">
     <div class="cab"><small>${fam ? 'Informe para las familias' : 'Informe de equipo'} · ${_escHtml(cat)}</small><h1>${_escHtml(d.eq.nombre || '')}</h1><div>${_escHtml(d.R.label)}${d.comp ? ' · ' + _escHtml(_compPartes(d.comp).nom || d.comp.nombre || '') : ''}</div></div>
-    <div class="sec"><div class="ks">${kpi(d.tot.pj, 'Partidos')}${kpi(d.tot.g + '-' + d.tot.e + '-' + d.tot.p, 'Gan · Emp · Per')}${kpi(d.tot.gf + ':' + d.tot.gc, 'Goles a favor : contra')}${kpi(f(d.tot.media), 'Valoración media')}</div></div>
+    <div class="sec"><div class="ks">${kpi(d.tot.pj, 'Partidos')}${kpi(d.tot.g + '-' + d.tot.e + '-' + d.tot.p, 'Gan · Emp · Per')}${kpi(d.tot.gf + ':' + d.tot.gc, 'Goles a favor : contra')}${d.tot.media == null || !cj ? kpi(d.tot.gf ? (d.jug.filter(x => x.goles).length || '—') : '—', 'Goleadores distintos') : kpi(f(d.tot.media), 'Valoración media')}</div></div>
     ${resp ? `<div class="sec ia"><h2>${fam ? '✉️ Mensaje del entrenador' : '🤖 Análisis'}</h2>${fam ? _iaMd(resp, []).replace(/\bJ\d+\b/g, '') : _iaMd(resp, d.jug)}</div>` : (fam && com ? `<div class="sec"><h2>✉️ Mensaje del entrenador</h2><div class="com">${_escHtml(_iaAnon(com, d.jug))}</div></div>` : '')}
     ${g1 ? `<div class="sec"><h2>⚽ Resultados por partido</h2><div class="ley"><span><i style="background:${C.fav}"></i>A favor</span><span><i style="background:${C.con}"></i>En contra</span><span>G · E · P = resultado</span></div>${g1}</div>` : ''}
     ${(g2 || g3f) ? `<div class="sec"><div class="dos">${g3f ? `<div><h2>📊 ${fam ? 'Valoración del equipo' : 'Por bloques'}</h2>${g3f}</div>` : ''}${g2 ? `<div><h2>📈 Evolución del equipo</h2>${g2}</div>` : ''}</div></div>` : ''}
-    ${(() => { const P = _iaProg(S.eq); return P.length > 1 ? `<div class="sec"><h2>📈 Progresión por trimestres</h2><div class="ley">${[['#1F1A1C', 'Media jugadores', 'media']].concat(_EG_SERIES.slice(1).map(s => [s.c, 'Equipo · ' + s.l, s.k])).filter(x => P.some(p => p[x[2]] != null)).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>${_iaProgSVG(P)}</div>` : ''; })()}
-    ${d.jug.length && !fam ? `<div class="sec"><h2>👥 Jugadores</h2><table><thead><tr><th class="nm">Jugador</th><th>Eval.</th><th>Téc.</th><th>Fís.</th><th>Act.</th><th>Media</th><th>Evol.</th><th>Goles</th></tr></thead><tbody>${filas}</tbody></table></div>` : ''}
+    ${(() => { const P = _iaProg(S.eq); if (!cj) P.forEach(p => p.media = null); return P.filter(p => p.media != null || p.tec != null || p.fis != null || p.act != null).length > 1 ? `<div class="sec"><h2>📈 Progresión por trimestres</h2><div class="ley">${[['#1F1A1C', 'Media jugadores', 'media']].concat(_EG_SERIES.slice(1).map(s => [s.c, 'Equipo · ' + s.l, s.k])).filter(x => P.some(p => p[x[2]] != null)).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>${_iaProgSVG(P)}</div>` : ''; })()}
+    ${cj && !fam && !d.jug.some(x => x.n) && d.jug.some(x => x.goles) ? `<div class="sec"><h2>⚽ Goleadores</h2><table><tbody>${d.jug.filter(x => x.goles).sort((a, b) => b.goles - a.goles).map(x => `<tr><td class="nm">${_escHtml(x.nombre)}</td><td><b>${x.goles}</b></td></tr>`).join('')}</tbody></table></div>` : ''}
+    ${cj && d.jug.some(x => x.n) && !fam ? `<div class="sec"><h2>👥 Jugadores</h2><table><thead><tr><th class="nm">Jugador</th><th>Eval.</th><th>Téc.</th><th>Fís.</th><th>Act.</th><th>Media</th><th>Evol.</th><th>Goles</th></tr></thead><tbody>${filas}</tbody></table></div>` : ''}
     ${com && !fam ? `<div class="sec"><h2>📝 Comentario del entrenador</h2><div class="com">${_escHtml(com)}</div></div>` : ''}
     <div class="pie">ClubOS ED · Escuela &amp; Deporte · Generado el ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
   </div></body></html>`;
