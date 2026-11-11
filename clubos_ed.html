@@ -1245,6 +1245,11 @@ body.cal-pop-on{overflow:hidden;}
 .ia-pt{font-weight:800;margin-bottom:8px;}
 .ia-paso textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;}
 .ia-nota{font-size:12px;color:var(--gris-suave);margin-top:8px;}
+.ia-modo{margin:0 0 6px;} .ia-grab{background:#B42318!important;color:#fff!important;border-color:#B42318!important;animation:iaPulso 1.2s infinite;}
+@keyframes iaPulso{0%,100%{box-shadow:0 0 0 0 rgba(180,35,24,.5);}50%{box-shadow:0 0 0 8px rgba(180,35,24,0);}}
+.ia-hist{background:#fff;border-radius:14px;padding:14px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.ia-h{display:flex;align-items:center;gap:8px;padding:9px 6px;border-top:1px solid #f0ecee;flex-wrap:wrap;} .ia-h.on{background:#FFF7E6;border-radius:10px;}
+.ia-hm{font-size:12px;font-weight:800;background:#f3eef0;border-radius:20px;padding:4px 10px;white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -2405,8 +2410,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.2.2';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.5';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.2.4';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.6';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2545,7 +2550,7 @@ function _snapMarcar(col, items) {
 }
 function _snapReconstruir() {
   const s = {};
-  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos']
+  ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos','informes']
     .forEach(col => { s[col] = {}; _payloadCol(col).forEach(x => { if (x && x.id) s[col][x.id] = _hash(JSON.stringify(x)); }); });
   _snapSet(s);
 }
@@ -8968,6 +8973,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.convocatorias?.length) DB.convocatorias = merge(DB.convocatorias, d.convocatorias);
         if (d.conceptos?.length) DB.conceptos = merge(DB.conceptos, d.conceptos);
         if (d.pagos?.length) DB.pagos = merge(DB.pagos, d.pagos);
+        if (d.informes?.length) DB.informes = merge(DB.informes || [], d.informes);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -8989,7 +8995,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         const d = j.data;
         // Si el servidor no devuelve una colección (backend sin actualizar, error parcial),
         // se conserva la local en vez de vaciarla.
-        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos']
+        ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos','informes']
           .forEach(k => { if (!Array.isArray(d[k])) d[k] = DB[k] || []; });
         // Los borrados locales aún no confirmados se excluyen de lo que llega del servidor, para
         // que un registro borrado no "resucite" al recargar (mismo criterio que manualSync).
@@ -9017,6 +9023,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.convocatorias = sinBorrados(d.convocatorias);
         DB.conceptos = sinBorrados(d.conceptos);
         DB.pagos = sinBorrados(d.pagos);
+        DB.informes = sinBorrados(d.informes);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
@@ -9046,7 +9053,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         sesion.rol==='club'    ? sesion.user :
         sesion.rol==='arbitro' ? 'arb2627'  : ''
       );
-      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos'];
+      const cols = ['competiciones','equipos','jugadores','partidos','actas','noticias','goleadores','sugerencias','patrocinadores','sedes','clubes','escuelas','personal','evaluaciones','gruposclubes','alineacionesPartido','convocatorias','conceptos','pagos','informes'];
       // Envío SECUENCIAL: antes eran 14 POST simultáneos que el servidor ejecutaba a la vez
       // sobre las mismas hojas (pisándose entre sí y saturando el límite de ejecuciones paralelas).
       // Saneado previo: equipoNombre de cada jugador = nombre actual de su equipo (corrige el Sheet).
@@ -9656,8 +9663,63 @@ function _egTip(i, e) {
 //  Los nombres viajan a la IA como J1, J2… y se restauran al generar el informe.
 // ══════════════════════════════════════════════════════
 window._ia = window._ia || { eq: '', per: '' };
-function _iaLS(eq, v) { const k = 'clubos_ed_informeia_' + eq; try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || '{}'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return {}; } }
-function _iaGuardarTxt() { const S = window._ia; if (!S.eq) return; _iaLS(S.eq, { com: (document.getElementById('iaCom') || {}).value || '', resp: (document.getElementById('iaResp') || {}).value || '' }); }
+function _iaRec(eq, modo, per) { return (DB.informes || []).filter(r => r.equipoId === eq && (r.modo || 'tec') === (modo || 'tec') && r.periodo === per).sort((a, b) => String(b.actualizado || '').localeCompare(String(a.actualizado || '')))[0]; }
+function _iaEst(r) { let e = r && r.estrellas; if (typeof e === 'string') { try { e = JSON.parse(e || '{}'); } catch (x) { e = {}; } } return e && typeof e === 'object' ? e : {}; }
+// Guarda en el Sheet (colección "informes": uno por equipo + tipo + periodo) y deja copia local de respaldo
+function _iaLS(eq, v) {
+  const S = window._ia, modo = S.modo || 'tec', k = 'clubos_ed_informeia_' + eq + '_' + modo + '_' + S.per, r = _iaRec(eq, modo, S.per);
+  if (v === undefined) { if (r) return { com: r.comentario || '', resp: r.respuesta || '', est: _iaEst(r), rec: r }; try { return JSON.parse(localStorage.getItem(k) || '{}'); } catch (e) { return {}; } }
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+  if (!String(v.com || '').trim() && !String(v.resp || '').trim() && !r) return;
+  const est = JSON.stringify(v.est || _iaEst(r));
+  if (r && (r.comentario || '') === (v.com || '') && (r.respuesta || '') === (v.resp || '') && (typeof r.estrellas === 'string' ? r.estrellas : JSON.stringify(_iaEst(r))) === est) return;
+  const ahora = new Date().toLocaleString('sv-SE').slice(0, 16);
+  const rec = r || { id: uid(), equipoId: eq, clubId: sesion.rol === 'club' ? sesion.user : '', modo, periodo: S.per, creado: ahora, autor: sesion.nombre || sesion.user || '', publicadoId: '' };
+  Object.assign(rec, { comentario: v.com || '', respuesta: v.resp || '', estrellas: est, actualizado: ahora });
+  if (!r) { DB.informes = DB.informes || []; DB.informes.push(rec); }
+  const el = document.getElementById('iaEstado'); if (el) el.textContent = '✏️ Guardando…';
+  clearTimeout(window._iaTSave); window._iaTSave = setTimeout(async () => { await saveCol('informes'); const e2 = document.getElementById('iaEstado'); if (e2) e2.textContent = '☁️ Guardado ' + ahora.slice(11); }, 2000);
+}
+function _iaPerLabel(per) { if (per === 'TEMP') return 'Temporada completa'; const T = _evalTrimDeKey(per); return T ? T.label.charAt(0).toUpperCase() + T.label.slice(1) : per; }
+// Progresión por trimestres: media de los jugadores + valoración del equipo en conjunto (estrellas)
+function _iaProg(eq) {
+  const jIds = new Set((DB.jugadores || []).filter(j => j.equipoId === eq).map(j => j.id)), keys = new Set();
+  (DB.evaluaciones || []).forEach(e => { if ((jIds.has(e.jugadorId) || (!e.jugadorId && e.equipoId === eq)) && _limpiarFecha(e.fecha)) keys.add(_evalTrim(e.fecha).key); });
+  (DB.informes || []).forEach(r => { if (r.equipoId === eq && r.periodo && r.periodo !== 'TEMP') keys.add(r.periodo); });
+  return [...keys].map(k => _evalTrimDeKey(k)).filter(Boolean).sort((a, b) => a.desde.localeCompare(b.desde)).map(T => {
+    const o = { T, cort: 'T' + T.key.slice(-1) + ' ' + T.key.slice(2, 7) }, d = _iaDatos(eq, T.key); o.media = d.tot.media;
+    const r = (DB.informes || []).filter(x => x.equipoId === eq && x.modo === 'fam' && x.periodo === T.key).sort((a, b) => String(b.actualizado || '').localeCompare(String(a.actualizado || '')))[0];
+    let est = _iaEst(r);
+    if (!Object.values(est).some(n => Number(n) > 0)) { const te = (DB.evaluaciones || []).filter(e => !e.jugadorId && e.equipoId === eq && _limpiarFecha(e.fecha) >= T.desde && _limpiarFecha(e.fecha) <= T.hasta);
+      est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { const v = te.map(e => Number(e[c])).filter(n => n > 0); if (v.length) est[c] = v.reduce((a, b) => a + b, 0) / v.length; }); }
+    _EG_SERIES.slice(1).forEach(s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); o[s.k] = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; });
+    return o; });
+}
+function _iaProgSVG(P) {
+  if (!P.length) return '';
+  const SER = [{ k: 'media', l: 'Media jugadores', c: '#1F1A1C', w: 3 }].concat(_EG_SERIES.slice(1).map(s => ({ k: s.k, l: 'Equipo · ' + s.l, c: s.c, w: 2 }))).filter(s => P.some(p => p[s.k] != null));
+  const W = 640, H = 240, mL = 28, mR = 130, mT = 16, mB = 30, iw = W - mL - mR, ih = H - mT - mB, n = P.length;
+  const X = i => mL + (n === 1 ? iw / 2 : i * iw / (n - 1)), Y = v => mT + ih - (v - 1) / 4 * ih, fx = v => v.toFixed(1).replace('.', ',');
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;" role="img" aria-label="Progresión del equipo por trimestres">`;
+  [1, 2, 3, 4, 5].forEach(v => s += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="#ece6e8"/><text x="${mL - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#8a8086">${v}</text>`);
+  P.forEach((p, i) => s += `<text x="${X(i)}" y="${H - 8}" text-anchor="middle" font-size="11" fill="#8a8086">${p.cort}</text>`);
+  SER.slice().reverse().forEach(se => { let d = '', pen = false; P.forEach((p, i) => { if (p[se.k] == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p[se.k]).toFixed(1) + ' '; pen = true; });
+    s += `<path d="${d}" fill="none" stroke="${se.c}" stroke-width="${se.w}" stroke-linejoin="round"/>`;
+    P.forEach((p, i) => { if (p[se.k] != null) s += `<circle cx="${X(i)}" cy="${Y(p[se.k])}" r="${se.k === 'media' ? 5 : 4}" fill="${se.c}" stroke="#fff" stroke-width="2"><title>${se.l} · ${p.cort}: ${fx(p[se.k])}</title></circle>`; }); });
+  const fin = SER.map(se => { let i = n - 1; while (i >= 0 && P[i][se.k] == null) i--; return i < 0 ? null : { se, y: Y(P[i][se.k]), v: P[i][se.k] }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < fin.length; i++) if (fin[i].y - fin[i - 1].y < 15) fin[i].y = fin[i - 1].y + 15;
+  fin.forEach(f => s += `<text x="${W - mR + 10}" y="${f.y + 4}" font-size="12" fill="#333"><tspan font-weight="800">${fx(f.v)}</tspan> ${f.se.l}</text>`);
+  return s + '</svg>';
+}
+function iaHistAbrir(id, ver) { const r = (DB.informes || []).find(x => x.id === id); if (!r) return; _iaGuardarTxt(); Object.assign(window._ia, { eq: r.equipoId, modo: r.modo || 'tec', per: r.periodo }); iaPintar(); if (ver) iaInforme(); else document.getElementById('iaCom')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+async function iaHistBorrar(id) {
+  if (!confirm('¿Eliminar este informe guardado?')) return;
+  DB.informes = (DB.informes || []).filter(x => x.id !== id); if (!DB._deleted) DB._deleted = {}; DB._deleted[id] = Date.now();
+  await saveCol('informes'); iaPintar();
+}
+function _iaGuardarTxt() { const S = window._ia; if (!S.eq || !document.getElementById('iaCom')) return; const o = { com: (document.getElementById('iaCom') || {}).value || '', resp: (document.getElementById('iaResp') || {}).value || '' };
+  if (S.modo === 'fam') { o.est = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { if (document.getElementById('iaEQ_' + c)) o.est[c] = _valorEstrellas('iaEQ_' + c); }); }
+  _iaLS(S.eq, o); }
 function iaInformeAbrir() {
   if (!puedeEvaluar()) { toast('No tienes permiso'); return; }
   const misEq = [...new Set(_misJugadoresEval().map(j => j.equipoId).filter(Boolean))].map(id => (DB.equipos || []).find(e => e.id === id)).filter(Boolean)
@@ -9675,23 +9737,105 @@ function iaInformeAbrir() {
 function iaPintar() {
   const S = window._ia, cu = document.getElementById('iaCuerpo'); if (!cu) return;
   const eq = (DB.equipos || []).find(e => e.id === S.eq); document.getElementById('iaCab').style.setProperty('--c', eq && eq.competicionId ? _calColorComp(eq.competicionId) : '#2E4057');
-  const g = _iaLS(S.eq), d = _iaDatos(S.eq, S.per), act = _evalTrim();
-  cu.innerHTML = `<div class="gx-eqs">${S.equipos.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
+  const g = _iaLS(S.eq), d = _iaDatos(S.eq, S.per), act = _evalTrim(), fam = S.modo === 'fam';
+  if (window._iaVoz) { try { window._iaVoz.stop(); } catch (e) {} window._iaVoz = null; }
+  const segM = (v, l) => `<button type="button" class="${(S.modo || 'tec') === v ? 'on' : ''}" onclick="_iaGuardarTxt();window._ia.modo='${v}';iaPintar()">${l}</button>`;
+  cu.innerHTML = `<div class="jb-seg ia-modo">${segM('fam', '👨‍👩‍👧 Informe para familias')}${segM('tec', '📋 Análisis técnico')}</div>
+    <div class="ia-nota" style="margin:0 0 10px;">${fam ? 'Valoración del <b>equipo en conjunto</b>, sin datos de ningún jugador. Sale una carta para los padres.' : 'Análisis interno con los datos de cada jugador (anonimizados).'}</div>
+    <div class="gx-eqs">${S.equipos.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
       return `<button type="button" class="gx-eq${S.eq === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="_iaGuardarTxt();window._ia.eq='${e.id}';iaPintar()"><span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : '')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span></button>`; }).join('')}</div>
     <div class="jb" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
       <label class="fb-f"><span>Periodo</span><select onchange="_iaGuardarTxt();window._ia.per=this.value;iaPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">
         <option value="TEMP" ${S.per === 'TEMP' ? 'selected' : ''}>Toda la temporada ${act.key.slice(0, 7)}</option>${_evalTrimOpciones(S.per === 'TEMP' ? '' : S.per).replace(/ selected/g, S.per === 'TEMP' ? '' : ' selected')}</select></label>
       <div class="ia-res">📊 ${d.partidos.length} partidos · ${d.jug.filter(j => j.n).length}/${d.jug.length} jugadores evaluados · ${d.nEval} evaluaciones</div>
     </div>
-    <div class="ia-paso"><b>1</b><div style="flex:1;min-width:0;"><div class="ia-pt">Tu comentario general del equipo</div>
-      <textarea id="iaCom" rows="5" oninput="_iaGuardarTxt()" placeholder="Cómo ves al equipo, qué ha pasado este periodo, qué te preocupa, objetivos…">${_escHtml(g.com || '')}</textarea></div></div>
+    <div class="ia-paso"><b>1</b><div style="flex:1;min-width:0;"><div class="ia-pt" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">${fam ? 'Tu valoración del equipo' : 'Tu comentario general del equipo'}
+        <button type="button" class="btn btn-outline btn-sm" id="iaMic" onclick="iaDictar()">🎤 Dictar</button></div>
+      <textarea id="iaCom" rows="${fam ? 7 : 5}" oninput="_iaGuardarTxt()" placeholder="${fam ? 'Escribe o dicta: cómo ha ido el equipo, ambiente, compromiso, qué hemos trabajado, qué toca ahora, cómo pueden ayudar las familias…' : 'Cómo ves al equipo, qué ha pasado este periodo, qué te preocupa, objetivos…'}">${_escHtml(g.com || '')}</textarea>
+      ${fam ? `<details class="ev-eqconj" style="margin-top:10px;" ${g.est && Object.values(g.est).some(n => n > 0) ? 'open' : ''}><summary>⭐ Valoración del equipo con estrellas <span style="font-weight:600;color:var(--gris-suave);">(opcional)</span></summary>
+        <div class="ev-card" style="border:0;box-shadow:none;padding:8px 0 0;">${_EVAL_GRUPOS.map(([gr, ...as]) => `<div class="ev-grp"><div class="ev-gt">${gr}</div>${as.map(([c, l]) => `<div class="ev-asp"><span>${l}</span><div id="iaEQ_${c}" class="ev-st" onclick="setTimeout(_iaGuardarTxt,0)"></div></div>`).join('')}</div>`).join('')}</div></details>` : ''}</div></div>
     <div class="ia-paso"><b>2</b><div style="flex:1;min-width:0;"><div class="ia-pt">Copia los datos y pégalos en la IA</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;"><button class="btn btn-rojo btn-sm" onclick="iaCopiar()">📋 Copiar para la IA</button>
       <a class="btn btn-outline btn-sm" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a></div>
-      <div class="ia-nota">🔒 Los nombres se envían como J1, J2… La IA no ve nombres reales; el informe los recupera.</div></div></div>
+      <div class="ia-nota">${fam ? '🔒 No se envía ningún dato de jugadores. Si nombras a alguien en tu texto, se cambia por un código.' : '🔒 Los nombres se envían como J1, J2… La IA no ve nombres reales; el informe los recupera.'}</div></div></div>
     <div class="ia-paso"><b>3</b><div style="flex:1;min-width:0;"><div class="ia-pt">Pega aquí la respuesta de la IA</div>
       <textarea id="iaResp" rows="7" oninput="_iaGuardarTxt()" placeholder="Pega la respuesta completa…">${_escHtml(g.resp || '')}</textarea>
-      <div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="btn btn-rojo" onclick="_iaGuardarTxt();iaInforme()">📄 Generar informe</button></div></div></div>`;
+      <div style="display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;margin-top:10px;">
+        ${fam ? `<button class="btn btn-outline" onclick="_iaGuardarTxt();iaWhatsApp()">📲 WhatsApp</button><button class="btn btn-outline" onclick="_iaGuardarTxt();iaPublicar()">💾 Publicar en la app</button>` : ''}
+        <button class="btn btn-rojo" onclick="_iaGuardarTxt();iaInforme()">📄 Generar informe</button></div></div></div>
+    <div class="ia-nota" id="iaEstado" style="text-align:right;">${g.rec ? '☁️ Guardado en el Sheet · ' + _escHtml(g.rec.actualizado || '') : 'Se guarda solo en el Sheet al escribir'}</div>
+    ${_iaHistHtml(S.eq)}`;
+  if (fam) CAMPOS_ASPECTOS_EVAL.forEach(c => _pintarEstrellas('iaEQ_' + c, (g.est || {})[c] || 0));
+}
+function _iaHistHtml(eq) {
+  const P = _iaProg(eq), hist = (DB.informes || []).filter(r => r.equipoId === eq)
+    .sort((a, b) => String(b.periodo === 'TEMP' ? '9' : b.periodo).localeCompare(String(a.periodo === 'TEMP' ? '9' : a.periodo)) || String(a.modo).localeCompare(String(b.modo)));
+  const S = window._ia, tend = P.filter(p => p.media != null);
+  let txt = ''; if (tend.length > 1) { const dv = tend[tend.length - 1].media - tend[0].media; txt = `Media de jugadores: <b>${tend[0].media.toFixed(1).replace('.', ',')}</b> (${tend[0].cort}) → <b>${tend[tend.length - 1].media.toFixed(1).replace('.', ',')}</b> (${tend[tend.length - 1].cort}) · ${dv > 0.05 ? '▲ sube' : (dv < -0.05 ? '▼ baja' : '= estable')}`; }
+  return `<div class="ia-hist"><div class="ia-pt">📈 Progresión del equipo</div>
+    ${P.length ? `<div class="eg-caja" style="padding:8px;">${_iaProgSVG(P)}</div><div class="ia-nota">${txt || 'Con dos o más trimestres verás la evolución.'} · Las líneas "Equipo" salen de las estrellas del informe para familias.</div>` : '<div class="ia-nota">Aún no hay evaluaciones de este equipo.</div>'}
+    <div class="ia-pt" style="margin-top:14px;">📚 Informes guardados</div>
+    ${hist.length ? hist.map(r => `<div class="ia-h${r.modo === S.modo && r.periodo === S.per ? ' on' : ''}"><span class="ia-hm">${r.modo === 'fam' ? '👨‍👩‍👧 Familias' : '📋 Técnico'}</span>
+      <div style="flex:1;min-width:0;"><b>${_escHtml(_iaPerLabel(r.periodo))}</b><div class="ia-nota" style="margin:0;">${_escHtml(r.autor || '')} · ${_escHtml(r.actualizado || '')}${r.respuesta ? ' · con análisis' : ' · borrador'}${r.publicadoId ? ' · ✅ publicado' : ''}</div></div>
+      <button class="btn btn-outline btn-xs" onclick="iaHistAbrir('${r.id}')">Abrir</button><button class="btn btn-outline btn-xs" onclick="iaHistAbrir('${r.id}',1)" title="Ver informe">📄</button><button class="btn btn-outline btn-xs" onclick="iaHistBorrar('${r.id}')" title="Eliminar">🗑️</button></div>`).join('')
+      : '<div class="ia-nota">Todavía no hay informes guardados de este equipo.</div>'}</div>`;
+}
+// ── Dictado por voz (Chrome/Android/Safari). Si no hay soporte, el micro del teclado sirve igual ──
+function iaDictar() {
+  const btn = document.getElementById('iaMic'), ta = document.getElementById('iaCom'); if (!ta) return;
+  if (window._iaVoz) { try { window._iaVoz.stop(); } catch (e) {} return; }
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Este navegador no permite dictar. Usa el 🎤 del teclado del móvil'); ta.focus(); return; }
+  const rec = new SR(); rec.lang = 'es-ES'; rec.continuous = true; rec.interimResults = true;
+  const base = ta.value ? ta.value.replace(/\s*$/, '') + ' ' : ''; let fin = '';
+  rec.onresult = e => { let tmp = ''; for (let i = e.resultIndex; i < e.results.length; i++) { const t = e.results[i][0].transcript; if (e.results[i].isFinal) fin += t.trim() + '. '; else tmp += t; } ta.value = base + fin + tmp; };
+  rec.onend = () => { window._iaVoz = null; ta.value = ta.value.replace(/\s+$/, ''); _iaGuardarTxt(); if (btn) { btn.textContent = '🎤 Dictar'; btn.classList.remove('ia-grab'); } };
+  rec.onerror = e => { if (e.error === 'not-allowed') toast('Permite el micrófono para dictar'); };
+  try { rec.start(); window._iaVoz = rec; if (btn) { btn.textContent = '⏹️ Parar'; btn.classList.add('ia-grab'); } toast('🎤 Habla… pulsa Parar al terminar'); } catch (e) { toast('No se pudo iniciar el dictado'); }
+}
+function _iaPromptFam() {
+  const S = window._ia, d = _iaDatos(S.eq, S.per), g = _iaLS(S.eq), f = n => n == null ? '-' : n.toFixed(1);
+  const com = (document.getElementById('iaCom') || {}).value || g.com || '', cat = d.comp ? (_compPartes(d.comp).cat || '') : '', mod = d.comp ? _calModalidad(d.comp) : '';
+  const est = g.est || {}, blo = s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const L = [];
+  L.push('Eres el entrenador de un equipo de fútbol base de una escuela deportiva. Con mi valoración y los datos del equipo, redacta un informe para las familias del equipo, en español.');
+  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''} · periodo: ${d.R.label}`);
+  if (d.tot.pj) L.push(`RESULTADOS: ${d.tot.pj} partidos · ${d.tot.g} ganados, ${d.tot.e} empatados, ${d.tot.p} perdidos · goles a favor ${d.tot.gf}, en contra ${d.tot.gc}`);
+  const eb = _EG_SERIES.slice(1).map(s => [s.l, blo(s)]).filter(x => x[1] != null);
+  if (eb.length) L.push('VALORACIÓN DEL EQUIPO EN CONJUNTO (1 a 5): ' + eb.map(x => x[0].toLowerCase() + ' ' + f(x[1])).join(' · '));
+  else if (d.tot.media != null) L.push(`VALORACIÓN MEDIA DEL EQUIPO (1 a 5): técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
+  L.push('', 'MI VALORACIÓN DEL EQUIPO:', com.trim() ? _iaAnon(com.trim(), d.jug) : '(sin comentario)');
+  L.push('', 'INSTRUCCIONES:', '- Es un texto para TODAS las familias: habla del grupo en conjunto. No nombres ni compares a ningún niño o niña; si aparece un código (J1, J2…) no lo uses.',
+    '- Tono cercano, positivo y honesto: reconoce lo bueno y explica con naturalidad lo que hay que mejorar. Que se note que lo escribe el entrenador, sin frases de manual.',
+    '- No inventes datos. El resultado deportivo no es lo principal: prioriza aprendizaje, compañerismo y esfuerzo.',
+    '- Responde exactamente con estos apartados, cada uno empezando por "## ":',
+    '## Cómo va el equipo', '## Lo que estamos trabajando', '## Lo que vamos a mejorar', '## Cómo podéis ayudar desde casa', '## Despedida',
+    '- Párrafos cortos o viñetas "- ". Máximo 350 palabras. Sin tablas ni emojis.');
+  return L.join('\n');
+}
+function _iaTextoPlano(txt) {
+  const d = _iaDatos(window._ia.eq, window._ia.per); let t = String(txt || '').replace(/\r/g, '');
+  t = t.replace(/\b(?:los |las |el |la )?J\d+\b/g, window._ia.modo === 'fam' ? 'el grupo' : '$&'); if (window._ia.modo !== 'fam') d.jug.forEach(x => { t = t.replace(new RegExp('\\b' + x.cod + '\\b', 'g'), x.j.nombre || x.cod); });
+  return t.split('\n').map(l => { const h = l.trim().match(/^#{1,4}\s*(.+)$/); return h ? '*' + h[1].replace(/\*\*/g, '').trim() + '*' : l.replace(/\*\*(.+?)\*\*/g, '*$1*').replace(/^\s*[-•]\s+/, '• '); }).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+function iaWhatsApp() {
+  const S = window._ia, g = _iaLS(S.eq); if (!String(g.resp || '').trim()) { toast('Pega primero la respuesta de la IA'); return; }
+  const eq = (DB.equipos || []).find(e => e.id === S.eq) || {};
+  _waAbrir('*Informe para familias · ' + (eq.nombre || '') + '*\n' + _iaRango(S.per).label + '\n\n' + _iaTextoPlano(g.resp));
+}
+async function iaPublicar() {
+  const S = window._ia, g = _iaLS(S.eq), txt = _iaTextoPlano(g.resp || '').replace(/\*/g, '');
+  if (!txt.trim()) { toast('Pega primero la respuesta de la IA'); return; }
+  if (!confirm('Se guardará como evaluación del equipo y la verán todas las familias del equipo en la app. ¿Publicar?')) return;
+  const hoy = new Date().toISOString().slice(0, 10), R = _iaRango(S.per), per = S.per === 'TEMP' ? '' : S.per;
+  const r = { id: uid(), tipo: 'equipo', jugadorId: '', equipoId: S.eq, partidoId: '', periodo: per, fecha: R.hasta < hoy ? R.hasta : hoy, evaluador: sesion.nombre || '', aspectosTecnicos: '', aspectosFisicos: '', actitud: '' };
+  CAMPOS_ASPECTOS_EVAL.forEach(c => r[c] = Number((g.est || {})[c]) || 0);
+  const v = CAMPOS_ASPECTOS_EVAL.map(c => r[c]).filter(n => n > 0);
+  r.valoracionGeneral = v.length ? (NIVELES_VALORACION[Math.round(v.reduce((s, n) => s + n, 0) / v.length) - 1] || '') : '';
+  r.observacionesParaFamilia = txt;
+  DB.evaluaciones = (DB.evaluaciones || []).concat([r]);
+  await saveCol('evaluaciones'); const ri = _iaRec(S.eq, 'fam', S.per); if (ri) { ri.publicadoId = r.id; await saveCol('informes'); }
+  toast('✅ Publicado para las familias del equipo'); iaPintar(); if (typeof renderEvaluaciones === 'function') renderEvaluaciones();
 }
 function _iaRango(per) {
   if (per === 'TEMP') { const a = _evalTrim(), ini = +a.key.slice(0, 4); return { desde: ini + '-09-01', hasta: (ini + 1) + '-08-31', label: 'Temporada ' + a.key.slice(0, 7) }; }
@@ -9751,7 +9895,7 @@ function _iaPrompt() {
   return L.join('\n');
 }
 async function iaCopiar() {
-  _iaGuardarTxt(); const t = _iaPrompt();
+  _iaGuardarTxt(); const t = window._ia.modo === 'fam' ? _iaPromptFam() : _iaPrompt();
   try { await navigator.clipboard.writeText(t); toast('📋 Copiado. Pégalo en la IA'); }
   catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado. Pégalo en la IA'); } catch (e2) { toast('No se pudo copiar'); } ta.remove(); }
 }
@@ -9803,6 +9947,10 @@ function iaInforme() {
   const blo = [['Técnico', d.tot.tec, C.tec], ['Físico', d.tot.fis, C.fis], ['Actitud', d.tot.act, C.act]];
   const g3 = blo.some(x => x[1] != null) ? blo.map(([l, v, c]) => `<div class="hb"><span class="hl">${l}</span><span class="ht"><span class="hf" style="width:${v == null ? 0 : v / 5 * 100}%;background:${c};"></span></span><b>${f(v)}</b></div>`).join('') : '';
   const kpi = (v, l) => `<div class="k"><b>${v}</b><span>${l}</span></div>`;
+  const fam = S.modo === 'fam';
+  if (fam) { const est = g.est || {}, bv = s => { const v = s.campos.map(c => Number(est[c])).filter(n => n > 0); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+    const bl = _EG_SERIES.slice(1).map(s => [s.l, bv(s), s.c]); if (bl.some(x => x[1] != null)) { blo.splice(0, 3, ...bl); } }
+  const g3f = blo.some(x => x[1] != null) ? blo.map(([l, v, c]) => `<div class="hb"><span class="hl">${l}</span><span class="ht"><span class="hf" style="width:${v == null ? 0 : v / 5 * 100}%;background:${c};"></span></span><b>${f(v)}</b></div>`).join('') : '';
   const filas = d.jug.slice().sort((a, b) => (b.media || 0) - (a.media || 0)).map(x => { const dv = x.n > 1 ? x.ult - x.prim : null;
     return `<tr><td class="nm">${_escHtml(x.nombre)}</td><td>${x.n || '—'}</td><td>${f(x.tec)}</td><td>${f(x.fis)}</td><td>${f(x.act)}</td><td><span class="mb"><span style="width:${x.media == null ? 0 : x.media / 5 * 100}%"></span></span><b>${f(x.media)}</b></td><td>${dv == null ? '—' : (dv > 0.05 ? '▲ ' : (dv < -0.05 ? '▼ ' : '= ')) + f(Math.abs(dv))}</td><td>${x.goles || '—'}</td></tr>`; }).join('');
   const resp = String(g.resp || '').trim(), com = String(g.com || '').trim();
@@ -9825,13 +9973,14 @@ function iaInforme() {
     @media (max-width:640px){.ks{grid-template-columns:1fr 1fr;}.sec{padding:14px 16px 0;}.cab{padding:20px 16px;}.dos{grid-template-columns:1fr;} td,th{padding:5px 3px;font-size:12px;}}
     @media print{.bar{display:none;} body{background:#fff;} .pg{max-width:none;} .sec{break-inside:avoid;} *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
   </style></head><body><div class="bar"><button onclick="print()">🖨️ Imprimir / Guardar PDF</button></div><div class="pg">
-    <div class="cab"><small>Informe de equipo · ${_escHtml(cat)}</small><h1>${_escHtml(d.eq.nombre || '')}</h1><div>${_escHtml(d.R.label)}${d.comp ? ' · ' + _escHtml(_compPartes(d.comp).nom || d.comp.nombre || '') : ''}</div></div>
+    <div class="cab"><small>${fam ? 'Informe para las familias' : 'Informe de equipo'} · ${_escHtml(cat)}</small><h1>${_escHtml(d.eq.nombre || '')}</h1><div>${_escHtml(d.R.label)}${d.comp ? ' · ' + _escHtml(_compPartes(d.comp).nom || d.comp.nombre || '') : ''}</div></div>
     <div class="sec"><div class="ks">${kpi(d.tot.pj, 'Partidos')}${kpi(d.tot.g + '-' + d.tot.e + '-' + d.tot.p, 'Gan · Emp · Per')}${kpi(d.tot.gf + ':' + d.tot.gc, 'Goles a favor : contra')}${kpi(f(d.tot.media), 'Valoración media')}</div></div>
-    ${resp ? `<div class="sec ia"><h2>🤖 Análisis</h2>${_iaMd(resp, d.jug)}</div>` : ''}
+    ${resp ? `<div class="sec ia"><h2>${fam ? '✉️ Mensaje del entrenador' : '🤖 Análisis'}</h2>${fam ? _iaMd(resp, []).replace(/\bJ\d+\b/g, '') : _iaMd(resp, d.jug)}</div>` : (fam && com ? `<div class="sec"><h2>✉️ Mensaje del entrenador</h2><div class="com">${_escHtml(_iaAnon(com, d.jug))}</div></div>` : '')}
     ${g1 ? `<div class="sec"><h2>⚽ Resultados por partido</h2><div class="ley"><span><i style="background:${C.fav}"></i>A favor</span><span><i style="background:${C.con}"></i>En contra</span><span>G · E · P = resultado</span></div>${g1}</div>` : ''}
-    ${(g2 || g3) ? `<div class="sec"><div class="dos">${g3 ? `<div><h2>📊 Por bloques</h2>${g3}</div>` : ''}${g2 ? `<div><h2>📈 Evolución de la media</h2>${g2}</div>` : ''}</div></div>` : ''}
-    ${d.jug.length ? `<div class="sec"><h2>👥 Jugadores</h2><table><thead><tr><th class="nm">Jugador</th><th>Eval.</th><th>Téc.</th><th>Fís.</th><th>Act.</th><th>Media</th><th>Evol.</th><th>Goles</th></tr></thead><tbody>${filas}</tbody></table></div>` : ''}
-    ${com ? `<div class="sec"><h2>📝 Comentario del entrenador</h2><div class="com">${_escHtml(com)}</div></div>` : ''}
+    ${(g2 || g3f) ? `<div class="sec"><div class="dos">${g3f ? `<div><h2>📊 ${fam ? 'Valoración del equipo' : 'Por bloques'}</h2>${g3f}</div>` : ''}${g2 ? `<div><h2>📈 Evolución del equipo</h2>${g2}</div>` : ''}</div></div>` : ''}
+    ${(() => { const P = _iaProg(S.eq); return P.length > 1 ? `<div class="sec"><h2>📈 Progresión por trimestres</h2><div class="ley">${[['#1F1A1C', 'Media jugadores', 'media']].concat(_EG_SERIES.slice(1).map(s => [s.c, 'Equipo · ' + s.l, s.k])).filter(x => P.some(p => p[x[2]] != null)).map(([c, l]) => `<span><i style="background:${c}"></i>${l}</span>`).join('')}</div>${_iaProgSVG(P)}</div>` : ''; })()}
+    ${d.jug.length && !fam ? `<div class="sec"><h2>👥 Jugadores</h2><table><thead><tr><th class="nm">Jugador</th><th>Eval.</th><th>Téc.</th><th>Fís.</th><th>Act.</th><th>Media</th><th>Evol.</th><th>Goles</th></tr></thead><tbody>${filas}</tbody></table></div>` : ''}
+    ${com && !fam ? `<div class="sec"><h2>📝 Comentario del entrenador</h2><div class="com">${_escHtml(com)}</div></div>` : ''}
     <div class="pie">ClubOS ED · Escuela &amp; Deporte · Generado el ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
   </div></body></html>`;
   const w = window.open('', '_blank'); if (!w) { toast('Permite las ventanas emergentes para ver el informe'); return; }
