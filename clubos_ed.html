@@ -2410,7 +2410,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.2.4';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.2.5';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.6';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -9754,9 +9754,12 @@ function iaPintar() {
       <textarea id="iaCom" rows="${fam ? 7 : 5}" oninput="_iaGuardarTxt()" placeholder="${fam ? 'Escribe o dicta: cómo ha ido el equipo, ambiente, compromiso, qué hemos trabajado, qué toca ahora, cómo pueden ayudar las familias…' : 'Cómo ves al equipo, qué ha pasado este periodo, qué te preocupa, objetivos…'}">${_escHtml(g.com || '')}</textarea>
       ${fam ? `<details class="ev-eqconj" style="margin-top:10px;" ${g.est && Object.values(g.est).some(n => n > 0) ? 'open' : ''}><summary>⭐ Valoración del equipo con estrellas <span style="font-weight:600;color:var(--gris-suave);">(opcional)</span></summary>
         <div class="ev-card" style="border:0;box-shadow:none;padding:8px 0 0;">${_EVAL_GRUPOS.map(([gr, ...as]) => `<div class="ev-grp"><div class="ev-gt">${gr}</div>${as.map(([c, l]) => `<div class="ev-asp"><span>${l}</span><div id="iaEQ_${c}" class="ev-st" onclick="setTimeout(_iaGuardarTxt,0)"></div></div>`).join('')}</div>`).join('')}</div></details>` : ''}</div></div>
-    <div class="ia-paso"><b>2</b><div style="flex:1;min-width:0;"><div class="ia-pt">Copia los datos y pégalos en la IA</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;"><button class="btn btn-rojo btn-sm" onclick="iaCopiar()">📋 Copiar para la IA</button>
+    <div class="ia-paso"><b>2</b><div style="flex:1;min-width:0;"><div class="ia-pt">Genera el prompt y pégalo en la IA</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;"><button class="btn btn-rojo btn-sm" onclick="iaCopiar()">✨ Generar y copiar prompt</button>
       <a class="btn btn-outline btn-sm" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a></div>
+      <div id="iaPromptBox" style="display:none;margin-top:10px;"><div class="ia-nota" style="margin:0 0 6px;">✅ Prompt generado y copiado. Pégalo en Claude. Si no se copió, pulsa dentro, selecciona todo y copia:</div>
+        <textarea id="iaPrompt" rows="10" readonly onclick="this.select()" style="font-size:12px;background:#FAF7F8;"></textarea>
+        <button type="button" class="btn btn-outline btn-sm" style="margin-top:6px;" onclick="iaCopiar()">📋 Copiar de nuevo</button></div>
       <div class="ia-nota">${fam ? '🔒 No se envía ningún dato de jugadores. Si nombras a alguien en tu texto, se cambia por un código.' : '🔒 Los nombres se envían como J1, J2… La IA no ve nombres reales; el informe los recupera.'}</div></div></div>
     <div class="ia-paso"><b>3</b><div style="flex:1;min-width:0;"><div class="ia-pt">Pega aquí la respuesta de la IA</div>
       <textarea id="iaResp" rows="7" oninput="_iaGuardarTxt()" placeholder="Pega la respuesta completa…">${_escHtml(g.resp || '')}</textarea>
@@ -9896,6 +9899,9 @@ function _iaPrompt() {
 }
 async function iaCopiar() {
   _iaGuardarTxt(); const t = window._ia.modo === 'fam' ? _iaPromptFam() : _iaPrompt();
+  const box = document.getElementById('iaPromptBox'), ta0 = document.getElementById('iaPrompt');
+  if (box && ta0) { ta0.value = t; box.style.display = ''; box.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  if (!String((document.getElementById('iaCom') || {}).value || '').trim()) toast('⚠️ Ojo: no has escrito tu valoración');
   try { await navigator.clipboard.writeText(t); toast('📋 Copiado. Pégalo en la IA'); }
   catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado. Pégalo en la IA'); } catch (e2) { toast('No se pudo copiar'); } ta.remove(); }
 }
