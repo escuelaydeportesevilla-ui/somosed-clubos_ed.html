@@ -1202,6 +1202,49 @@ body.cal-pop-on{overflow:hidden;}
 .fb-rap{display:flex;flex-wrap:wrap;gap:6px;}
 .fb-rap .jb-chip{font-size:12.5px;padding:6px 11px;}
 @media (max-width:768px){.fb-f{flex:1;min-width:130px;}.fb-f input{width:100%;box-sizing:border-box;}.fb-row>.btn{width:100%;justify-content:center;}}
+.ev-tipo{display:inline-block;background:var(--c);color:#fff;font-size:11px;font-weight:800;letter-spacing:.3px;border-radius:20px;padding:3px 10px;margin-bottom:6px;}
+.ev-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px;}
+.ev-card{background:#fff;border-radius:14px;padding:12px;box-shadow:0 1px 6px rgba(0,0,0,.08);border:2px solid transparent;}
+.ev-card.nd{opacity:.5;border-color:#f3c9c9;}
+.ev-card.nd .ev-skip{background:#FDE2E1;color:#B42318;}
+.ev-cab{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ev-cab b{flex:1;font-size:14px;}
+.ev-cab .ev-skip{width:auto;margin:0;padding:5px 10px;}
+.ev-base{font-size:11px;font-weight:700;color:#C2571A;}
+.ev-grp{margin-top:4px;}
+.ev-gt{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--gris-suave);}
+.ev-asp{display:flex;justify-content:space-between;align-items:center;font-size:13px;}
+.ev-st span{font-size:22px!important;padding:0 1px;}
+.ev-card textarea{width:100%;box-sizing:border-box;margin-top:8px;font-size:13px;border:1px solid var(--gris-linea);border-radius:8px;padding:8px;font-family:inherit;}
+.ev-n{font-size:12px;color:var(--gris-suave);margin:10px 0 6px;}
+.ev-eqconj{background:#F6F2FB;border:1px solid #E1D5F0;border-radius:12px;padding:10px 12px;}
+.ev-eqconj summary{cursor:pointer;font-weight:800;font-size:13px;color:#6C3FA0;}
+@media (max-width:768px){.ev-lista{grid-template-columns:1fr;}}
+.eg-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.eg-kpis .cal-stat{padding:12px 14px;display:flex;flex-direction:column;}
+.eg-kpis .cal-stat b{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:900;line-height:1.1;}
+.eg-ley{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px;}
+.eg-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #ddd;background:#fff;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:700;cursor:pointer;}
+.eg-chip i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+.eg-chip.off{opacity:.45;text-decoration:line-through;}
+.eg-forma{font-size:12px;color:var(--gris-suave);margin-left:auto;}
+.eg-caja{position:relative;background:#fff;border-radius:14px;padding:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.eg-svg{width:100%;height:auto;display:block;}
+.eg-ax{font-size:11px;fill:#8a8086;font-family:inherit;}
+.eg-lab{font-size:12px;fill:#333;font-family:inherit;}
+.eg-hit{cursor:crosshair;}
+.eg-tip{position:absolute;top:12px;background:#1F1A1C;color:#fff;border-radius:10px;padding:8px 10px;font-size:12px;min-width:170px;pointer-events:none;box-shadow:0 6px 18px rgba(0,0,0,.25);}
+.eg-tt{font-weight:800;font-size:13px;} .eg-ts{opacity:.8;font-size:11px;margin-bottom:4px;}
+.eg-tr{display:flex;align-items:center;gap:6px;} .eg-tr i{width:9px;height:9px;border-radius:2px;display:inline-block;box-shadow:0 0 0 1px rgba(255,255,255,.7);} .eg-tr b{margin-left:auto;}
+.eg-aviso{font-size:12px;color:var(--gris-suave);margin-bottom:6px;}
+.eg-tabla{margin-top:12px;} .eg-tabla summary{cursor:pointer;font-weight:800;font-size:13px;color:var(--rojo);margin-bottom:8px;}
+@media (max-width:768px){.eg-kpis{grid-template-columns:1fr 1fr;}.eg-forma{margin-left:0;width:100%;}}
+.ia-res{font-size:12px;color:var(--gris-suave);font-weight:700;padding-bottom:10px;}
+.ia-paso{display:flex;gap:12px;align-items:flex-start;background:#fff;border-radius:14px;padding:14px;margin-top:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.ia-paso>b{flex:none;width:30px;height:30px;border-radius:50%;background:var(--rojo);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.ia-pt{font-weight:800;margin-bottom:8px;}
+.ia-paso textarea{width:100%;border:1px solid #ddd;border-radius:10px;padding:10px;font:inherit;font-size:14px;resize:vertical;}
+.ia-nota{font-size:12px;color:var(--gris-suave);margin-top:8px;}
 </style>
 </head>
 <body>
@@ -1486,6 +1529,8 @@ body.cal-pop-on{overflow:hidden;}
       <div class="section-header">
         <h2>📝 Evaluaciones</h2><div class="section-line"></div>
         <input type="text" id="buscadorEvaluaciones" placeholder="🔎 Buscar jugador…" oninput="filtrarEvaluaciones(this.value)" style="max-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;">
+        <button class="btn btn-outline" onclick="evalEquipoAbrir()" style="margin-right:6px;">👥 Evaluar equipo</button>
+        <button class="btn btn-outline" onclick="iaInformeAbrir()" style="margin-right:6px;">🤖 Informe IA</button>
         <button class="btn btn-rojo" id="btnNuevaEvaluacion" onclick="abrirModalEvaluacion()">+ Nueva evaluación</button>
       </div>
       <div id="evaluacionesContent"></div>
@@ -1702,13 +1747,25 @@ body.cal-pop-on{overflow:hidden;}
     </div>
     <div class="form-grid">
       <div class="form-field form-full">
+        <label>Tipo de evaluación</label>
+        <div class="jb-seg" id="evTipoSeg" style="margin:0;"></div>
+        <input type="hidden" id="evTipo" value="continua">
+      </div>
+      <div class="form-field form-full" id="evEquipoInfo" style="display:none;"></div>
+      <div class="form-field form-full" id="evJugadorWrap">
         <label>Jugador *</label>
         <input id="evJugadorBuscar" placeholder="Escribe el nombre del jugador…" autocomplete="off" oninput="filtrarJugadorEval(this.value)">
         <div id="evJugadorSugerencias" style="position:relative;"></div>
         <input type="hidden" id="evJugador">
         <div id="evJugadorSeleccionado" style="margin-top:6px;font-size:12px;color:var(--gris-suave);"></div>
       </div>
-      <div class="form-field"><label>Fecha</label><input type="date" id="evFecha"></div>
+      <div class="form-field form-full" id="evPartidoWrap" style="display:none;"><label>Partido</label>
+        <select id="evPartido" onfocus="_evalPartidoOpts()" onchange="_evalPartidoElegido()"><option value="">— Elige primero el jugador —</option></select></div>
+      <div class="form-field form-full" id="evTrimWrap" style="display:none;"><label>Trimestre</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;"><select id="evTrim" style="flex:1;min-width:180px;"></select>
+        <button type="button" class="btn btn-outline btn-sm" onclick="_evalCalcularTrimestral()">↻ Calcular con sus evaluaciones</button></div>
+        <div id="evTrimInfo" style="font-size:12px;color:var(--gris-suave);margin-top:4px;"></div></div>
+      <div class="form-field" id="evFechaWrap"><label>Fecha</label><input type="date" id="evFecha"></div>
       <div class="form-field"><label>Evaluador</label><input id="evEvaluador" placeholder="Nombre del entrenador"></div>
 
       <div class="form-field form-full">
@@ -2348,8 +2405,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.1.3';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.4';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.2.2';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.5';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -4724,7 +4781,7 @@ function _acordeonATiles(cont, grupo, info) {
     t.innerHTML = `<button type="button" class="cal-tile" style="--c:${d.color}" onclick="_popAbrir('${popId}')">
         <span class="cal-tile-cat" style="font-size:1.45rem;">${_escHtml(d.cat)}</span>
         ${d.sub ? `<span class="cal-tile-nom">${_escHtml(d.sub)}</span>` : ''}
-        ${d.nums.length ? `<span class="cal-tile-nums" style="grid-template-columns:repeat(${d.nums.length},1fr)">${d.nums.map(([n, l]) => `<span><b>${n}</b>${_escHtml(l)}</span>`).join('')}</span>` : ''}
+        ${d.nums.length ? `<span class="cal-tile-nums" style="grid-template-columns:repeat(${d.nums.length >= 4 ? 2 : d.nums.length},1fr)">${d.nums.map(([n, l]) => `<span><b>${n}</b>${_escHtml(l)}</span>`).join('')}</span>` : ''}
         ${d.pie ? `<span class="cal-tile-pie">${d.pie}</span>` : ''}
         <span class="cal-tile-ir">${_escHtml(d.ir)}</span></button>`;
     const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = popId; pop.dataset.g = grupo; pop.style.display = 'none';
@@ -8216,7 +8273,7 @@ function renderVistaFamiliaJugador() {
   const escNombres = ((j.escuelaIds||[]).map(eid=>(DB.escuelas||[]).find(e=>e.id===eid)?.nombre).filter(Boolean)).join(', ');
   const tab = window._famTabActiva || 'evaluaciones';
 
-  const evaluaciones = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===j.id)
+  const evaluaciones = (DB.evaluaciones||[]).filter(ev=>ev.jugadorId===j.id || (ev.tipo === 'equipo' && ev.equipoId && ev.equipoId === j.equipoId))
     .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
 
   const noticias = _ordenarNoticias((DB.noticias||[]).filter(n => {
@@ -8253,11 +8310,12 @@ function renderVistaFamiliaJugador() {
     </div>
 
     <div style="display:${tab==='evaluaciones'?'block':'none'};">
-      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;">📝 Evaluaciones</h2>
+      <h2 style="font-size:14px;letter-spacing:1px;text-transform:uppercase;color:var(--rojo);border-bottom:2px solid #FADBD8;padding-bottom:6px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;">📝 Evaluaciones ${evaluaciones.some(e => e.jugadorId === j.id) ? `<button class="btn btn-rojo btn-sm" onclick="evalGrafica('${j.id}')">📈 Ver evolución</button>` : ''}</h2>
       <div id="famEvaluacionesList" style="margin-bottom:8px;">
         ${!evaluaciones.length ? '<div class="empty-state"><div class="ei">📝</div><p>Todavía no hay evaluaciones registradas.</p></div>' :
           evaluaciones.map(ev => `
-          <div class="fam-item-card" style="border-top:4px solid #2E4057;margin-bottom:12px;padding:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
+          <div class="fam-item-card" style="border-top:4px solid ${_evalColorTipo(ev.tipo)};margin-bottom:12px;padding:12px;cursor:pointer;" onclick="abrirFichaEvaluacionFamilia('${ev.id}')">
+            <div class="ev-tipo" style="--c:${_evalColorTipo(ev.tipo)}">${_escHtml(_evalEtiqueta(ev))}</div>
             <div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
             ${ev.observacionesParaFamilia ? `<div style="font-size:13px;">💬 ${ev.observacionesParaFamilia}</div>` : ''}
             <div style="font-size:11px;color:var(--rojo);margin-top:6px;font-weight:700;">Ver ficha completa →</div>
@@ -8360,6 +8418,7 @@ function abrirFichaEvaluacionFamilia(evId) {
   const fila = (label,val) => val ? `<div style="margin-top:10px;"><strong>${label}:</strong><br>${val}</div>` : '';
   const filaEstrella = (label, campo) => ev[campo] ? `<div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0;"><span>${label}</span><span style="color:#D4A017;">${_estrellasTexto(ev[campo])}</span></div>` : '';
   document.getElementById('fichaEvalFamiliaContent').innerHTML = `
+    <div class="ev-tipo" style="--c:${_evalColorTipo(ev.tipo)}">${_escHtml(_evalEtiqueta(ev))}</div>
     <div style="font-size:12px;color:var(--gris-suave);">${ev.fecha||'—'} · ${ev.evaluador||'—'}</div>
     <div style="margin-top:6px;font-weight:700;">Valoración general: ${ev.valoracionGeneral||'—'}</div>
     <div style="margin-top:12px;font-weight:700;font-size:12px;color:var(--gris-suave);">⚙️ TÉCNICO</div>
@@ -9275,7 +9334,9 @@ function renderEvaluaciones() {
     return;
   }
   const misJugadoresIds = new Set(_misJugadoresEval().map(j=>j.id));
-  const lista = (DB.evaluaciones||[]).filter(ev=>misJugadoresIds.has(ev.jugadorId))
+  const misEqIds = new Set(_misJugadoresEval().map(j => j.equipoId).filter(Boolean));
+  if (sesion.rol === 'admin') (DB.equipos || []).forEach(e => misEqIds.add(e.id));
+  const lista = (DB.evaluaciones||[]).filter(ev=>misJugadoresIds.has(ev.jugadorId) || (ev.tipo === 'equipo' && misEqIds.has(ev.equipoId)))
     .sort((a,b)=>(b.fecha||'').localeCompare(a.fecha||''));
 
   if (!lista.length) {
@@ -9286,15 +9347,19 @@ function renderEvaluaciones() {
   // Agrupar por jugador
   const porJugador = {};
   lista.forEach(ev => {
-    if (!porJugador[ev.jugadorId]) porJugador[ev.jugadorId] = [];
-    porJugador[ev.jugadorId].push(ev);
+    const k = ev.tipo === 'equipo' ? 'EQ:' + ev.equipoId : ev.jugadorId;
+    if (!porJugador[k]) porJugador[k] = [];
+    porJugador[k].push(ev);
   });
+  const _ordenK = k => k.startsWith('EQ:') ? 0 : 1;
 
-  el.innerHTML = Object.entries(porJugador).map(([jugadorId, evs]) => {
-    const j = (DB.jugadores||[]).find(x=>x.id===jugadorId);
-    const nombreJ = j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —';
+  el.innerHTML = Object.entries(porJugador).sort((a, b) => _ordenK(a[0]) - _ordenK(b[0])).map(([jugadorId, evs]) => {
+    const esEq = jugadorId.startsWith('EQ:'), eqE = esEq ? (DB.equipos || []).find(e => e.id === jugadorId.slice(3)) : null;
+    const j = esEq ? null : (DB.jugadores||[]).find(x=>x.id===jugadorId);
+    const nombreJ = esEq ? '👥 ' + (eqE ? eqE.nombre : 'Equipo') : (j ? (j.nombre+' '+(j.apellidos||'')) : '— jugador eliminado —');
     const tarjetas = evs.map(ev => `
-      <div class="card-evaluacion" style="border-top:4px solid #2E4057;">
+      <div class="card-evaluacion" style="border-top:4px solid ${_evalColorTipo(ev.tipo)};">
+        <div class="ev-tipo" style="--c:${_evalColorTipo(ev.tipo)}">${_escHtml(_evalEtiqueta(ev))}</div>
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
           <div style="font-size:12px;color:var(--gris-suave);">${ev.fecha||'—'} · ${ev.evaluador||'—'} · ${ev.valoracionGeneral||'—'}</div>
         </div>
@@ -9306,18 +9371,20 @@ function renderEvaluaciones() {
       </div>`).join('');
     return `
     <div style="margin-bottom:14px;" data-nombre-eval="${nombreJ.toLowerCase()}">
-      <div onclick="toggleAcordeon('evalJ_${jugadorId}')"><span>${_escHtml(nombreJ)} <span>(${evs.length} evaluaci${evs.length === 1 ? 'ón' : 'ones'})</span></span>
-        <button class="btn btn-outline btn-sm" onclick="exportarFichaJugadorPDF('${jugadorId}')">📄 Exportar</button>
+      <div onclick="toggleAcordeon('${esEq ? 'evalE_' + jugadorId.slice(3) : 'evalJ_' + jugadorId}')"><span>${_escHtml(nombreJ)} <span>(${evs.length} evaluaci${evs.length === 1 ? 'ón' : 'ones'})</span></span>
+        ${esEq ? '' : `<button class="btn btn-outline btn-sm" onclick="evalGrafica('${jugadorId}')">📈 Evolución</button><button class="btn btn-outline btn-sm" onclick="abrirModalEvaluacion();seleccionarJugadorEval('${jugadorId}');_evalSetTipo('trimestral')">📊 Trimestral</button><button class="btn btn-outline btn-sm" onclick="exportarFichaJugadorPDF('${jugadorId}')">📄 Exportar</button>`}
       </div>
-      <div id="evalJ_${jugadorId}" style="display:none;"><div class="cards-escuelas">${tarjetas}</div></div>
+      <div id="${esEq ? 'evalE_' + jugadorId.slice(3) : 'evalJ_' + jugadorId}" style="display:none;"><div class="cards-escuelas">${tarjetas}</div></div>
     </div>`;
   }).join('');
   _acordeonATiles(el, 'eval', contId => {
+    if (contId.startsWith('evalE_')) { const eq = (DB.equipos || []).find(e => e.id === contId.slice(6)), evs = porJugador['EQ:' + contId.slice(6)] || [];
+      return { cat: '👥 ' + (eq ? eq.nombre : 'Equipo'), sub: 'Evaluación del equipo en conjunto', color: eq?.competicionId ? _calColorComp(eq.competicionId) : '#6C3FA0', nums: [[evs.length, 'evaluaciones']], pie: evs[0] ? '🗓️ Última: ' + _escHtml(_convFmtFecha(_limpiarFecha(evs[0].fecha))) : '', ir: 'Ver evaluaciones →' }; }
     const jid = contId.slice(6), j = (DB.jugadores || []).find(x => x.id === jid), eq = j && (DB.equipos || []).find(e => e.id === j.equipoId);
     const evs = porJugador[jid] || [], ult = evs[0] || {};
     const notas = evs.map(ev => _evalNota(ev)).filter(n => n != null), media = notas.length ? (notas.reduce((s, n) => s + n, 0) / notas.length).toFixed(1).replace('.', ',') : '—';
     return { sub: eq ? eq.nombre : 'Sin equipo', color: eq?.competicionId ? _calColorComp(eq.competicionId) : '#2E4057',
-      nums: [[evs.length, 'evaluaciones'], [media, 'media']], pie: ult.fecha ? '🗓️ Última: ' + _escHtml(_convFmtFecha(_limpiarFecha(ult.fecha))) + (ult.valoracionGeneral ? ' · ' + _escHtml(ult.valoracionGeneral) : '') : '', ir: 'Ver evaluaciones →' };
+      nums: [[evs.length, 'evaluaciones'], [evs.filter(e => e.tipo === 'partido').length, 'partidos'], [evs.filter(e => e.tipo === 'trimestral').length, 'trimestrales'], [media, 'media']], pie: ult.fecha ? '🗓️ Última: ' + _escHtml(_convFmtFecha(_limpiarFecha(ult.fecha))) + (ult.valoracionGeneral ? ' · ' + _escHtml(ult.valoracionGeneral) : '') : '', ir: 'Ver evaluaciones →' };
   });
   // la búsqueda filtra por el nombre del jugador también en modo pastillas
   el.querySelectorAll('.cal-tile-wrap[data-pop]').forEach(t => { const j = (DB.jugadores || []).find(x => 'pop_evalJ_' + x.id === t.dataset.pop); t.setAttribute('data-nombre-eval', j ? (j.nombre + ' ' + (j.apellidos || '')).toLowerCase() : ''); });
@@ -9325,7 +9392,7 @@ function renderEvaluaciones() {
 // Nota media de una evaluación (campos numéricos de 1 a 10 o 1 a 5 que existan)
 function _evalNota(ev) {
   const ks = ['tecControl','tecPase','tecTiro','fisVelocidad','fisResistencia','fisFuerza','actEsfuerzo','actEquipo','actDisciplina'];
-  const v = ks.map(k => parseFloat(ev[k])).filter(n => !isNaN(n));
+  const v = ks.map(k => parseFloat(ev[k])).filter(n => !isNaN(n) && n > 0); // 0 = no puntuado
   return v.length ? v.reduce((s, n) => s + n, 0) / v.length : null;
 }
 
@@ -9356,6 +9423,7 @@ function seleccionarJugadorEval(jugadorId) {
   document.getElementById('evJugadorBuscar').value = '';
   document.getElementById('evJugadorSugerencias').innerHTML = '';
   document.getElementById('evJugadorSeleccionado').textContent = '✅ ' + j.nombre + ' ' + (j.apellidos||'');
+  if (document.getElementById('evTipo')?.value === 'partido') _evalPartidoOpts('');
   // Evaluación nueva (no edición): repartir la puntuación de Alineaciones de forma equitativa
   // entre las 9 características. La Valoración general se calculará sola como su media.
   if (!document.getElementById('evEditId').value && j.puntuacion) {
@@ -9414,9 +9482,442 @@ function _actualizarValoracionGeneralEval() {
   _pintarEstrellasSoloLectura('evValoracionEstrellas', media);
 }
 
+// ══════════════════════════════════════════════════════
+//  EVALUACIONES: continua · por partido · trimestral · de equipo
+// ══════════════════════════════════════════════════════
+// Trimestres de la temporada: T1 sep–dic · T2 ene–mar · T3 abr–jun (jul–ago cuentan en T3)
+function _evalTrim(fecha) {
+  const f = _limpiarFecha(fecha || '') || new Date().toISOString().slice(0, 10), y = +f.slice(0, 4), m = +f.slice(5, 7);
+  const ini = m >= 9 ? y : y - 1, temp = ini + '/' + String(ini + 1).slice(2), t = m >= 9 ? 1 : (m <= 3 ? 2 : 3);
+  const rango = { 1: [ini + '-09-01', ini + '-12-31'], 2: [(ini + 1) + '-01-01', (ini + 1) + '-03-31'], 3: [(ini + 1) + '-04-01', (ini + 1) + '-08-31'] }[t];
+  return { key: temp + '-T' + t, label: ['', '1er', '2º', '3er'][t] + ' trimestre ' + temp, desde: rango[0], hasta: rango[1] };
+}
+function _evalTrimDeKey(key) {
+  const m = String(key || '').match(/^(\d{4})\/\d{2}-T([123])$/); if (!m) return null;
+  const ini = +m[1], t = +m[2]; return _evalTrim(t === 1 ? ini + '-10-15' : (t === 2 ? (ini + 1) + '-02-15' : (ini + 1) + '-05-15'));
+}
+function _evalTrimOpciones(sel) {
+  const hoy = new Date().toISOString().slice(0, 10), act = _evalTrim(hoy), l = [act];
+  let d = new Date(act.desde + 'T12:00:00'); for (let i = 0; i < 3; i++) { d.setDate(d.getDate() - 1); const t = _evalTrim(_fbISO(d)); l.push(t); d = new Date(t.desde + 'T12:00:00'); }
+  if (sel && !l.some(t => t.key === sel)) { const x = _evalTrimDeKey(sel); if (x) l.push(x); }
+  return l.map(t => `<option value="${t.key}" ${t.key === (sel || act.key) ? 'selected' : ''}>${t.label}</option>`).join('');
+}
+function _evalEtiqueta(ev) {
+  const t = ev.tipo || 'continua';
+  if (t === 'partido') { const p = (DB.partidos || []).find(x => x.id === ev.partidoId), mE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
+    return '⚽ ' + (p ? 'J' + p.jornada + ' · ' + mE(p.localId) + ' vs ' + mE(p.visitanteId) : 'Partido'); }
+  if (t === 'trimestral') { const x = _evalTrimDeKey(ev.periodo); return '📊 Evaluación trimestral' + (x ? ' · ' + x.label : ''); }
+  if (t === 'equipo') return '👥 Evaluación del equipo';
+  return '📅 Evaluación continua';
+}
+function _evalColorTipo(t) { return { partido: '#1D5FB0', trimestral: '#C2571A', equipo: '#6C3FA0' }[t] || '#2E4057'; }
+function _evalSetTipo(tipo, ev) {
+  document.getElementById('evTipo').value = tipo;
+  const eq = tipo === 'equipo';
+  document.getElementById('evTipoSeg').innerHTML = eq ? `<button class="on">👥 Equipo</button>` :
+    [['continua', '📅 Fecha libre'], ['partido', '⚽ Partido'], ['trimestral', '📊 Trimestral']].map(([v, l]) => `<button type="button" class="${tipo === v ? 'on' : ''}" onclick="_evalSetTipo('${v}')">${l}</button>`).join('');
+  document.getElementById('evJugadorWrap').style.display = eq ? 'none' : '';
+  const info = document.getElementById('evEquipoInfo'); info.style.display = eq ? '' : 'none';
+  if (eq) info.innerHTML = `<div class="info-box">👥 Evaluación del equipo en conjunto: <b>${_escHtml(((DB.equipos || []).find(e => e.id === window._evalEditEquipo) || {}).nombre || '')}</b></div>`;
+  document.getElementById('evPartidoWrap').style.display = tipo === 'partido' ? '' : 'none';
+  document.getElementById('evTrimWrap').style.display = tipo === 'trimestral' ? '' : 'none';
+  document.getElementById('evFechaWrap').style.display = tipo === 'trimestral' ? 'none' : '';
+  if (tipo === 'trimestral') { document.getElementById('evTrim').innerHTML = _evalTrimOpciones(ev && ev.periodo); document.getElementById('evTrimInfo').textContent = 'Pulsa "Calcular" para rellenar con la media de sus evaluaciones del trimestre. Después puedes ajustarla.'; }
+  if (tipo === 'partido') _evalPartidoOpts(ev && ev.partidoId);
+}
+// Partidos del equipo del jugador elegido (los ya jugados primero)
+function _evalPartidosDe(eqId) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  return (DB.partidos || []).filter(p => p.localId === eqId || p.visitanteId === eqId)
+    .sort((a, b) => ((_limpiarFecha(b.fecha) <= hoy) - (_limpiarFecha(a.fecha) <= hoy)) || String(_limpiarFecha(b.fecha)).localeCompare(String(_limpiarFecha(a.fecha))));
+}
+function _evalOptsPartido(eqId, sel) {
+  const mE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
+  const ps = _evalPartidosDe(eqId);
+  return ps.length ? '<option value="">— Elige el partido —</option>' + ps.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>J${_escHtml(p.jornada)} · ${_escHtml(_convFmtFecha(_limpiarFecha(p.fecha)))} · ${_escHtml(mE(p.localId))} vs ${_escHtml(mE(p.visitanteId))}${p.estado === 'jugado' ? ` (${p.golesLocal}-${p.golesVisitante})` : ''}</option>`).join('')
+    : '<option value="">Este equipo no tiene partidos</option>';
+}
+function _evalPartidoOpts(sel) {
+  const s = document.getElementById('evPartido'); if (!s) return;
+  const j = (DB.jugadores || []).find(x => x.id === document.getElementById('evJugador').value);
+  const actual = sel !== undefined ? sel : s.value;
+  s.innerHTML = j && j.equipoId ? _evalOptsPartido(j.equipoId, actual) : '<option value="">— Elige primero el jugador —</option>';
+}
+function _evalPartidoElegido() { const p = (DB.partidos || []).find(x => x.id === document.getElementById('evPartido').value); if (p && _limpiarFecha(p.fecha)) document.getElementById('evFecha').value = _limpiarFecha(p.fecha); }
+// Media de las evaluaciones (no trimestrales) de un jugador en un trimestre
+function _evalMediaPeriodo(jid, key) {
+  const T = _evalTrimDeKey(key); if (!T) return null;
+  const evs = (DB.evaluaciones || []).filter(e => e.jugadorId === jid && e.tipo !== 'trimestral' && _limpiarFecha(e.fecha) >= T.desde && _limpiarFecha(e.fecha) <= T.hasta)
+    .sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+  const med = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { const v = evs.map(e => Number(e[c])).filter(n => n > 0); med[c] = v.length ? Math.round(v.reduce((s, n) => s + n, 0) / v.length) : 0; });
+  const junta = k => evs.map(e => e[k]).filter(Boolean).map(t => '• ' + t).join('\n');
+  return { n: evs.length, med, tec: junta('aspectosTecnicos'), fis: junta('aspectosFisicos'), act: junta('actitud'), fam: junta('observacionesParaFamilia'), T };
+}
+function _evalCalcularTrimestral() {
+  const jid = document.getElementById('evJugador').value; if (!jid) { toast('Elige primero el jugador'); return; }
+  const r = _evalMediaPeriodo(jid, document.getElementById('evTrim').value); if (!r) return;
+  if (!r.n) { document.getElementById('evTrimInfo').textContent = '⚠️ No hay evaluaciones de este jugador en ese trimestre.'; return; }
+  ASPECTOS_EVAL.forEach((id, i) => _pintarEstrellas(id, r.med[CAMPOS_ASPECTOS_EVAL[i]]));
+  _actualizarValoracionGeneralEval();
+  const pon = (id, t) => { const e = document.getElementById(id); if (e && !e.value.trim()) e.value = t; };
+  pon('evTecnicos', r.tec); pon('evFisicos', r.fis); pon('evActitud', r.act); pon('evObsFamilia', r.fam);
+  document.getElementById('evFecha').value = r.T.hasta < new Date().toISOString().slice(0, 10) ? r.T.hasta : new Date().toISOString().slice(0, 10);
+  document.getElementById('evTrimInfo').textContent = `✅ Media de ${r.n} evaluaci${r.n === 1 ? 'ón' : 'ones'} (${r.T.label}). Revisa y ajusta antes de guardar.`;
+}
+
+// ══════════════════════════════════════════════════════
+//  GRÁFICA DE EVOLUCIÓN DE UN JUGADOR (media + técnico, físico, actitud)
+// ══════════════════════════════════════════════════════
+const _EG_SERIES = [
+  { k: 'media', l: 'Media', c: '#1F1A1C', w: 3, campos: CAMPOS_ASPECTOS_EVAL },
+  { k: 'tec', l: 'Técnico', c: '#2a78d6', w: 2, campos: ['tecControl', 'tecPase', 'tecTiro'] },
+  { k: 'fis', l: 'Físico', c: '#eb6834', w: 2, campos: ['fisVelocidad', 'fisResistencia', 'fisFuerza'] },
+  { k: 'act', l: 'Actitud', c: '#1baf7a', w: 2, campos: ['actEsfuerzo', 'actEquipo', 'actDisciplina'] }];
+window._egOcultas = window._egOcultas || {};
+function _egMedia(ev, campos) { const v = campos.map(c => Number(ev[c])).filter(n => n > 0); return v.length ? v.reduce((s, n) => s + n, 0) / v.length : null; }
+function _egNum(n) { return n == null ? '—' : n.toFixed(1).replace('.', ','); }
+function evalGrafica(jid) {
+  const j = (DB.jugadores || []).find(x => x.id === jid); if (!j) return;
+  window._egJid = jid;
+  document.getElementById('evalGrafPop')?.remove();
+  const eq = (DB.equipos || []).find(e => e.id === j.equipoId), col = eq && eq.competicionId ? _calColorComp(eq.competicionId) : '#2E4057';
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'evalGrafPop'; pop.style.display = 'none';
+  pop.onclick = e => { if (e.target === pop) _popCerrar(); };
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true" style="max-width:900px;"><div class="cal-pop-cab" style="--c:${col};">
+      <div style="min-width:0;"><div class="cal-pop-cat">📈 ${_escHtml(j.nombre)} ${_escHtml(j.apellidos || '')}</div><div class="cal-pop-nom">Evolución de sus evaluaciones${eq ? ' · ' + _escHtml(eq.nombre) : ''}</div></div>
+      <button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></div>
+    <div class="cal-pop-cuerpo" id="egCuerpo"></div></div>`;
+  document.body.appendChild(pop); _egPintar(); _popAbrir('evalGrafPop');
+}
+function _egPintar() {
+  const cu = document.getElementById('egCuerpo'); if (!cu) return;
+  const evs = (DB.evaluaciones || []).filter(e => e.jugadorId === window._egJid && _egMedia(e, CAMPOS_ASPECTOS_EVAL) != null)
+    .sort((a, b) => String(_limpiarFecha(a.fecha)).localeCompare(String(_limpiarFecha(b.fecha))));
+  if (!evs.length) { cu.innerHTML = '<div class="empty-state"><div class="ei">📈</div><p>Todavía no hay evaluaciones con puntuación.</p></div>'; return; }
+  const pts = evs.map(e => { const o = { ev: e }; _EG_SERIES.forEach(s => o[s.k] = _egMedia(e, s.campos)); return o; });
+  const ult = pts[pts.length - 1], pri = pts[0], dif = pts.length > 1 ? ult.media - pri.media : null;
+  const aspMed = {}; CAMPOS_ASPECTOS_EVAL.forEach(c => { const v = evs.map(e => Number(e[c])).filter(n => n > 0); if (v.length) aspMed[c] = v.reduce((s, n) => s + n, 0) / v.length; });
+  const nomAsp = { tecControl: 'Control', tecPase: 'Pase', tecTiro: 'Tiro', fisVelocidad: 'Velocidad', fisResistencia: 'Resistencia', fisFuerza: 'Fuerza', actEsfuerzo: 'Esfuerzo', actEquipo: 'Trabajo en equipo', actDisciplina: 'Disciplina' };
+  const ord = Object.entries(aspMed).sort((a, b) => b[1] - a[1]), mejor = ord[0], peor = ord[ord.length - 1];
+  // ── SVG ──
+  const W = 760, H = 300, mL = 34, mR = 92, mT = 16, mB = 40, iw = W - mL - mR, ih = H - mT - mB;
+  const X = i => mL + (pts.length === 1 ? iw / 2 : i * iw / (pts.length - 1)), Y = v => mT + ih - (v - 1) / 4 * ih;
+  const fmtX = e => { const f = _limpiarFecha(e.fecha) || ''; return f.slice(8, 10) + '/' + f.slice(5, 7); };
+  let svg = `<svg viewBox="0 0 ${W} ${H}" class="eg-svg" role="img" aria-label="Evolución de la valoración">`;
+  [1, 2, 3, 4, 5].forEach(v => { svg += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="#ece6e8" stroke-width="1"/><text x="${mL - 8}" y="${Y(v) + 4}" text-anchor="end" class="eg-ax">${v}</text>`; });
+  const paso = Math.max(1, Math.ceil(pts.length / 10));
+  pts.forEach((p, i) => { if (i % paso === 0 || i === pts.length - 1) svg += `<text x="${X(i)}" y="${H - mB + 18}" text-anchor="middle" class="eg-ax">${fmtX(p.ev)}</text>`; });
+  const visibles = _EG_SERIES.filter(s => !window._egOcultas[s.k]);
+  visibles.slice().reverse().forEach(s => {
+    let d = '', pen = false;
+    pts.forEach((p, i) => { if (p[s.k] == null) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(p[s.k]).toFixed(1) + ' '; pen = true; });
+    svg += `<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${s.w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach((p, i) => { if (p[s.k] == null) return; const t = p.ev.tipo || 'continua', x = X(i), y = Y(p[s.k]), r = s.k === 'media' ? 5 : 4;
+      svg += t === 'trimestral' ? `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" transform="rotate(45 ${x} ${y})" fill="${s.c}" stroke="#fff" stroke-width="2"/>`
+        : (t === 'partido' ? `<rect x="${x - r}" y="${y - r}" width="${2 * r}" height="${2 * r}" rx="1.5" fill="${s.c}" stroke="#fff" stroke-width="2"/>` : `<circle cx="${x}" cy="${y}" r="${r}" fill="${s.c}" stroke="#fff" stroke-width="2"/>`); });
+  });
+  // etiquetas directas al final (separadas para que no se pisen)
+  const fin = visibles.map(s => { let i = pts.length - 1; while (i >= 0 && pts[i][s.k] == null) i--; return i < 0 ? null : { s, y: Y(pts[i][s.k]), v: pts[i][s.k] }; }).filter(Boolean).sort((a, b) => a.y - b.y);
+  for (let i = 1; i < fin.length; i++) if (fin[i].y - fin[i - 1].y < 15) fin[i].y = fin[i - 1].y + 15;
+  fin.forEach(f => { svg += `<text x="${W - mR + 10}" y="${f.y + 4}" class="eg-lab"><tspan font-weight="800">${_egNum(f.v)}</tspan> ${f.s.l}</text>`; });
+  // zonas de toque para el detalle
+  pts.forEach((p, i) => { const x0 = pts.length === 1 ? mL : (i === 0 ? mL : (X(i - 1) + X(i)) / 2), x1 = pts.length === 1 ? W - mR : (i === pts.length - 1 ? W - mR : (X(i) + X(i + 1)) / 2);
+    svg += `<rect x="${x0}" y="${mT}" width="${x1 - x0}" height="${ih}" fill="transparent" class="eg-hit" data-i="${i}" onmouseenter="_egTip(${i},event)" onmousemove="_egTip(${i},event)" onclick="_egTip(${i},event)" onmouseleave="_egTip(-1)"/>`; });
+  svg += `<line id="egCross" x1="0" x2="0" y1="${mT}" y2="${mT + ih}" stroke="#bbb" stroke-dasharray="3 3" style="display:none"/></svg>`;
+  window._egPts = pts; window._egX = X;
+  const kpi = (v, l, c) => `<div class="cal-stat" style="background-color:${c};"><b>${v}</b><span>${l}</span></div>`;
+  cu.innerHTML = `<div class="eg-kpis">
+      ${kpi(_egNum(ult.media), 'Valoración actual', '#1F1A1C')}
+      ${kpi(dif == null ? '—' : (dif > 0 ? '▲ +' : (dif < 0 ? '▼ ' : '= ')) + _egNum(Math.abs(dif)).replace(/^/, dif < 0 ? '-' : ''), 'Desde la primera', dif == null ? '#6B7280' : (dif >= 0 ? '#17803D' : '#B42318'))}
+      ${kpi(mejor ? nomAsp[mejor[0]] : '—', 'Su punto fuerte', '#1D5FB0')}
+      ${kpi(peor && ord.length > 1 ? nomAsp[peor[0]] : '—', 'A reforzar', '#C2571A')}
+    </div>
+    <div class="eg-ley">${_EG_SERIES.map(s => `<button type="button" class="eg-chip${window._egOcultas[s.k] ? ' off' : ''}" onclick="window._egOcultas['${s.k}']=!window._egOcultas['${s.k}'];_egPintar()"><i style="background:${s.c}"></i>${s.l}</button>`).join('')}
+      <span class="eg-forma">● continua · ■ partido · ◆ trimestral</span></div>
+    <div class="eg-caja">${pts.length === 1 ? '<div class="eg-aviso">Solo hay una evaluación: la línea aparecerá con la siguiente.</div>' : ''}${svg}<div id="egTip" class="eg-tip" style="display:none;"></div></div>
+    <details class="eg-tabla"><summary>📋 Ver como tabla</summary><div class="ch-wrap"><table class="ch-tabla"><thead><tr><th class="ch-nom">Fecha</th><th>Tipo</th>${_EG_SERIES.map(s => `<th>${s.l}</th>`).join('')}</tr></thead><tbody>
+      ${pts.slice().reverse().map(p => `<tr><td class="ch-nom">${_escHtml(_convFmtFecha(_limpiarFecha(p.ev.fecha)))}</td><td style="text-align:left;">${_escHtml(_evalEtiqueta(p.ev))}</td>${_EG_SERIES.map(s => `<td>${_egNum(p[s.k])}</td>`).join('')}</tr>`).join('')}
+    </tbody></table></div></details>`;
+}
+function _egTip(i, e) {
+  const tip = document.getElementById('egTip'), cr = document.getElementById('egCross'); if (!tip || !cr) return;
+  if (i < 0) { tip.style.display = 'none'; cr.style.display = 'none'; return; }
+  const p = window._egPts[i], svg = tip.parentElement.querySelector('svg'), r = svg.getBoundingClientRect(), k = r.width / 760, x = window._egX(i);
+  cr.setAttribute('x1', x); cr.setAttribute('x2', x); cr.style.display = '';
+  tip.innerHTML = `<div class="eg-tt">${_escHtml(_convFmtFecha(_limpiarFecha(p.ev.fecha)))}</div><div class="eg-ts">${_escHtml(_evalEtiqueta(p.ev))}</div>` +
+    _EG_SERIES.map(s => `<div class="eg-tr"><i style="background:${s.c}"></i>${s.l}<b>${_egNum(p[s.k])}</b></div>`).join('') + (p.ev.evaluador ? `<div class="eg-ts" style="margin-top:4px;">👤 ${_escHtml(p.ev.evaluador)}</div>` : '');
+  tip.style.display = '';
+  const left = x * k, tw = tip.offsetWidth;
+  tip.style.left = Math.max(4, Math.min(r.width - tw - 4, left + (left > r.width / 2 ? -tw - 12 : 12))) + 'px';
+}
+
+// ══════════════════════════════════════════════════════
+//  INFORME DE EQUIPO CON IA (copiar datos → pegar respuesta → informe con gráficas)
+//  Los nombres viajan a la IA como J1, J2… y se restauran al generar el informe.
+// ══════════════════════════════════════════════════════
+window._ia = window._ia || { eq: '', per: '' };
+function _iaLS(eq, v) { const k = 'clubos_ed_informeia_' + eq; try { if (v === undefined) return JSON.parse(localStorage.getItem(k) || '{}'); localStorage.setItem(k, JSON.stringify(v)); } catch (e) { return {}; } }
+function _iaGuardarTxt() { const S = window._ia; if (!S.eq) return; _iaLS(S.eq, { com: (document.getElementById('iaCom') || {}).value || '', resp: (document.getElementById('iaResp') || {}).value || '' }); }
+function iaInformeAbrir() {
+  if (!puedeEvaluar()) { toast('No tienes permiso'); return; }
+  const misEq = [...new Set(_misJugadoresEval().map(j => j.equipoId).filter(Boolean))].map(id => (DB.equipos || []).find(e => e.id === id)).filter(Boolean)
+    .sort((a, b) => _calOrdenComp(a.competicionId) - _calOrdenComp(b.competicionId) || (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  if (!misEq.length) { toast('No tienes equipos con jugadores'); return; }
+  const S = window._ia; S.equipos = misEq; if (!misEq.some(e => e.id === S.eq)) S.eq = misEq[0].id; if (!S.per) S.per = _evalTrim().key;
+  document.getElementById('iaPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'iaPop'; pop.style.display = 'none';
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" id="iaCab" style="--c:#2E4057;">
+      <div style="min-width:0;"><div class="cal-pop-cat">🤖 Informe IA del equipo</div><div class="cal-pop-nom">Tu comentario + los datos → análisis → informe con gráficas</div></div>
+      <button class="cal-pop-x" onclick="_iaGuardarTxt();_popCerrar()" aria-label="Cerrar">✕</button></div>
+    <div class="cal-pop-cuerpo" id="iaCuerpo"></div></div>`;
+  document.body.appendChild(pop); iaPintar(); _popAbrir('iaPop');
+}
+function iaPintar() {
+  const S = window._ia, cu = document.getElementById('iaCuerpo'); if (!cu) return;
+  const eq = (DB.equipos || []).find(e => e.id === S.eq); document.getElementById('iaCab').style.setProperty('--c', eq && eq.competicionId ? _calColorComp(eq.competicionId) : '#2E4057');
+  const g = _iaLS(S.eq), d = _iaDatos(S.eq, S.per), act = _evalTrim();
+  cu.innerHTML = `<div class="gx-eqs">${S.equipos.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
+      return `<button type="button" class="gx-eq${S.eq === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="_iaGuardarTxt();window._ia.eq='${e.id}';iaPintar()"><span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : '')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span></button>`; }).join('')}</div>
+    <div class="jb" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+      <label class="fb-f"><span>Periodo</span><select onchange="_iaGuardarTxt();window._ia.per=this.value;iaPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">
+        <option value="TEMP" ${S.per === 'TEMP' ? 'selected' : ''}>Toda la temporada ${act.key.slice(0, 7)}</option>${_evalTrimOpciones(S.per === 'TEMP' ? '' : S.per).replace(/ selected/g, S.per === 'TEMP' ? '' : ' selected')}</select></label>
+      <div class="ia-res">📊 ${d.partidos.length} partidos · ${d.jug.filter(j => j.n).length}/${d.jug.length} jugadores evaluados · ${d.nEval} evaluaciones</div>
+    </div>
+    <div class="ia-paso"><b>1</b><div style="flex:1;min-width:0;"><div class="ia-pt">Tu comentario general del equipo</div>
+      <textarea id="iaCom" rows="5" oninput="_iaGuardarTxt()" placeholder="Cómo ves al equipo, qué ha pasado este periodo, qué te preocupa, objetivos…">${_escHtml(g.com || '')}</textarea></div></div>
+    <div class="ia-paso"><b>2</b><div style="flex:1;min-width:0;"><div class="ia-pt">Copia los datos y pégalos en la IA</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;"><button class="btn btn-rojo btn-sm" onclick="iaCopiar()">📋 Copiar para la IA</button>
+      <a class="btn btn-outline btn-sm" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a></div>
+      <div class="ia-nota">🔒 Los nombres se envían como J1, J2… La IA no ve nombres reales; el informe los recupera.</div></div></div>
+    <div class="ia-paso"><b>3</b><div style="flex:1;min-width:0;"><div class="ia-pt">Pega aquí la respuesta de la IA</div>
+      <textarea id="iaResp" rows="7" oninput="_iaGuardarTxt()" placeholder="Pega la respuesta completa…">${_escHtml(g.resp || '')}</textarea>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px;"><button class="btn btn-rojo" onclick="_iaGuardarTxt();iaInforme()">📄 Generar informe</button></div></div></div>`;
+}
+function _iaRango(per) {
+  if (per === 'TEMP') { const a = _evalTrim(), ini = +a.key.slice(0, 4); return { desde: ini + '-09-01', hasta: (ini + 1) + '-08-31', label: 'Temporada ' + a.key.slice(0, 7) }; }
+  const T = _evalTrimDeKey(per) || _evalTrim(); return { desde: T.desde, hasta: T.hasta, label: T.label.charAt(0).toUpperCase() + T.label.slice(1) };
+}
+function _iaDatos(eqId, per) {
+  const R = _iaRango(per), en = f => { f = _limpiarFecha(f || ''); return f && f >= R.desde && f <= R.hasta; }, mE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
+  const eq = (DB.equipos || []).find(e => e.id === eqId) || {}, comp = (DB.competiciones || []).find(c => c.id === eq.competicionId);
+  const partidos = (DB.partidos || []).filter(p => (p.localId === eqId || p.visitanteId === eqId) && en(p.fecha) && p.golesLocal !== '' && p.golesLocal != null && p.golesVisitante !== '' && p.golesVisitante != null && !isNaN(Number(p.golesLocal)))
+    .sort((a, b) => String(_limpiarFecha(a.fecha)).localeCompare(String(_limpiarFecha(b.fecha)))).map(p => { const loc = p.localId === eqId, gf = Number(loc ? p.golesLocal : p.golesVisitante), gc = Number(loc ? p.golesVisitante : p.golesLocal);
+      let goles = []; try { goles = JSON.parse(p.golesAsignados || '[]'); } catch (e) {}
+      return { p, fecha: _limpiarFecha(p.fecha), j: p.jornada, rival: mE(loc ? p.visitanteId : p.localId), loc, gf, gc, r: gf > gc ? 'G' : (gf < gc ? 'P' : 'E'), goles: (Array.isArray(goles) ? goles : []).filter(g => g && g.equipoId === eqId) }; });
+  const norm = s => _calNorm(String(s || '')).trim();
+  const jug = (DB.jugadores || []).filter(j => j.equipoId === eqId && j.activo !== false && j.activo !== 'false').sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'))
+    .map((j, i) => { const evs = (DB.evaluaciones || []).filter(e => e.jugadorId === j.id && en(e.fecha)).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
+      const o = { j, cod: 'J' + (i + 1), nombre: ((j.nombre || '') + ' ' + (j.apellidos || '')).trim(), n: evs.length, evs, goles: 0 };
+      _EG_SERIES.forEach(s => { const v = evs.map(e => _egMedia(e, s.campos)).filter(x => x != null); o[s.k] = v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; });
+      const v1 = evs.map(e => _egMedia(e, CAMPOS_ASPECTOS_EVAL)).filter(x => x != null); o.prim = v1[0]; o.ult = v1[v1.length - 1];
+      const fn = norm(o.nombre), n1 = norm(j.nombre);
+      partidos.forEach(p => p.goles.forEach(g => { const gn = norm(g.jugador); if (gn && (gn === fn || gn === n1 || fn.startsWith(gn) || gn.startsWith(fn))) o.goles += Number(g.goles) || 0; }));
+      return o; });
+  const nEval = jug.reduce((s, x) => s + x.n, 0);
+  const eqEvs = (DB.evaluaciones || []).filter(e => !e.jugadorId && e.equipoId === eqId && en(e.fecha));
+  const meses = {}; jug.forEach(x => x.evs.forEach(e => { const m = _egMedia(e, CAMPOS_ASPECTOS_EVAL); if (m == null) return; const k = _limpiarFecha(e.fecha).slice(0, 7); (meses[k] = meses[k] || []).push(m); }));
+  const evol = Object.keys(meses).sort().map(k => ({ k, v: meses[k].reduce((a, b) => a + b, 0) / meses[k].length, n: meses[k].length }));
+  const med = k => { const v = jug.map(x => x[k]).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const tot = { pj: partidos.length, g: partidos.filter(p => p.r === 'G').length, e: partidos.filter(p => p.r === 'E').length, p: partidos.filter(p => p.r === 'P').length, gf: partidos.reduce((s, p) => s + p.gf, 0), gc: partidos.reduce((s, p) => s + p.gc, 0) };
+  _EG_SERIES.forEach(s => tot[s.k] = med(s.k));
+  return { R, eq, comp, partidos, jug, nEval, eqEvs, evol, tot };
+}
+function _iaAnon(txt, jug) {
+  let t = String(txt || '');
+  jug.slice().sort((a, b) => b.nombre.length - a.nombre.length).forEach(x => { [x.nombre, x.j.nombre].filter(n => n && n.length > 2).forEach(n => { t = t.replace(new RegExp('\\b' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi'), x.cod); }); });
+  return t;
+}
+function _iaPrompt() {
+  const S = window._ia, d = _iaDatos(S.eq, S.per), f = n => n == null ? '-' : n.toFixed(1), com = (document.getElementById('iaCom') || {}).value || '';
+  const cat = d.comp ? (_compPartes(d.comp).cat || '') : '', mod = d.comp ? _calModalidad(d.comp) : '';
+  const L = [];
+  L.push('Eres un analista de fútbol base y coordinador de una escuela deportiva. Analiza los datos de mi equipo y mi comentario y redacta un análisis útil para el cuerpo técnico, en español, con tono constructivo y adecuado a niños y niñas.');
+  L.push('', `EQUIPO: categoría ${cat || '-'}${mod ? ' (' + mod + ')' : ''} · periodo: ${d.R.label} (${d.R.desde} a ${d.R.hasta})`);
+  L.push('Las valoraciones van de 1 (necesita refuerzo) a 5 (excelente). Técnico = control, pase, tiro. Físico = velocidad, resistencia, fuerza. Actitud = esfuerzo, trabajo en equipo, disciplina.');
+  L.push('', `RESULTADOS: ${d.tot.pj} partidos · ${d.tot.g} ganados, ${d.tot.e} empatados, ${d.tot.p} perdidos · goles a favor ${d.tot.gf}, en contra ${d.tot.gc}`);
+  d.partidos.forEach(p => L.push(`- ${p.fecha} jornada ${p.j} ${p.loc ? 'en casa' : 'fuera'}: ${p.gf}-${p.gc} (${p.r})`));
+  L.push('', `MEDIAS DEL EQUIPO: media ${f(d.tot.media)} · técnico ${f(d.tot.tec)} · físico ${f(d.tot.fis)} · actitud ${f(d.tot.act)}`);
+  if (d.evol.length > 1) L.push('Evolución mensual de la media: ' + d.evol.map(e => e.k + ' ' + f(e.v)).join(' · '));
+  L.push('', 'JUGADORES (código | nº evaluaciones | media | técnico | físico | actitud | primera→última | goles):');
+  d.jug.forEach(x => L.push(`${x.cod} | ${x.n} | ${f(x.media)} | ${f(x.tec)} | ${f(x.fis)} | ${f(x.act)} | ${x.n > 1 ? f(x.prim) + '→' + f(x.ult) : '-'} | ${x.goles}`));
+  const obs = []; d.jug.forEach(x => x.evs.forEach(e => { const t = [e.aspectosTecnicos, e.aspectosFisicos, e.actitud, e.observacionesParaFamilia].filter(Boolean).join(' / '); if (t) obs.push(`${x.cod}: ${_iaAnon(t, d.jug)}`); }));
+  if (obs.length) { L.push('', 'OBSERVACIONES DE LAS EVALUACIONES:'); obs.slice(-40).forEach(o => L.push('- ' + o.replace(/\s+/g, ' '))); }
+  d.eqEvs.forEach(e => { const t = [e.valoracionGeneral, e.observacionesParaFamilia].filter(Boolean).join(' / '); if (t) L.push('', 'VALORACIÓN DEL EQUIPO (' + _limpiarFecha(e.fecha) + '): ' + _iaAnon(t, d.jug)); });
+  L.push('', 'COMENTARIO DEL ENTRENADOR:', com.trim() ? _iaAnon(com.trim(), d.jug) : '(sin comentario)');
+  L.push('', 'INSTRUCCIONES DE RESPUESTA:', '- Refiérete a los jugadores SOLO por su código (J1, J2…). No inventes datos que no estén aquí.',
+    '- Responde exactamente con estos 6 apartados, cada uno empezando por "## " y con viñetas "- " breves:',
+    '## Resumen', '## Fortalezas', '## Áreas de mejora', '## Jugadores a seguir', '## Plan de trabajo', '## Mensaje para las familias',
+    '- En "Mensaje para las familias" escribe un párrafo corto y positivo, sin nombrar a ningún jugador.', '- Máximo 450 palabras en total. Sin tablas.');
+  return L.join('\n');
+}
+async function iaCopiar() {
+  _iaGuardarTxt(); const t = _iaPrompt();
+  try { await navigator.clipboard.writeText(t); toast('📋 Copiado. Pégalo en la IA'); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Copiado. Pégalo en la IA'); } catch (e2) { toast('No se pudo copiar'); } ta.remove(); }
+}
+function _iaMd(txt, jug) {
+  let t = _escHtml(String(txt || '').replace(/\r/g, ''));
+  jug.forEach(x => { t = t.replace(new RegExp('\\b' + x.cod + '\\b', 'g'), '<b>' + _escHtml(x.nombre) + '</b>'); });
+  const out = []; let ul = false;
+  t.split('\n').forEach(l => {
+    const s = l.trim(), h = s.match(/^#{1,4}\s*(.+)$/), li = s.match(/^(?:[-*•]|\d+[.)])\s+(.+)$/);
+    if (!li && ul) { out.push('</ul>'); ul = false; }
+    if (!s) return;
+    const fmt = x => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    if (h) out.push('<h3>' + fmt(h[1].replace(/\*\*/g, '')) + '</h3>');
+    else if (li) { if (!ul) { out.push('<ul>'); ul = true; } out.push('<li>' + fmt(li[1]) + '</li>'); }
+    else out.push('<p>' + fmt(s) + '</p>');
+  });
+  if (ul) out.push('</ul>');
+  return out.join('');
+}
+function iaInforme() {
+  const S = window._ia, d = _iaDatos(S.eq, S.per), g = _iaLS(S.eq), f = n => n == null ? '—' : n.toFixed(1).replace('.', ',');
+  if (!String(g.resp || '').trim() && !confirm('No has pegado la respuesta de la IA. ¿Generar el informe solo con datos y gráficas?')) return;
+  const col = d.eq.competicionId ? _calColorComp(d.eq.competicionId) : '#2E4057', cat = d.comp ? (_compPartes(d.comp).cat || '') : '';
+  const C = { fav: '#2a78d6', con: '#eb6834', tec: '#2a78d6', fis: '#eb6834', act: '#1baf7a', ink: '#1F1A1C', grid: '#ece6e8', mut: '#8a8086' };
+  // Gráfica 1: goles a favor / en contra por partido (barras agrupadas)
+  let g1 = '';
+  if (d.partidos.length) {
+    const W = 720, H = 230, mL = 30, mR = 10, mT = 14, mB = 44, iw = W - mL - mR, ih = H - mT - mB, mx = Math.max(1, ...d.partidos.map(p => Math.max(p.gf, p.gc)));
+    const paso = Math.max(1, Math.ceil(mx / 5)), top = Math.ceil(mx / paso) * paso, Y = v => mT + ih - v / top * ih, bw = iw / d.partidos.length, b = Math.min(22, bw * 0.34);
+    g1 = `<svg viewBox="0 0 ${W} ${H}" class="ch">`;
+    for (let v = 0; v <= top; v += paso) g1 += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}"/><text x="${mL - 6}" y="${Y(v) + 4}" text-anchor="end" class="ax">${v}</text>`;
+    d.partidos.forEach((p, i) => { const cx = mL + bw * i + bw / 2;
+      [[p.gf, C.fav, -b - 1], [p.gc, C.con, 1]].forEach(([v, c, dx]) => { if (v > 0) g1 += `<path d="M${cx + dx} ${Y(0)} V${Y(v) + 3} q0 -3 3 -3 h${b - 6} q3 0 3 3 V${Y(0)} Z" fill="${c}"><title>${v}</title></path>`; g1 += `<text x="${cx + dx + b / 2}" y="${Y(v) - 4}" text-anchor="middle" class="vl">${v}</text>`; });
+      g1 += `<text x="${cx}" y="${H - mB + 16}" text-anchor="middle" class="ax">J${_escHtml(p.j)}</text><text x="${cx}" y="${H - mB + 31}" text-anchor="middle" class="rs r${p.r}">${p.r}</text>`; });
+    g1 += `</svg>`;
+  }
+  // Gráfica 2: evolución mensual de la media del equipo
+  let g2 = '';
+  if (d.evol.length) {
+    const W = 380, H = 220, mL = 26, mR = 18, mT = 20, mB = 30, iw = W - mL - mR, ih = H - mT - mB, n = d.evol.length;
+    const X = i => mL + (n === 1 ? iw / 2 : i * iw / (n - 1)), Y = v => mT + ih - (v - 1) / 4 * ih, MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    g2 = `<svg viewBox="0 0 ${W} ${H}" class="ch">`;
+    [1, 2, 3, 4, 5].forEach(v => g2 += `<line x1="${mL}" x2="${W - mR}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}"/><text x="${mL - 6}" y="${Y(v) + 4}" text-anchor="end" class="ax">${v}</text>`);
+    g2 += `<path d="${d.evol.map((e, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(e.v).toFixed(1)).join(' ')}" fill="none" stroke="${C.ink}" stroke-width="3" stroke-linejoin="round"/>`;
+    d.evol.forEach((e, i) => g2 += `<circle cx="${X(i)}" cy="${Y(e.v)}" r="5" fill="${C.ink}" stroke="#fff" stroke-width="2"/><text x="${X(i)}" y="${Y(e.v) - 10}" text-anchor="middle" class="vl">${f(e.v)}</text><text x="${X(i)}" y="${H - 10}" text-anchor="middle" class="ax">${MES[+e.k.slice(5, 7) - 1]}</text>`);
+    g2 += `</svg>`;
+  }
+  // Gráfica 3: bloques del equipo (barras horizontales)
+  const blo = [['Técnico', d.tot.tec, C.tec], ['Físico', d.tot.fis, C.fis], ['Actitud', d.tot.act, C.act]];
+  const g3 = blo.some(x => x[1] != null) ? blo.map(([l, v, c]) => `<div class="hb"><span class="hl">${l}</span><span class="ht"><span class="hf" style="width:${v == null ? 0 : v / 5 * 100}%;background:${c};"></span></span><b>${f(v)}</b></div>`).join('') : '';
+  const kpi = (v, l) => `<div class="k"><b>${v}</b><span>${l}</span></div>`;
+  const filas = d.jug.slice().sort((a, b) => (b.media || 0) - (a.media || 0)).map(x => { const dv = x.n > 1 ? x.ult - x.prim : null;
+    return `<tr><td class="nm">${_escHtml(x.nombre)}</td><td>${x.n || '—'}</td><td>${f(x.tec)}</td><td>${f(x.fis)}</td><td>${f(x.act)}</td><td><span class="mb"><span style="width:${x.media == null ? 0 : x.media / 5 * 100}%"></span></span><b>${f(x.media)}</b></td><td>${dv == null ? '—' : (dv > 0.05 ? '▲ ' : (dv < -0.05 ? '▼ ' : '= ')) + f(Math.abs(dv))}</td><td>${x.goles || '—'}</td></tr>`; }).join('');
+  const resp = String(g.resp || '').trim(), com = String(g.com || '').trim();
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe · ${_escHtml(d.eq.nombre || '')}</title><style>
+    *{box-sizing:border-box;} body{font-family:'Segoe UI',Arial,sans-serif;color:#1F1A1C;margin:0;background:#f4f2f3;}
+    .pg{max-width:860px;margin:0 auto;background:#fff;padding:0 0 30px;}
+    .cab{background:linear-gradient(135deg,${col},${col}cc);color:#fff;padding:26px 30px;}
+    .cab small{letter-spacing:2px;text-transform:uppercase;font-weight:700;opacity:.85;font-size:12px;} .cab h1{margin:6px 0 4px;font-size:28px;} .cab div{opacity:.9;font-size:14px;}
+    .sec{padding:18px 30px 0;} h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:${col};border-bottom:2px solid ${col}33;padding-bottom:6px;margin:10px 0 12px;}
+    .ks{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;} .k{background:#f6f3f4;border-radius:12px;padding:12px 14px;} .k b{display:block;font-size:24px;} .k span{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#6b6266;font-weight:700;}
+    .ch{width:100%;height:auto;display:block;} .ax{font-size:11px;fill:${C.mut};} .vl{font-size:11px;font-weight:700;fill:#1F1A1C;} .rs{font-size:11px;font-weight:800;} .rG{fill:#17803D;} .rE{fill:#8a8086;} .rP{fill:#B42318;}
+    .ley{display:flex;gap:14px;font-size:12px;margin-bottom:6px;color:#444;} .ley i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+    .hb{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:14px;} .hl{width:70px;font-weight:700;} .ht{flex:1;height:14px;background:#f0ecee;border-radius:7px;overflow:hidden;} .hf{display:block;height:100%;border-radius:7px;}
+    table{width:100%;border-collapse:collapse;font-size:13px;} th{font-size:11px;text-transform:uppercase;color:#6b6266;text-align:center;padding:6px;border-bottom:2px solid #eee;} td{text-align:center;padding:7px 6px;border-bottom:1px solid #f0ecee;} td.nm,th.nm{text-align:left;}
+    .mb{display:inline-block;width:46px;height:7px;background:#f0ecee;border-radius:4px;overflow:hidden;margin-right:6px;vertical-align:1px;} .mb span{display:block;height:100%;background:#1F1A1C;}
+    .ia h3{font-size:15px;color:${col};margin:16px 0 6px;} .ia ul{margin:0;padding-left:20px;} .ia li{margin:4px 0;line-height:1.45;font-size:14px;} .ia p{line-height:1.5;font-size:14px;margin:6px 0;}
+    .com{background:#f6f3f4;border-left:4px solid ${col};border-radius:8px;padding:12px 14px;white-space:pre-wrap;font-size:14px;line-height:1.5;}
+    .bar{position:sticky;top:0;background:#1F1A1C;padding:10px;text-align:center;z-index:2;} .bar button{background:#fff;border:0;border-radius:8px;padding:9px 18px;font-weight:800;cursor:pointer;font-size:14px;}
+    .pie{font-size:11px;color:#8a8086;text-align:center;margin-top:24px;} .dos{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+    @media (max-width:640px){.ks{grid-template-columns:1fr 1fr;}.sec{padding:14px 16px 0;}.cab{padding:20px 16px;}.dos{grid-template-columns:1fr;} td,th{padding:5px 3px;font-size:12px;}}
+    @media print{.bar{display:none;} body{background:#fff;} .pg{max-width:none;} .sec{break-inside:avoid;} *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+  </style></head><body><div class="bar"><button onclick="print()">🖨️ Imprimir / Guardar PDF</button></div><div class="pg">
+    <div class="cab"><small>Informe de equipo · ${_escHtml(cat)}</small><h1>${_escHtml(d.eq.nombre || '')}</h1><div>${_escHtml(d.R.label)}${d.comp ? ' · ' + _escHtml(_compPartes(d.comp).nom || d.comp.nombre || '') : ''}</div></div>
+    <div class="sec"><div class="ks">${kpi(d.tot.pj, 'Partidos')}${kpi(d.tot.g + '-' + d.tot.e + '-' + d.tot.p, 'Gan · Emp · Per')}${kpi(d.tot.gf + ':' + d.tot.gc, 'Goles a favor : contra')}${kpi(f(d.tot.media), 'Valoración media')}</div></div>
+    ${resp ? `<div class="sec ia"><h2>🤖 Análisis</h2>${_iaMd(resp, d.jug)}</div>` : ''}
+    ${g1 ? `<div class="sec"><h2>⚽ Resultados por partido</h2><div class="ley"><span><i style="background:${C.fav}"></i>A favor</span><span><i style="background:${C.con}"></i>En contra</span><span>G · E · P = resultado</span></div>${g1}</div>` : ''}
+    ${(g2 || g3) ? `<div class="sec"><div class="dos">${g3 ? `<div><h2>📊 Por bloques</h2>${g3}</div>` : ''}${g2 ? `<div><h2>📈 Evolución de la media</h2>${g2}</div>` : ''}</div></div>` : ''}
+    ${d.jug.length ? `<div class="sec"><h2>👥 Jugadores</h2><table><thead><tr><th class="nm">Jugador</th><th>Eval.</th><th>Téc.</th><th>Fís.</th><th>Act.</th><th>Media</th><th>Evol.</th><th>Goles</th></tr></thead><tbody>${filas}</tbody></table></div>` : ''}
+    ${com ? `<div class="sec"><h2>📝 Comentario del entrenador</h2><div class="com">${_escHtml(com)}</div></div>` : ''}
+    <div class="pie">ClubOS ED · Escuela &amp; Deporte · Generado el ${new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}</div>
+  </div></body></html>`;
+  const w = window.open('', '_blank'); if (!w) { toast('Permite las ventanas emergentes para ver el informe'); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+// ── Evaluar un equipo completo (todos sus jugadores con el mismo sistema) ──
+window._evEq = window._evEq || { eq: '', tipo: 'continua' };
+const _EVAL_GRUPOS = [['⚙️ Técnico', ['tecControl', 'Control'], ['tecPase', 'Pase'], ['tecTiro', 'Tiro']], ['💪 Físico', ['fisVelocidad', 'Velocidad'], ['fisResistencia', 'Resistencia'], ['fisFuerza', 'Fuerza']], ['🧠 Actitud', ['actEsfuerzo', 'Esfuerzo'], ['actEquipo', 'Equipo'], ['actDisciplina', 'Disciplina']]];
+function evalEquipoAbrir() {
+  if (!puedeEvaluar()) { toast('No tienes permiso para evaluar'); return; }
+  const misEq = [...new Set(_misJugadoresEval().map(j => j.equipoId).filter(Boolean))].map(id => (DB.equipos || []).find(e => e.id === id)).filter(Boolean)
+    .sort((a, b) => _calOrdenComp(a.competicionId) - _calOrdenComp(b.competicionId) || (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  if (!misEq.length) { toast('No tienes equipos con jugadores'); return; }
+  if (!misEq.some(e => e.id === window._evEq.eq)) window._evEq.eq = misEq[0].id;
+  window._evEq.equipos = misEq;
+  document.getElementById('evalEqPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'evalEqPop'; pop.style.display = 'none';
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" id="evEqCab" style="--c:#6C3FA0;">
+      <div style="min-width:0;"><div class="cal-pop-cat">👥 Evaluar equipo</div><div class="cal-pop-nom">Todos los jugadores con el mismo sistema</div></div>
+      <span style="display:flex;gap:6px;align-items:center;"><button class="btn btn-outline btn-xs" onclick="evalEquipoGuardar()">💾 Guardar</button><button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span></div>
+    <div class="cal-pop-cuerpo" id="evEqCuerpo"></div></div>`;
+  document.body.appendChild(pop); evalEquipoPintar(); _popAbrir('evalEqPop');
+}
+function _evStars(id, v) { return `<div id="${id}" class="ev-st"></div>`; }
+function evalEquipoPintar() {
+  const S = window._evEq, cu = document.getElementById('evEqCuerpo'); if (!cu) return;
+  const eq = (DB.equipos || []).find(e => e.id === S.eq), col = eq && eq.competicionId ? _calColorComp(eq.competicionId) : '#6C3FA0';
+  document.getElementById('evEqCab').style.setProperty('--c', col);
+  const jugs = _misJugadoresEval().filter(j => j.equipoId === S.eq && j.activo !== false && j.activo !== 'false').sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  const seg = (v, l) => `<button type="button" class="${S.tipo === v ? 'on' : ''}" onclick="window._evEq.tipo='${v}';evalEquipoPintar()">${l}</button>`;
+  const bloqueEstrellas = pref => _EVAL_GRUPOS.map(([g, ...as]) => `<div class="ev-grp"><div class="ev-gt">${g}</div>${as.map(([c, l]) => `<div class="ev-asp"><span>${l}</span>${_evStars(pref + c)}</div>`).join('')}</div>`).join('');
+  cu.innerHTML = `<div class="gx-eqs">${S.equipos.map(e => { const c = (DB.competiciones || []).find(x => x.id === e.competicionId);
+      return `<button type="button" class="gx-eq${S.eq === e.id ? ' on' : ''}" style="--c:${e.competicionId ? _calColorComp(e.competicionId) : '#2E4057'}" onclick="window._evEq.eq='${e.id}';evalEquipoPintar()"><span class="gx-eq-cat">${_escHtml(c ? (_compPartes(c).cat || '') : '')}</span><span class="gx-eq-n">${_escHtml(e.nombre)}</span></button>`; }).join('')}</div>
+    <div class="jb" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+      <div><div class="fb-lbl" style="color:var(--gris-suave);margin-bottom:4px;">Tipo</div><div class="jb-seg" style="margin:0;">${seg('continua', '📅 Fecha libre')}${seg('partido', '⚽ Partido')}${seg('trimestral', '📊 Trimestral')}</div></div>
+      ${S.tipo === 'partido' ? `<label class="fb-f" style="flex:1;min-width:240px;"><span>Partido</span><select id="evEqPartido" style="padding:9px;border:1px solid #ddd;border-radius:10px;">${_evalOptsPartido(S.eq, S.partido || '')}</select></label>` : ''}
+      ${S.tipo === 'trimestral' ? `<label class="fb-f"><span>Trimestre</span><select id="evEqTrim" onchange="window._evEq.trim=this.value;evalEquipoPintar()" style="padding:9px;border:1px solid #ddd;border-radius:10px;">${_evalTrimOpciones(S.trim)}</select></label>` : ''}
+      ${S.tipo === 'continua' ? `<label class="fb-f"><span>Fecha</span><input type="date" id="evEqFecha" value="${S.fecha || new Date().toISOString().slice(0, 10)}"></label>` : ''}
+      <label class="fb-f"><span>Evaluador</span><input id="evEqEval" value="${_escHtml(S.evaluador || sesion.nombre || '')}" style="padding:8px 10px;border:1px solid #ccd6e6;border-radius:10px;"></label>
+    </div>
+    ${S.tipo === 'trimestral' ? '<div class="info-box" style="margin-bottom:10px;">📊 Cada jugador viene relleno con la <b>media de sus evaluaciones</b> del trimestre. Revisa, ajusta y guarda.</div>' : ''}
+    <details class="ev-eqconj"><summary>👥 Valoración del equipo en conjunto <span style="font-weight:600;color:var(--gris-suave);">(opcional · la ven las familias del equipo)</span></summary>
+      <div class="ev-card" style="border:0;box-shadow:none;padding:8px 0 0;">${bloqueEstrellas('tevEQ_')}<textarea id="tevEQ_txt" rows="2" placeholder="Comentario para las familias del equipo…"></textarea></div></details>
+    <div class="ev-n">${jugs.length} jugadores · Los que dejes sin estrellas no se guardan</div>
+    <div class="ev-lista">${jugs.map(j => { const r = S.tipo === 'trimestral' ? _evalMediaPeriodo(j.id, S.trim || _evalTrim().key) : null;
+      return `<div class="ev-card" id="tevC_${j.id}"><div class="ev-cab"><b>${_escHtml(j.nombre)} ${_escHtml(j.apellidos || '')}</b>
+        ${r ? `<span class="ev-base">${r.n ? 'Basado en ' + r.n + ' eval.' : 'Sin evaluaciones'}</span>` : ''}
+        <button type="button" class="alin-disp ev-skip" onclick="this.closest('.ev-card').classList.toggle('nd');this.textContent=this.closest('.ev-card').classList.contains('nd')?'⛔ No se evalúa':'✅ Evaluar'">✅ Evaluar</button></div>
+        ${bloqueEstrellas('tev_' + j.id + '_')}
+        <textarea id="tev_${j.id}_txt" rows="2" placeholder="Comentario para la familia (opcional)…">${r && r.n ? _escHtml(r.fam) : ''}</textarea></div>`; }).join('')}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;"><button class="btn btn-rojo" onclick="evalEquipoGuardar()">💾 Guardar evaluaciones</button></div>`;
+  jugs.forEach(j => { const r = S.tipo === 'trimestral' ? _evalMediaPeriodo(j.id, S.trim || _evalTrim().key) : null; CAMPOS_ASPECTOS_EVAL.forEach(c => _pintarEstrellas('tev_' + j.id + '_' + c, r ? r.med[c] : 0)); });
+  CAMPOS_ASPECTOS_EVAL.forEach(c => _pintarEstrellas('tevEQ_' + c, 0));
+}
+async function evalEquipoGuardar() {
+  const S = window._evEq, tipo = S.tipo, hoy = new Date().toISOString().slice(0, 10);
+  const partidoId = tipo === 'partido' ? (document.getElementById('evEqPartido') || {}).value || '' : '';
+  if (tipo === 'partido' && !partidoId) { toast('Elige el partido'); return; }
+  const periodo = tipo === 'trimestral' ? (document.getElementById('evEqTrim') || {}).value || _evalTrim().key : '';
+  const p = partidoId ? (DB.partidos || []).find(x => x.id === partidoId) : null, T = periodo ? _evalTrimDeKey(periodo) : null;
+  const fecha = tipo === 'partido' ? (_limpiarFecha(p && p.fecha) || hoy) : (tipo === 'trimestral' ? (T.hasta < hoy ? T.hasta : hoy) : ((document.getElementById('evEqFecha') || {}).value || hoy));
+  const evaluador = ((document.getElementById('evEqEval') || {}).value || '').trim(); S.evaluador = evaluador;
+  const nuevo = (pref, extra) => {
+    const r = { id: uid(), tipo, partidoId, periodo, fecha, evaluador, aspectosTecnicos: '', aspectosFisicos: '', actitud: '', ...extra };
+    CAMPOS_ASPECTOS_EVAL.forEach(c => { r[c] = _valorEstrellas(pref + c); });
+    const v = CAMPOS_ASPECTOS_EVAL.map(c => r[c]).filter(n => n > 0); if (!v.length) return null;
+    r.valoracionGeneral = NIVELES_VALORACION[Math.round(v.reduce((s, n) => s + n, 0) / v.length) - 1] || 'Buena';
+    r.observacionesParaFamilia = ((document.getElementById(pref + 'txt') || {}).value || '').trim();
+    return r;
+  };
+  const recs = [];
+  _misJugadoresEval().filter(j => j.equipoId === S.eq).forEach(j => { const card = document.getElementById('tevC_' + j.id); if (!card || card.classList.contains('nd')) return;
+    const r = nuevo('tev_' + j.id + '_', { jugadorId: j.id, equipoId: S.eq }); if (r) recs.push(r); });
+  const req = nuevo('tevEQ_', { jugadorId: '', equipoId: S.eq, tipo: 'equipo', partidoId, periodo });
+  if (req) recs.push(req);
+  if (!recs.length) { toast('No has puesto estrellas a nadie'); return; }
+  if (!confirm(`Se guardarán ${recs.length} evaluaci${recs.length === 1 ? 'ón' : 'ones'}${req ? ' (incluida la del equipo)' : ''}. ¿Continuar?`)) return;
+  DB.evaluaciones = (DB.evaluaciones || []).concat(recs);
+  await saveCol('evaluaciones'); _popCerrar(); toast(`✅ ${recs.length} evaluaciones guardadas`); renderEvaluaciones();
+}
+
 function abrirModalEvaluacion() {
   if (!puedeEvaluar()) { toast('No tienes permiso para crear evaluaciones'); return; }
   document.getElementById('evEditId').value = '';
+  window._evalEditEquipo = ''; _evalSetTipo('continua');
   _preseleccionarJugadorEval('');
   document.getElementById('evFecha').value = new Date().toISOString().slice(0,10);
   document.getElementById('evEvaluador').value = sesion.nombre || '';
@@ -9430,7 +9931,9 @@ function abrirModalEvaluacion() {
 function editarEvaluacion(id) {
   const ev = (DB.evaluaciones||[]).find(x=>x.id===id); if(!ev) return;
   document.getElementById('evEditId').value = ev.id;
+  window._evalEditEquipo = ev.tipo === 'equipo' ? (ev.equipoId || '') : '';
   _preseleccionarJugadorEval(ev.jugadorId||'');
+  _evalSetTipo(ev.tipo || 'continua', ev);
   document.getElementById('evFecha').value       = ev.fecha       ||'';
   document.getElementById('evEvaluador').value   = ev.evaluador   ||'';
   document.getElementById('evTecnicos').value    = ev.aspectosTecnicos ||'';
@@ -9445,12 +9948,18 @@ function editarEvaluacion(id) {
 
 async function guardarEvaluacion() {
   const editId = document.getElementById('evEditId').value;
-  const jugadorId = document.getElementById('evJugador').value;
-  if (!jugadorId) { toast('Selecciona un jugador'); return; }
+  const jugadorId = document.getElementById('evJugador').value, tipo = document.getElementById('evTipo').value || 'continua';
+  if (!jugadorId && tipo !== 'equipo') { toast('Selecciona un jugador'); return; }
+  const partidoId = tipo === 'partido' ? document.getElementById('evPartido').value : '';
+  if (tipo === 'partido' && !partidoId) { toast('Elige el partido'); return; }
+  const periodo = tipo === 'trimestral' ? document.getElementById('evTrim').value : '';
+  const jj = (DB.jugadores || []).find(x => x.id === jugadorId);
   _actualizarValoracionGeneralEval();
   const rec = {
     id:                       editId || uid(),
-    jugadorId,
+    jugadorId:                tipo === 'equipo' ? '' : jugadorId,
+    tipo, partidoId, periodo,
+    equipoId:                 tipo === 'equipo' ? window._evalEditEquipo : (jj ? jj.equipoId || '' : ''),
     fecha:                    document.getElementById('evFecha').value,
     evaluador:                document.getElementById('evEvaluador').value.trim(),
     aspectosTecnicos:         document.getElementById('evTecnicos').value.trim(),
@@ -10982,8 +11491,8 @@ function exportarFichaJugadorPDF(jugadorId) {
   const filaEst = (label, campo, ev) => ev[campo] ? `<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>${label}</span><span style="color:#D4A017;">${_estrellasTexto(ev[campo])}</span></div>` : '';
   const fichas = lista.map(ev => `
     <div style="margin-bottom:28px;page-break-inside:avoid;border:1px solid #ddd;border-radius:6px;overflow:hidden;">
-      <div style="background:#7B1E3A;color:white;padding:8px 14px;font-weight:700;font-size:14px;">
-        ${ev.fecha||'—'}
+      <div style="background:${_evalColorTipo(ev.tipo)};color:white;padding:8px 14px;font-weight:700;font-size:14px;">
+        ${ev.fecha||'—'} · ${_escHtml(_evalEtiqueta(ev))}
       </div>
       <div style="padding:14px;font-size:13px;line-height:1.5;">
         <div><strong>Evaluador:</strong> ${ev.evaluador||'—'}</div>
