@@ -1252,6 +1252,12 @@ body.cal-pop-on{overflow:hidden;}
 .ia-hm{font-size:12px;font-weight:800;background:#f3eef0;border-radius:20px;padding:4px 10px;white-space:nowrap;}
 .ia-chk{display:flex;gap:10px;align-items:flex-start;background:#fff;border-radius:12px;padding:10px 12px;margin:4px 0 8px;box-shadow:0 1px 4px rgba(0,0,0,.06);cursor:pointer;font-size:14px;}
 .ia-chk input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--rojo);} .ia-chk small{color:var(--gris-suave);font-size:12px;}
+.fam-hijos{display:flex;gap:8px;flex-wrap:wrap;padding:2px 2px 10px;margin-bottom:6px;}
+.fam-hijo{flex:1 1 140px;min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px;border:0;border-radius:14px;padding:10px 16px;cursor:pointer;background:#fff;color:#333;box-shadow:0 2px 6px rgba(0,0,0,.08);border-left:5px solid var(--c);text-align:left;}
+.fam-hijo.on{background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 70%,#000));color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.18);}
+.fam-hijo-n{font-weight:800;font-size:15px;} .fam-hijo-e{font-size:11px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.fam-vinc{display:inline-flex;align-items:center;gap:6px;background:#E9F7EF;color:#1A7A3C;border-radius:20px;padding:5px 6px 5px 12px;margin:4px 6px 0 0;font-size:13px;font-weight:600;}
+.fam-vinc button{border:0;background:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#B42318;font-weight:800;}
 </style>
 </head>
 <body>
@@ -1626,8 +1632,8 @@ body.cal-pop-on{overflow:hidden;}
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="cEsFamilia" style="width:auto;" onchange="toggleWrapFamilia()"> Acceso "Mi Jugador" (familia, vista restringida)</label>
       </div>
       <div class="form-field form-full" id="wrapFamiliaJugador" style="display:none;">
-        <label>Jugador/a vinculado/a</label>
-        <input id="cFamiliaBuscar" placeholder="Escribe el nombre del jugador…" autocomplete="off" oninput="filtrarFamiliaJugador(this.value)">
+        <label>Jugadores/as vinculados/as <span style="font-weight:400;color:var(--gris-suave);">(puedes añadir varios hermanos)</span></label>
+        <input id="cFamiliaBuscar" placeholder="Escribe el nombre para añadir un jugador…" autocomplete="off" oninput="filtrarFamiliaJugador(this.value)">
         <div id="cFamiliaSugerencias" style="position:relative;"></div>
         <input type="hidden" id="cFamiliaJugadorId">
         <div id="cFamiliaSeleccionado" style="margin-top:6px;font-size:12px;color:var(--gris-suave);"></div>
@@ -2412,8 +2418,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.2.7';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.6';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.2.8';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.7';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2692,8 +2698,27 @@ function entrarDirecto(rol) {
   iniciarSesion({ rol, nombre: 'Familia' });
 }
 
+// Familias con varios hijos: jugadorId del Sheet = "id1,id2". sesion.jugadorIds = todos; sesion.jugadorId = el que se está viendo
+function _famIds() { return (sesion && Array.isArray(sesion.jugadorIds) && sesion.jugadorIds.length) ? sesion.jugadorIds : String((sesion && sesion.jugadorId) || '').split(',').map(x => x.trim()).filter(Boolean); }
+function _famPrepararSesion(cred) {
+  if (!cred || !cred.esFamilia) return;
+  const ids = Array.isArray(cred.jugadorIds) && cred.jugadorIds.length ? cred.jugadorIds : String(cred.jugadorId || '').split(',').map(x => x.trim()).filter(Boolean);
+  let sel = ''; try { sel = localStorage.getItem('clubos_ed_mihijo') || ''; } catch (e) {}
+  cred.jugadorIds = ids; cred.jugadorId = ids.includes(sel) ? sel : (ids.includes(cred.jugadorId) ? cred.jugadorId : (ids[0] || ''));
+}
+function famCambiarHijo(id) {
+  if (!_famIds().includes(id)) return;
+  sesion.jugadorId = id; try { localStorage.setItem('clubos_ed_mihijo', id); localStorage.setItem('clubos_ed_sesion', JSON.stringify(sesion)); } catch (e) {}
+  renderVistaFamiliaJugador(); window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function _famActualizarIds(ids) {
+  if (!sesion || !sesion.esFamilia || !Array.isArray(ids) || !ids.length) return;
+  sesion.jugadorIds = ids.map(String); if (!sesion.jugadorIds.includes(sesion.jugadorId)) sesion.jugadorId = sesion.jugadorIds[0];
+  try { localStorage.setItem('clubos_ed_sesion', JSON.stringify(sesion)); } catch (e) {}
+}
 function iniciarSesion(cred) {
   if (cred.rol === 'admin') cred.user = 'cbedadmin';
+  _famPrepararSesion(cred);
   cred.ts = Date.now();
   sesion = cred;
   localStorage.setItem('clubos_ed_sesion', JSON.stringify(cred));
@@ -3836,8 +3861,8 @@ function nombreClub(clubId) {
 function _etiquetaDestinatarioClub(clubId) {
   const c = (DB.clubes||[]).find(x=>x.user===clubId);
   if (c && c.esFamilia) {
-    const j = (DB.jugadores||[]).find(x=>x.id===c.jugadorId);
-    return '👨‍👩‍👧 Familia de ' + (j ? (j.nombre+' '+(j.apellidos||'')) : c.nombre);
+    const hs = String(c.jugadorId || '').split(',').map(id => (DB.jugadores || []).find(x => x.id === id.trim())).filter(Boolean);
+    return '👨‍👩‍👧 Familia de ' + (hs.length ? hs.map(x => (x.nombre + ' ' + (x.apellidos || '')).trim()).join(' y ') : c.nombre);
   }
   return nombreClub(clubId);
 }
@@ -8271,7 +8296,8 @@ async function eliminarPatr(id) {
 function renderVistaFamiliaJugador() {
   const cont = document.getElementById('vistaFamiliaJugador');
   if (!cont) return;
-  const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
+  let j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
+  if (!j) { const alt = _famIds().map(id => (DB.jugadores || []).find(x => x.id === id)).find(Boolean); if (alt) { sesion.jugadorId = alt.id; j = alt; } }
   if (!j) {
     cont.innerHTML = '<div class="empty-state"><div class="ei">⚠️</div><p>No se ha encontrado el jugador/a vinculado/a. Contacta con el club.</p></div>';
     return;
@@ -8298,9 +8324,12 @@ function renderVistaFamiliaJugador() {
 
   const btnTab = (id, label) => `<button class="btn ${tab===id?'btn-rojo':'btn-outline'} btn-sm" onclick="activarTabFamilia('${id}')">${label}</button>`;
 
-  cont.innerHTML = `
+  const hijos = _famIds().map(id => (DB.jugadores || []).find(x => x.id === id)).filter(Boolean);
+  const selHijos = hijos.length > 1 ? `<div class="fam-hijos">${hijos.map(h => { const e2 = (DB.equipos || []).find(e => e.id === h.equipoId), c2 = e2 && e2.competicionId ? _calColorComp(e2.competicionId) : '#2E4057', cp = e2 ? (DB.competiciones || []).find(c => c.id === e2.competicionId) : null;
+      return `<button type="button" class="fam-hijo${h.id === j.id ? ' on' : ''}" style="--c:${c2}" onclick="famCambiarHijo('${h.id}')"><span class="fam-hijo-n">${_escHtml(h.nombre)}</span><span class="fam-hijo-e">${_escHtml(cp ? (_compPartes(cp).cat || '') : '')}${e2 ? ' · ' + _escHtml(e2.nombre) : ''}</span></button>`; }).join('')}</div>` : '';
+  cont.innerHTML = `${selHijos}
     <div style="background:var(--marino,#0B1F3A);color:#fff;border-radius:14px;padding:20px;margin-bottom:20px;">
-      <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;">Mi Jugador/a</div>
+      <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:4px;">Mi Jugador/a${hijos.length > 1 ? ' · ' + (hijos.findIndex(x => x.id === j.id) + 1) + ' de ' + hijos.length : ''}</div>
       <div style="font-size:1.4rem;font-weight:800;">${j.nombre} ${j.apellidos||''}</div>
       <div style="font-size:13px;opacity:.85;margin-top:4px;">${eq?('🏟️ '+eq.nombre):'Sin equipo asignado'}${escNombres?' · 🏫 '+escNombres:''}</div>
       ${eq && eq.delegado ? `<div style="font-size:12px;opacity:.75;margin-top:8px;border-top:1px solid rgba(255,255,255,.15);padding-top:8px;">👤 Entrenador: ${eq.delegado}${eq.telDelegado?` · 📞 <a href="tel:${eq.telDelegado}" style="color:#fff;">${eq.telDelegado}</a>`:''}${eq.emailDelegado?` · ✉️ <a href="mailto:${eq.emailDelegado}" style="color:#fff;">${eq.emailDelegado}</a>`:''}</div>` : ''}
@@ -8447,8 +8476,8 @@ async function enviarSugerenciaFamilia() {
   if (!texto) { toast('Escribe algo antes de enviar'); return; }
   const paraDestinatarios = Array.from(document.querySelectorAll('#famSugParaBox input[data-para]:checked')).map(c=>c.dataset.para);
   if (!paraDestinatarios.length) { toast('Elige a quién va dirigida'); return; }
-  const j = (DB.jugadores||[]).find(x=>x.id===sesion.jugadorId);
-  const nombreRemitente = j ? ('Familia de ' + j.nombre + ' ' + (j.apellidos||'')) : 'Familia';
+  const hs = _famIds().map(id => (DB.jugadores || []).find(x => x.id === id)).filter(Boolean);
+  const nombreRemitente = hs.length ? ('Familia de ' + hs.map(x => (x.nombre + ' ' + (x.apellidos || '')).trim()).join(' y ')) : 'Familia';
   if (!DB.sugerencias) DB.sugerencias = [];
   DB.sugerencias.push({
     id: uid(),
@@ -8976,6 +9005,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.conceptos?.length) DB.conceptos = merge(DB.conceptos, d.conceptos);
         if (d.pagos?.length) DB.pagos = merge(DB.pagos, d.pagos);
         if (d.informes?.length) DB.informes = merge(DB.informes || [], d.informes);
+        if (d.famJugadorIds) _famActualizarIds(d.famJugadorIds);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -9026,6 +9056,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.conceptos = sinBorrados(d.conceptos);
         DB.pagos = sinBorrados(d.pagos);
         DB.informes = sinBorrados(d.informes);
+        if (d.famJugadorIds) _famActualizarIds(d.famJugadorIds);
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
@@ -11874,8 +11905,7 @@ function editarClub(id) {
   document.getElementById('wrapFamiliaJugador').style.display = c.esFamilia === true ? '' : 'none';
   document.getElementById('cFamiliaJugadorId').value = c.jugadorId || '';
   document.getElementById('cFamiliaBuscar').value = '';
-  const jVinculado = (DB.jugadores||[]).find(j=>j.id===c.jugadorId);
-  document.getElementById('cFamiliaSeleccionado').textContent = jVinculado ? ('✅ Vinculado a: ' + jVinculado.nombre + ' ' + (jVinculado.apellidos||'')) : '';
+  _famPintarVinculados();
   document.getElementById('cEditId').value = c.id;
   abrirModal('modalClub');
 }
@@ -11898,13 +11928,22 @@ function filtrarFamiliaJugador(texto) {
     `</div>`;
 }
 
+function _famVincIds() { return String(document.getElementById('cFamiliaJugadorId').value || '').split(',').map(x => x.trim()).filter(Boolean); }
+function _famPintarVinculados() {
+  const cont = document.getElementById('cFamiliaSeleccionado'); if (!cont) return;
+  const ids = _famVincIds();
+  cont.innerHTML = ids.length ? ids.map(id => { const j = (DB.jugadores || []).find(x => x.id === id), e = j ? (DB.equipos || []).find(q => q.id === j.equipoId) : null;
+    return `<span class="fam-vinc">✅ ${_escHtml(j ? (j.nombre + ' ' + (j.apellidos || '')).trim() : id)}${e ? ' <small>· ' + _escHtml(e.nombre) + '</small>' : ''}<button type="button" onclick="quitarFamiliaJugador('${id}')" title="Quitar">✕</button></span>`; }).join('') : '';
+}
 function seleccionarFamiliaJugador(jugadorId) {
   const j = (DB.jugadores||[]).find(x=>x.id===jugadorId); if (!j) return;
-  document.getElementById('cFamiliaJugadorId').value = jugadorId;
+  const ids = _famVincIds(); if (!ids.includes(jugadorId)) ids.push(jugadorId);
+  document.getElementById('cFamiliaJugadorId').value = ids.join(',');
   document.getElementById('cFamiliaBuscar').value = '';
   document.getElementById('cFamiliaSugerencias').innerHTML = '';
-  document.getElementById('cFamiliaSeleccionado').textContent = '✅ Vinculado a: ' + j.nombre + ' ' + (j.apellidos||'');
+  _famPintarVinculados();
 }
+function quitarFamiliaJugador(id) { document.getElementById('cFamiliaJugadorId').value = _famVincIds().filter(x => x !== id).join(','); _famPintarVinculados(); }
 
 async function guardarClub() {
   const editId = document.getElementById('cEditId').value;
