@@ -2432,7 +2432,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.3.1';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.3.2';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.8';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -2675,7 +2675,8 @@ async function doLoginRemoto(u, p) {
     const j = await jsonpFetch(url, 8000);
     if (j && j.ok) {
       cerrarLogin();
-      iniciarSesion({ user: u, pass: p, rol: 'club', nombre: j.nombre || u });
+      const cu = (DB.clubes || []).find(c => String(c.user || '').toLowerCase() === u);
+      iniciarSesion({ user: j.user || (cu ? cu.user : u), pass: p, rol: 'club', nombre: j.nombre || u });
     } else {
       document.getElementById('loginError').style.display = 'block';
     }
@@ -2730,8 +2731,17 @@ function _famActualizarIds(ids) {
   sesion.jugadorIds = ids.map(String); if (!sesion.jugadorIds.includes(sesion.jugadorId)) sesion.jugadorId = sesion.jugadorIds[0];
   try { localStorage.setItem('clubos_ed_sesion', JSON.stringify(sesion)); } catch (e) {}
 }
+// El usuario de club debe ir con las mayúsculas exactas del Sheet (RclMABG ≠ rclmabg) o no encuentra sus equipos/jugadores
+function _clubNormalizarUser() {
+  if (!sesion || sesion.rol !== 'club' || sesion.esFamilia || !sesion.user) return false;
+  const c = (DB.clubes || []).find(x => String(x.user || '').toLowerCase() === String(sesion.user).toLowerCase());
+  if (!c || c.user === sesion.user) return false;
+  sesion.user = c.user; try { localStorage.setItem('clubos_ed_sesion', JSON.stringify(sesion)); } catch (e) {}
+  return true;
+}
 function iniciarSesion(cred) {
   if (cred.rol === 'admin') cred.user = 'cbedadmin';
+  if (cred.rol === 'club' && !cred.esFamilia && cred.user) { const c = (DB.clubes || []).find(x => String(x.user || '').toLowerCase() === String(cred.user).toLowerCase()); if (c) cred.user = c.user; }
   _famPrepararSesion(cred);
   cred.ts = Date.now();
   sesion = cred;
@@ -2831,6 +2841,7 @@ function getDefaultTab() {
 function buildNav() {
   if (sesion.esFamilia) { document.getElementById('navBar').innerHTML = ''; _buildBottomNav(); _buildSideNav(); return; }
   let tabs = TABS_POR_ROL[sesion.rol] || [];
+  window._navPE = puedeEvaluar();
   if (sesion.rol === 'club' && !puedeEvaluar()) tabs = tabs.filter(t => t !== 'evaluaciones' && t !== 'alineaciones');
   const nav = document.getElementById('navBar');
   nav.innerHTML = tabs.map(t =>
@@ -9036,6 +9047,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         if (d.pagos?.length) DB.pagos = merge(DB.pagos, d.pagos);
         if (d.informes?.length) DB.informes = merge(DB.informes || [], d.informes);
         if (d.famJugadorIds) _famActualizarIds(d.famJugadorIds);
+        if (_clubNormalizarUser() || (sesion && sesion.rol === 'club' && !sesion.esFamilia && window._navPE !== puedeEvaluar())) { try { buildNav(); _buildSideNav(); if (typeof renderAll === 'function') renderAll(); } catch (e) {} }
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         renderAll(); setSyncStatus('ok');
@@ -9087,6 +9099,7 @@ console.log('Familias: acceso directo (sin contraseña)');
         DB.pagos = sinBorrados(d.pagos);
         DB.informes = sinBorrados(d.informes);
         if (d.famJugadorIds) _famActualizarIds(d.famJugadorIds);
+        if (_clubNormalizarUser() || (sesion && sesion.rol === 'club' && !sesion.esFamilia && window._navPE !== puedeEvaluar())) { try { buildNav(); _buildSideNav(); if (typeof renderAll === 'function') renderAll(); } catch (e) {} }
         delete DB.competicion;
         localStorage.setItem('clubos_ed', JSON.stringify(DB));
         _snapReconstruir(); // tras reemplazar todo, lo local == lo del servidor
