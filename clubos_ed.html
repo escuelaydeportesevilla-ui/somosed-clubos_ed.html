@@ -1258,6 +1258,18 @@ body.cal-pop-on{overflow:hidden;}
 .fam-hijo-n{font-weight:800;font-size:15px;} .fam-hijo-e{font-size:11px;opacity:.8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 .fam-vinc{display:inline-flex;align-items:center;gap:6px;background:#E9F7EF;color:#1A7A3C;border-radius:20px;padding:5px 6px 5px 12px;margin:4px 6px 0 0;font-size:13px;font-weight:600;}
 .fam-vinc button{border:0;background:#fff;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#B42318;font-weight:800;}
+.fa-card{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid var(--c);}
+.fa-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;} .fa-nom{font-weight:800;font-size:15px;}
+.fa-hijos{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px;font-size:13px;} .fa-hijos small{color:var(--gris-suave);} .fa-otros{color:var(--gris-suave);font-style:italic;}
+.fa-tel{font-size:12px;color:var(--gris-suave);margin-top:4px;}
+.fa-clave{flex:none;background:#F3EEF0;border-radius:10px;padding:6px 10px;font-family:ui-monospace,Menlo,monospace;font-size:14px;cursor:pointer;letter-spacing:1px;}
+.fa-acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.fa-form{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);border:2px solid #1A7A3C33;}
+.fa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;} .fa-form input{width:100%;padding:9px 10px;border:1px solid #ddd;border-radius:10px;font:inherit;font-size:14px;}
+.fa-res{display:flex;flex-direction:column;border:1px solid #eee;border-radius:10px;margin-top:6px;overflow:hidden;} .fa-res button{border:0;border-bottom:1px solid #f0ecee;background:#fff;text-align:left;padding:9px 12px;cursor:pointer;font-size:14px;} .fa-res button:hover{background:#F6FBF8;} .fa-res small{color:var(--gris-suave);}
+.fa-sin{background:#fff;border-radius:14px;padding:12px 14px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);} .fa-sin summary{cursor:pointer;font-weight:800;}
+.fa-sinf{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f0ecee;font-size:14px;} .fa-sinf small{color:var(--gris-suave);}
+@media (max-width:640px){.fa-grid{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
@@ -1510,6 +1522,7 @@ body.cal-pop-on{overflow:hidden;}
         </div>
         <button class="btn btn-outline" id="btnToggleListado" onclick="toggleVistaJugadores()" style="display:none;">📋 Ver listado</button>
         <button class="btn btn-outline" id="btnToggleNotas" onclick="toggleVistaNotas()" style="display:none;">📝 Notas</button>
+        <button class="btn btn-outline" id="btnFamAccesos" onclick="famAccesosAbrir()" style="display:none;">👨‍👩‍👧 Accesos familias</button>
         <button class="btn btn-rojo" id="btnAddJugador" onclick="abrirModalJugador()">+ Añadir jugador</button>
       </div>
       <div id="jugBarra"></div>
@@ -1544,6 +1557,7 @@ body.cal-pop-on{overflow:hidden;}
         <input type="text" id="buscadorEvaluaciones" placeholder="🔎 Buscar jugador…" oninput="filtrarEvaluaciones(this.value)" style="max-width:200px;padding:8px 12px;border-radius:8px;border:1px solid var(--gris-linea);font-size:13px;margin-right:8px;">
         <button class="btn btn-outline" onclick="evalEquipoAbrir()" style="margin-right:6px;">👥 Evaluar equipo</button>
         <button class="btn btn-outline" onclick="iaInformeAbrir()" style="margin-right:6px;">🤖 Informe IA</button>
+        <button class="btn btn-outline" onclick="famAccesosAbrir()" style="margin-right:6px;">👨‍👩‍👧 Accesos familias</button>
         <button class="btn btn-rojo" id="btnNuevaEvaluacion" onclick="abrirModalEvaluacion()">+ Nueva evaluación</button>
       </div>
       <div id="evaluacionesContent"></div>
@@ -2418,8 +2432,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.2.8';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.7';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.3.1';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.4.8';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -2783,10 +2797,10 @@ function pedirSyncAntesDeLogout() {
 //  NAVEGACIÓN POR ROL
 // ══════════════════════════════════════════════════════
 const TABS_POR_ROL = {
-  admin:    ['competicion','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convpartido','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias','clubes'],
-  club:     ['competicion','equipos','jugadores','evaluaciones','alineaciones','convpartido','convocatorias','pagos','misjornadas','calendario','clasificacion','goleadores','actas','noticias','patrocinadores','sugerencias'],
+  admin:    ['misjornadas','calendario','competicion','actas','clasificacion','goleadores','equipos','jugadores','escuelas','personal','evaluaciones','alineaciones','convpartido','convocatorias','pagos','noticias','patrocinadores','sugerencias','clubes'],
+  club:     ['misjornadas','calendario','competicion','actas','clasificacion','goleadores','equipos','jugadores','evaluaciones','alineaciones','convpartido','convocatorias','pagos','noticias','patrocinadores','sugerencias'],
   familias: ['miequipo','misjornadas','competicion','equipos','calendario','clasificacion','goleadores','noticias','patrocinadores','sugerencias'],
-  arbitro:  ['competicion','calendario','equipos','jugadores','actas','goleadores','noticias','patrocinadores','sugerencias'],
+  arbitro:  ['calendario','competicion','actas','goleadores','equipos','jugadores','noticias','patrocinadores','sugerencias'],
 };
 const TAB_LABELS = {
   miequipo:'⭐ Mi equipo', competicion:'⚙️ Competición', equipos:'🏟️ Equipos', jugadores:'👥 Jugadores',
@@ -2846,6 +2860,8 @@ function buildNav() {
   if (btnExp) btnExp.style.display = (esAdmin || esClub) ? '' : 'none';
   const btnNuevaEval = document.getElementById('btnNuevaEvaluacion');
   if (btnNuevaEval) btnNuevaEval.style.display = puedeEvaluar() ? '' : 'none';
+  const btnFamAcc = document.getElementById('btnFamAccesos');
+  if (btnFamAcc) btnFamAcc.style.display = (puedeEvaluar() && !sesion.esFamilia) ? '' : 'none';
   const btnSolicitud = document.getElementById('btnSolicitarInscripcion');
   if (btnSolicitud) btnSolicitud.style.display = (sesion.rol==='familias') ? '' : 'none';
 }
@@ -2854,9 +2870,9 @@ function buildNav() {
 //  MÓVIL: barra inferior, menú ⋯, botón flotante
 // ══════════════════════════════════════════════════════
 const _BN_PRIORIDAD = {
-  admin:['misjornadas','calendario','equipos','jugadores'],
-  club:['misjornadas','calendario','equipos','jugadores'],
-  arbitro:['calendario','equipos','jugadores','actas'],
+  admin:['misjornadas','calendario','competicion','actas'],
+  club:['misjornadas','calendario','competicion','actas'],
+  arbitro:['calendario','competicion','actas','jugadores'],
   familias:['miequipo','misjornadas','calendario','clasificacion']
 };
 function _tabsVisibles() {
@@ -2865,7 +2881,7 @@ function _tabsVisibles() {
   return tabs;
 }
 const _SN_GRUPOS = [
-  ['Competición', ['miequipo','misjornadas','calendario','clasificacion','goleadores','actas','competicion']],
+  ['Competición', ['miequipo','misjornadas','calendario','competicion','actas','clasificacion','goleadores']],
   ['Equipos y personas', ['equipos','jugadores','escuelas','personal','clubes']],
   ['Gestión', ['convpartido','convocatorias','alineaciones','evaluaciones','pagos']],
   ['Comunicación', ['noticias','patrocinadores','sugerencias']]
@@ -3308,6 +3324,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const q = new URLSearchParams(location.search).get('equipo');
     const cv = new URLSearchParams(location.search).get('conv');
     if (cv) { convPublicaIniciar(cv); return; }
+    const mj = new URLSearchParams(location.search).get('mj');
+    if (mj) {
+      try { const u = new URL(location.href); u.searchParams.delete('mj'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch (e) {}
+      let r0 = null; try { r0 = JSON.parse(localStorage.getItem('clubos_ed_sesion') || 'null'); } catch (e) {}
+      if (!(r0 && r0.esFamilia && String(r0.pass) === mj)) { doLoginFamiliaJugador(mj); return; }
+    }
     if (q) _miEqSet(q);
     // Sesión recordada: se mantiene hasta 30 días sin abrir la app (se renueva en cada apertura)
     const SESION_DIAS = 30;
@@ -4715,7 +4737,7 @@ function _sedesPintar() {
       <button class="btn btn-outline btn-sm" onclick="_sedesCopiar()">📋 Copiar agenda</button></div>
     ${Object.keys(porDia).length ? Object.entries(porDia).map(([f, lst]) => `<div class="ag-dia"><div class="ag-fecha">${f === 'sin' ? 'Fecha por confirmar' : '🗓️ ' + _escHtml(_mjFechaTxt(f))}<span>${lst.length} partido${lst.length === 1 ? '' : 's'}</span></div>
       ${lst.map(p => { const c = (DB.competiciones || []).find(x => x.id === p.competicionId), jug = p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
-        return `<div class="ag-fila" ${sesion.rol === 'admin' ? `onclick="editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
+        return `<div class="ag-fila" ${_puedeEditarPartido(p) ? `onclick="editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
           <div class="ag-hora">${_escHtml(_limpiarHora(p.hora) || '--:--')}</div>
           <div class="ag-info"><span class="cat-chip" style="--c:${p.competicionId ? _calColorComp(p.competicionId) : '#6B7280'}">${_escHtml(c ? (_compPartes(c).cat || c.nombre) : '—')}${c && _calModalidad(c) === 'Fútbol 7' ? ' · F7' : ''}</span>
             <div class="ag-eqs">${_escHtml(mE[p.localId]?.nombre || '—')} <b>${jug ? _escHtml(p.golesLocal) + ' – ' + _escHtml(p.golesVisitante) : 'vs'}</b> ${_escHtml(mE[p.visitanteId]?.nombre || '—')}</div>
@@ -4770,7 +4792,7 @@ function fechaBusAbrir() {
       <span style="display:flex;gap:6px;align-items:center;">${ps.length ? '<button class="btn btn-outline btn-xs" onclick="_fechaBusCopiar()">📋 Copiar</button>' : ''}<button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></span></div>
     <div class="cal-pop-cuerpo">${ps.length ? Object.entries(porDia).map(([f, lst]) => `<div class="ag-dia"><div class="ag-fecha">🗓️ ${_escHtml(_mjFechaTxt(f))}<span>${lst.length} partido${lst.length === 1 ? '' : 's'}</span></div>
       ${lst.map(p => { const c = (DB.competiciones || []).find(x => x.id === p.competicionId), jug = p.estado === 'jugado' && p.golesLocal !== '' && p.golesLocal != null;
-        return `<div class="ag-fila" ${sesion.rol === 'admin' ? `onclick="_popCerrar();editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
+        return `<div class="ag-fila" ${_puedeEditarPartido(p) ? `onclick="_popCerrar();editarPartido('${p.id}')" style="cursor:pointer;"` : ''}>
           <div class="ag-hora">${_escHtml(_limpiarHora(p.hora) || '--:--')}</div>
           <div class="ag-info"><span class="cat-chip" style="--c:${p.competicionId ? _calColorComp(p.competicionId) : '#6B7280'}">${_escHtml(c ? (_compPartes(c).cat || c.nombre) : '—')}${c && _calModalidad(c) === 'Fútbol 7' ? ' · F7' : ''}</span>
             <div class="ag-eqs">${_escHtml(mE[p.localId]?.nombre || '—')} <b>${jug ? _escHtml(p.golesLocal) + ' – ' + _escHtml(p.golesVisitante) : 'vs'}</b> ${_escHtml(mE[p.visitanteId]?.nombre || '—')}</div>
@@ -6438,10 +6460,10 @@ function renderCalendario() {
                     ${_limpiarFecha(p.fecha)} ${_limpiarHora(p.hora)}<br>📍 ${p.campo||'Lugar por confirmar'}
                   </div>
                   <span class="badge badge-${p.estado||'pendiente'}">${p.estado||'Pendiente'}</span>
-                  ${_avisoActivo(p) ? _avisoBadge(p, esAdmin) : ''}
+                  ${_avisoActivo(p) ? _avisoBadge(p, _puedeEditarPartido(p)) : ''}
                   <div class="partido-actions">
-                    ${esAdmin ? `<button class="btn btn-outline btn-xs" onclick="editarPartido('${p.id}')">✏️ Editar</button>` : ''}
-                    ${esAdmin && !_avisoActivo(p) && p.estado!=='jugado' ? `<button class="btn btn-outline btn-xs" onclick="suspenderPartido('${p.id}')">⚠️ Suspender</button>` : ''}
+                    ${_puedeEditarPartido(p) ? `<button class="btn btn-outline btn-xs" onclick="editarPartido('${p.id}')">✏️ Editar</button>` : ''}
+                    ${_puedeEditarPartido(p) && !_avisoActivo(p) && p.estado!=='jugado' ? `<button class="btn btn-outline btn-xs" onclick="suspenderPartido('${p.id}')">⚠️ Suspender</button>` : ''}
                     ${(esAdmin||esArb) ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">📋 Acta</button>` : (_permisoActa(p) === 'club' ? `<button class="btn btn-rojo btn-xs" onclick="abrirActaPartido('${p.id}')">⚽ Goleadores</button>` : '')}
                     ${esAdmin ? `<button class="btn btn-xs" style="background:var(--rojo-suave);color:var(--rojo)" onclick="eliminarPartido('${p.id}')">🗑️</button>` : ''}
                   </div>
@@ -6703,7 +6725,7 @@ function calBusBuscar() {
     const fila = (eq, goles, gana, mio) => `<div class="pm-fila${gana ? ' gana' : ''}${jug && !gana ? ' pierde' : ''}">
         <span class="pm-n">${mio ? '<i class="pm-mio"></i>' : ''}${_escHtml(eq ? eq.nombre : '—')}</span>
         ${jug ? `<span class="pm-g">${_escHtml(goles)}</span>` : ''}</div>`;
-    return cab + `<div class="pm${av ? ' aviso' : ''}" ${admin ? `onclick="editarPartido('${p.id}')" title="Pulsa para editar"` : ''} style="border-left-color:${av ? '#D97706' : (RES ? RES[1] : (_lv ? _lvColor(_esL) : 'var(--rojo)'))};${admin ? 'cursor:pointer;' : ''}">
+    return cab + `<div class="pm${av ? ' aviso' : ''}" ${(admin || _permisoActa(p) === 'club') ? `onclick="editarPartido('${p.id}')" title="Pulsa para editar"` : ''} style="border-left-color:${av ? '#D97706' : (RES ? RES[1] : (_lv ? _lvColor(_esL) : 'var(--rojo)'))};${(admin || _permisoActa(p) === 'club') ? 'cursor:pointer;' : ''}">
       <div class="pm-cab">
         <span class="pm-cat">${_escHtml(pc.cat || (comp ? comp.nombre : ''))}</span>
         ${_lv ? _lvBadge(_esL) : ''}
@@ -6866,8 +6888,9 @@ function poblarSelectCompeticiones(selectId, selected) {
     (DB.competiciones||[]).map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${_etiquetaCompeticion(c)}</option>`).join('');
 }
 
+function _partidoBloqueo(on) { ['pCompeticion', 'pLocal', 'pVisitante', 'pJornada'].forEach(id => { const el = document.getElementById(id); if (el) { el.disabled = !!on; el.title = on ? 'Solo el administrador puede cambiarlo' : ''; } }); }
 function abrirModalPartido(compIdPreseleccionada) {
-  editPartidoId = null;
+  editPartidoId = null; _partidoBloqueo(false);
   document.getElementById('modalPartidoTitle').textContent = 'Nuevo partido';
   ['pJornada','pFecha','pHora','pCampo','pGolesLocal','pGolesVisitante'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('pEstado').value = 'pendiente';
@@ -6878,8 +6901,9 @@ function abrirModalPartido(compIdPreseleccionada) {
 }
 
 function editarPartido(id) {
-  editPartidoId = id;
   const p = DB.partidos.find(x=>x.id===id); if (!p) return;
+  if (!_puedeEditarPartido(p)) { toast('Solo puedes editar partidos de tus equipos'); return; }
+  editPartidoId = id;
   document.getElementById('modalPartidoTitle').textContent = 'Editar partido';
   document.getElementById('pJornada').value        = p.jornada||'';;
   document.getElementById('pFecha').value          = _limpiarFecha(p.fecha);
@@ -6892,6 +6916,7 @@ function editarPartido(id) {
   poblarSelectSedes(p.sedeId); actualizarCamposSede(p.campoNombre);
   poblarSelectEquipos('pLocal', p.localId, p.competicionId);
   poblarSelectEquipos('pVisitante', p.visitanteId, p.competicionId);
+  _partidoBloqueo(sesion.rol !== 'admin');
   abrirModal('modalPartido');
 }
 
@@ -6909,6 +6934,8 @@ function actualizarEquiposPorCompeticion() {
 }
 
 async function guardarPartido() {
+  const pOrig = editPartidoId ? DB.partidos.find(x => x.id === editPartidoId) : null;
+  if (sesion.rol !== 'admin' && (!pOrig || !_puedeEditarPartido(pOrig))) { toast('Sin permiso para guardar este partido'); return; }
   const sedeId      = document.getElementById('pSede').value || '';
   const campoNombre = document.getElementById('pCampoSelect').value || '';
   const sede        = (DB.sedes||[]).find(s=>s.id===sedeId);
@@ -6939,6 +6966,7 @@ async function guardarPartido() {
     golesVisitante: gv,
     estado:         estado,
   };
+  if (sesion.rol !== 'admin') { datos.competicionId = pOrig.competicionId || ''; datos.jornada = pOrig.jornada || ''; datos.localId = pOrig.localId; datos.visitanteId = pOrig.visitanteId; }
   if (editPartidoId) {
     const idx = DB.partidos.findIndex(p=>p.id===editPartidoId);
     if (idx>=0) DB.partidos[idx] = { ...DB.partidos[idx], ...datos };
@@ -7510,6 +7538,8 @@ function exportarActasPDF(soloCompId) {
 
 // Quién puede abrir el acta: 'total' (admin/árbitro) · 'club' (club con permiso de evaluar, solo partidos de sus equipos y solo goleadores de su equipo)
 function _equiposClub() { return new Set((DB.equipos || []).filter(e => _eqEsDeClub(e)).map(e => e.id)); }
+// Editar/suspender partidos: admin todos; club con permiso de evaluación, los de sus equipos
+function _puedeEditarPartido(p) { return !!p && !!sesion && (sesion.rol === 'admin' || _permisoActa(p) === 'club'); }
 function _permisoActa(p) {
   if (!p || !sesion) return false;
   if (sesion.rol === 'admin' || sesion.rol === 'arbitro') return 'total';
@@ -10071,6 +10101,114 @@ function iaInforme() {
   w.document.open(); w.document.write(html); w.document.close();
 }
 
+// ══════════════════════════════════════════════════════
+//  ACCESOS DE FAMILIAS ("Mi Jugador") creados por el propio club
+//  Solo para jugadores de sus equipos. Todo pasa por el servidor (famListar/famGuardar/famBorrar).
+// ══════════════════════════════════════════════════════
+window._fa = window._fa || { lista: [], cargando: false, err: '', edit: null, ver: {} };
+function _faMisJug() { return _misJugadoresEval().slice().sort((a, b) => ((a.nombre || '') + ' ' + (a.apellidos || '')).localeCompare((b.nombre || '') + ' ' + (b.apellidos || ''), 'es')); }
+function _faNomJ(id) { const j = (DB.jugadores || []).find(x => x.id === id); return j ? ((j.nombre || '') + ' ' + (j.apellidos || '')).trim() : '—'; }
+function _faEqJ(id) { const j = (DB.jugadores || []).find(x => x.id === id), e = j ? (DB.equipos || []).find(q => q.id === j.equipoId) : null; return e || null; }
+function _faUrl(clave) { const base = /^https?:/.test(location.protocol) && !/localhost|127\.0\.0\.1/.test(location.hostname) ? location.href.split(/[?#]/)[0] : 'https://ed.escuelaydeporte.com/clubos_ed.html'; return base + (clave ? '?mj=' + encodeURIComponent(clave) : ''); }
+async function famAccesosAbrir() {
+  if (!puedeEvaluar() || sesion.esFamilia) { toast('No tienes permiso'); return; }
+  document.getElementById('famAccPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'famAccPop'; pop.style.display = 'none';
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" style="--c:#1A7A3C;">
+      <div style="min-width:0;"><div class="cal-pop-cat">👨‍👩‍👧 Accesos familias</div><div class="cal-pop-nom">Claves "Mi Jugador" para las familias de tus jugadores</div></div>
+      <button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></div><div class="cal-pop-cuerpo" id="faCuerpo"></div></div>`;
+  document.body.appendChild(pop); window._fa.edit = null; _popAbrir('famAccPop'); await famCargar();
+}
+async function famCargar() {
+  const S = window._fa; S.cargando = true; S.err = ''; famPintar();
+  try { const r = await jsonpFetch(SCRIPT_URL + '?action=famListar&pwd=' + _convpPwd(), 20000); if (r && r.ok) S.lista = r.familias || []; else S.err = (r && r.error) || 'Error'; }
+  catch (e) { S.err = 'Sin conexión'; }
+  S.cargando = false; famPintar();
+}
+function famPintar() {
+  const S = window._fa, cu = document.getElementById('faCuerpo'); if (!cu) return;
+  if (S.cargando && !S.lista.length) { cu.innerHTML = '<div class="empty-state"><div class="ei">⏳</div><p>Cargando accesos…</p></div>'; return; }
+  if (S.err) { cu.innerHTML = `<div class="empty-state"><div class="ei">⚠️</div><p>${_escHtml(S.err === 'Sin permiso' ? 'Tu club no tiene permiso para crear accesos (necesita "puede evaluar").' : S.err)}</p><button class="btn btn-outline" onclick="famCargar()">Reintentar</button></div>`; return; }
+  const mis = _faMisJug(), con = new Set(); S.lista.forEach(f => f.jugadorIds.forEach(id => con.add(id)));
+  const sin = mis.filter(j => !con.has(j.id));
+  const kpi = (v, l, c) => `<div class="cal-stat" style="background-color:${c};"><b>${v}</b><span>${l}</span></div>`;
+  let html = `<div class="eg-kpis">${kpi(S.lista.length, 'Accesos creados', '#1A7A3C')}${kpi(mis.length - sin.length, 'Jugadores con acceso', '#1D5FB0')}${kpi(sin.length, 'Sin acceso', sin.length ? '#C2571A' : '#6B7280')}${kpi(mis.length, 'Tus jugadores', '#2E4057')}</div>`;
+  html += S.edit ? _faForm() : `<div style="display:flex;justify-content:flex-end;margin-bottom:10px;"><button class="btn btn-rojo" onclick="famNuevo()">＋ Nuevo acceso</button></div>`;
+  html += S.lista.length ? S.lista.slice().sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(f => {
+    const eq0 = f.jugadorIds.map(_faEqJ).find(Boolean), col = eq0 && eq0.competicionId ? _calColorComp(eq0.competicionId) : '#1A7A3C', ver = S.ver[f.id];
+    return `<div class="fa-card" style="--c:${col}"><div class="fa-top"><div style="min-width:0;"><div class="fa-nom">${_escHtml(f.nombre)}</div>
+        <div class="fa-hijos">${f.jugadorIds.map(id => { const e = _faEqJ(id); return `<span>⚽ ${_escHtml(_faNomJ(id))}${e ? ' <small>· ' + _escHtml(e.nombre) + '</small>' : ''}</span>`; }).join('')}${f.otros ? `<span class="fa-otros">+${f.otros} en otros clubes</span>` : ''}</div>
+        ${f.tel ? `<div class="fa-tel">📞 ${_escHtml(f.tel)}</div>` : ''}</div>
+        <div class="fa-clave" onclick="window._fa.ver['${f.id}']=!window._fa.ver['${f.id}'];famPintar()" title="Mostrar/ocultar">🔑 <b>${ver ? _escHtml(f.clave) : '••••••'}</b></div></div>
+      <div class="fa-acc"><button class="btn btn-rojo btn-sm" onclick="famEnviar('${f.id}')">📲 WhatsApp</button><button class="btn btn-outline btn-sm" onclick="famCopiar('${f.id}')">📋 Copiar</button>
+        <button class="btn btn-outline btn-sm" onclick="famEditar('${f.id}')">✏️ Editar</button><button class="btn btn-outline btn-sm" onclick="famNuevaClave('${f.id}')">🔄 Nueva clave</button><button class="btn btn-outline btn-sm" onclick="famBorrar('${f.id}')">🗑️</button></div></div>`; }).join('')
+    : '<div class="empty-state"><div class="ei">👨‍👩‍👧</div><p>Todavía no has creado accesos.</p></div>';
+  if (sin.length) html += `<details class="fa-sin" ${S.lista.length ? '' : 'open'}><summary>🚫 Jugadores sin acceso (${sin.length})</summary>
+      ${sin.map(j => { const e = (DB.equipos || []).find(q => q.id === j.equipoId); return `<div class="fa-sinf"><span><b>${_escHtml(((j.nombre || '') + ' ' + (j.apellidos || '')).trim())}</b>${e ? ' <small>· ' + _escHtml(e.nombre) + '</small>' : ''}</span><button class="btn btn-outline btn-xs" onclick="famNuevo('${j.id}')">＋ Crear acceso</button></div>`; }).join('')}</details>`;
+  cu.innerHTML = html;
+}
+function famNuevo(jid) {
+  const j = jid ? (DB.jugadores || []).find(x => x.id === jid) : null;
+  window._fa.edit = { id: '', nombre: j ? 'Familia ' + ((j.apellidos || j.nombre || '').trim()) : '', tel: j ? (j.tutorTelefono || j.telefono || '') : '', email: j ? (j.tutorEmail || j.email || '') : '', jugadorIds: jid ? [jid] : [], clave: '', busca: '' };
+  famPintar(); document.getElementById('faNombre')?.focus();
+}
+function famEditar(id) { const f = window._fa.lista.find(x => x.id === id); if (!f) return; window._fa.edit = { id: f.id, nombre: f.nombre, tel: f.tel, email: f.email, jugadorIds: f.jugadorIds.slice(), clave: '', busca: '' }; famPintar(); document.getElementById('faCuerpo')?.scrollTo({ top: 0, behavior: 'smooth' }); }
+function _faLeerForm() { const E = window._fa.edit; if (!E) return; ['nombre', 'tel', 'email', 'clave'].forEach(k => { const el = document.getElementById('fa' + k.charAt(0).toUpperCase() + k.slice(1)); if (el) E[k] = el.value; }); }
+function _faForm() {
+  const E = window._fa.edit, q = _calNorm(E.busca || '').trim();
+  const res = q ? _faMisJug().filter(j => !E.jugadorIds.includes(j.id) && _calNorm(((j.nombre || '') + ' ' + (j.apellidos || ''))).includes(q)).slice(0, 8) : [];
+  return `<div class="fa-form"><div class="ia-pt">${E.id ? '✏️ Editar acceso' : '＋ Nuevo acceso'}</div>
+    <div class="fa-grid"><label class="fb-f"><span>Nombre de la familia *</span><input id="faNombre" value="${_escHtml(E.nombre)}" placeholder="Familia Ruiz García"></label>
+      <label class="fb-f"><span>Teléfono (para WhatsApp)</span><input id="faTel" type="tel" value="${_escHtml(E.tel)}" placeholder="600 000 000"></label>
+      <label class="fb-f"><span>Email</span><input id="faEmail" type="email" value="${_escHtml(E.email)}" placeholder="opcional"></label>
+      <label class="fb-f"><span>Clave ${E.id ? '(vacío = mantener)' : '(vacío = automática)'}</span><input id="faClave" value="${_escHtml(E.clave)}" maxlength="12" style="text-transform:uppercase;" placeholder="${E.id ? 'Mantener la actual' : 'Se genera sola'}"></label></div>
+    <div class="fb-f" style="margin-top:8px;"><span>Hijos/as * <small style="font-weight:400;">(solo jugadores de tus equipos)</small></span>
+      <div>${E.jugadorIds.map(id => `<span class="fam-vinc">✅ ${_escHtml(_faNomJ(id))}<button type="button" onclick="_faLeerForm();window._fa.edit.jugadorIds=window._fa.edit.jugadorIds.filter(x=>x!=='${id}');famPintar()">✕</button></span>`).join('') || '<small style="color:var(--gris-suave);">Ninguno todavía</small>'}</div>
+      <input id="faBusca" value="${_escHtml(E.busca || '')}" placeholder="🔎 Escribe para añadir un hermano/a…" oninput="_faLeerForm();window._fa.edit.busca=this.value;famPintar();const i=document.getElementById('faBusca');i.focus();i.setSelectionRange(i.value.length,i.value.length)" style="margin-top:8px;">
+      ${res.length ? `<div class="fa-res">${res.map(j => { const e = (DB.equipos || []).find(x => x.id === j.equipoId); return `<button type="button" onclick="_faLeerForm();window._fa.edit.jugadorIds.push('${j.id}');window._fa.edit.busca='';famPintar()">${_escHtml(((j.nombre || '') + ' ' + (j.apellidos || '')).trim())}${e ? ' <small>· ' + _escHtml(e.nombre) + '</small>' : ''}</button>`; }).join('')}</div>` : (q ? '<small style="color:var(--gris-suave);">Sin resultados entre tus jugadores</small>' : '')}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px;"><button class="btn btn-outline" onclick="window._fa.edit=null;famPintar()">Cancelar</button><button class="btn btn-rojo" id="faGuardarBtn" onclick="famGuardar()">💾 Guardar</button></div></div>`;
+}
+async function famGuardar(extra) {
+  _faLeerForm(); const E = window._fa.edit, S = window._fa;
+  if (!String(E.nombre || '').trim()) { toast('Pon el nombre de la familia'); return; }
+  if (!E.jugadorIds.length) { toast('Añade al menos un hijo/a'); return; }
+  const b = document.getElementById('faGuardarBtn'); if (b) { b.disabled = true; b.textContent = 'Guardando…'; }
+  const p = { id: E.id, nombre: E.nombre.trim(), tel: E.tel || '', email: E.email || '', jug: E.jugadorIds.join(','), clave: String(E.clave || '').trim().toUpperCase() };
+  try {
+    const r = await jsonpFetch(SCRIPT_URL + '?action=famGuardar&pwd=' + _convpPwd() + Object.entries(p).map(([k, v]) => '&' + k + '=' + encodeURIComponent(v)).join('') + (extra || ''), 20000);
+    if (r && r.ok) { const i = S.lista.findIndex(x => x.id === r.familia.id); if (i >= 0) S.lista[i] = r.familia; else S.lista.push(r.familia);
+      S.edit = null; S.ver[r.familia.id] = true; famPintar(); toast('✅ Acceso guardado · clave ' + r.familia.clave); }
+    else { toast(r && r.error ? r.error : 'No se pudo guardar'); if (b) { b.disabled = false; b.textContent = '💾 Guardar'; } }
+  } catch (e) { toast('Sin conexión'); if (b) { b.disabled = false; b.textContent = '💾 Guardar'; } }
+}
+async function famNuevaClave(id) {
+  const f = window._fa.lista.find(x => x.id === id); if (!f) return;
+  if (!confirm('Se generará una clave nueva y la actual dejará de funcionar. ¿Seguir?')) return;
+  window._fa.edit = { id: f.id, nombre: f.nombre, tel: f.tel, email: f.email, jugadorIds: f.jugadorIds.slice(), clave: '' };
+  famPintar(); await famGuardar('&nueva=1');
+}
+async function famBorrar(id) {
+  const f = window._fa.lista.find(x => x.id === id); if (!f) return;
+  if (!confirm(`¿Eliminar el acceso de "${f.nombre}"? Su clave dejará de funcionar.`)) return;
+  try { const r = await jsonpFetch(SCRIPT_URL + '?action=famBorrar&pwd=' + _convpPwd() + '&id=' + encodeURIComponent(id), 20000);
+    if (r && r.ok) { window._fa.lista = window._fa.lista.filter(x => x.id !== id); famPintar(); toast(r.desvinculado ? 'Quitados tus jugadores (tiene hijos en otro club)' : '🗑️ Acceso eliminado'); }
+    else toast(r && r.error ? r.error : 'No se pudo eliminar');
+  } catch (e) { toast('Sin conexión'); }
+}
+function _faMensaje(f) {
+  const hijos = f.jugadorIds.map(id => ((DB.jugadores || []).find(x => x.id === id) || {}).nombre).filter(Boolean);
+  const club = ((DB.clubes || []).find(c => c.user === sesion.user) || {}).nombre || 'Escuela & Deporte';
+  return `Hola, ${f.nombre}. Ya tenéis acceso a la app de ${club} para seguir a ${hijos.length > 1 ? hijos.slice(0, -1).join(', ') + ' y ' + hijos[hijos.length - 1] : (hijos[0] || 'vuestro hijo/a')}: evaluaciones, partidos, pagos y avisos.\n\n` +
+    `*Entrada directa:*\n${_faUrl(f.clave)}\n\n*O bien:* abrid ${_faUrl('')}, pulsad «Mi Jugador» e introducid la clave *${f.clave}*\n\n` +
+    `Consejo: instaladla en el móvil desde el menú del navegador, «Añadir a pantalla de inicio». La clave es personal, no la compartáis.`;
+}
+function famEnviar(id) { const f = window._fa.lista.find(x => x.id === id); if (f) _waAbrir(_faMensaje(f), String(f.tel || '').replace(/\D/g, '')); }
+async function famCopiar(id) {
+  const f = window._fa.lista.find(x => x.id === id); if (!f) return; const t = _faMensaje(f);
+  try { await navigator.clipboard.writeText(t); toast('📋 Mensaje copiado'); }
+  catch (e) { const ta = document.createElement('textarea'); ta.value = t; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); toast('📋 Mensaje copiado'); } catch (e2) { toast('No se pudo copiar'); } ta.remove(); }
+}
+
 // ── Evaluar un equipo completo (todos sus jugadores con el mismo sistema) ──
 window._evEq = window._evEq || { eq: '', tipo: 'continua' };
 const _EVAL_GRUPOS = [['⚙️ Técnico', ['tecControl', 'Control'], ['tecPase', 'Pase'], ['tecTiro', 'Tiro']], ['💪 Físico', ['fisVelocidad', 'Velocidad'], ['fisResistencia', 'Resistencia'], ['fisFuerza', 'Fuerza']], ['🧠 Actitud', ['actEsfuerzo', 'Esfuerzo'], ['actEquipo', 'Equipo'], ['actDisciplina', 'Disciplina']]];
@@ -11540,6 +11678,7 @@ function _avisoBadge(p, conBoton) {
 }
 async function suspenderPartido(id) {
   const p = (DB.partidos || []).find(x => x.id === id); if (!p) return;
+  if (!_puedeEditarPartido(p)) { toast('Sin permiso'); return; }
   const m = prompt('Motivo de la suspensión (lluvia, pista no disponible, falta de jugadores…):', '');
   if (m === null) return;
   p.avisoTipo = 'suspendido'; p.avisoMotivo = m.trim();
@@ -11551,6 +11690,7 @@ async function suspenderPartido(id) {
 }
 async function quitarAvisoPartido(id) {
   const p = (DB.partidos || []).find(x => x.id === id); if (!p) return;
+  if (!_puedeEditarPartido(p)) { toast('Sin permiso'); return; }
   if (!confirm('¿Quitar el aviso de este partido?')) return;
   p.avisoTipo = ''; p.avisoMotivo = ''; p.fechaOriginal = ''; p.horaOriginal = '';
   await saveCol('partidos'); renderAll();
@@ -11640,9 +11780,9 @@ function _mjPartidoCard(p, sel) {
       <div class="pm-tabla">${fila(p.localId, p.golesLocal, ganaL)}${fila(p.visitanteId, p.golesVisitante, ganaV)}</div>
       ${RES ? `<div class="pm-res" style="background:${RES[1]};">${RES[0]}</div>` : ''}
       <div class="mjc-info"><span>🗓️ <b>${_escHtml(_mjFechaTxt(p.fecha))}</b>${hora ? ' · ⏰ <b>' + _escHtml(hora) + '</b>' : ''}</span><span>📍 ${_escHtml(p.campo || 'Lugar por confirmar')}</span></div>
-      ${av ? _avisoBadge(p, sesion.rol === 'admin') : ''}
+      ${av ? _avisoBadge(p, _puedeEditarPartido(p)) : ''}
       ${_mjEsGestor() && mio && (sesion.rol === 'admin' || _eqEsDeClub(mio)) ? `<button class="btn ${_convpConocida(_convpId(p.id, mio.id)) ? 'btn-outline' : 'btn-rojo'} btn-sm" style="margin-top:10px;" onclick="convPartidoAbrir('${p.id}','${mio.id}')">${_convpConocida(_convpId(p.id, mio.id)) ? '📊 Ver estado' : '📣 Convocatoria'}</button>` : ''}
-      ${_permisoActa(p) === 'club' ? `<button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="abrirActaPartido('${p.id}')">⚽ Goleadores</button>` : ''}
+      ${_permisoActa(p) === 'club' ? `<button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="abrirActaPartido('${p.id}')">⚽ Goleadores</button><button class="btn btn-outline btn-sm" style="margin-top:10px;margin-left:6px;" onclick="editarPartido('${p.id}')">✏️ Editar</button>${!av && !jug ? `<button class="btn btn-outline btn-sm" style="margin-top:10px;margin-left:6px;" onclick="suspenderPartido('${p.id}')">⚠️ Suspender</button>` : ''}` : ''}
     </div></div>`;
 }
 function _mjProximaJornada(parts) {
