@@ -1270,6 +1270,20 @@ body.cal-pop-on{overflow:hidden;}
 .fa-sin{background:#fff;border-radius:14px;padding:12px 14px;margin-top:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);} .fa-sin summary{cursor:pointer;font-weight:800;}
 .fa-sinf{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid #f0ecee;font-size:14px;} .fa-sinf small{color:var(--gris-suave);}
 @media (max-width:640px){.fa-grid{grid-template-columns:1fr;}}
+.eqf{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.eqf-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.eqf-chip{border:1px solid color-mix(in srgb,var(--c) 35%,#fff);background:#fff;color:var(--c);border-radius:20px;padding:6px 12px;font-weight:800;font-size:13px;cursor:pointer;}
+.eqf-chip small{opacity:.7;font-weight:700;margin-left:2px;} .eqf-chip.on{background:var(--c);color:#fff;border-color:var(--c);box-shadow:0 3px 8px color-mix(in srgb,var(--c) 40%,transparent);}
+.eqf-sel{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center;} .eqf-sel select{padding:8px 10px;border:1px solid #ddd;border-radius:10px;font:inherit;font-size:13px;max-width:100%;}
+.eqf-res{font-size:13px;color:var(--gris-suave);margin:4px 2px 10px;}
+.eqg{margin-bottom:18px;} .eqg-cab{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 75%,#000));color:#fff;border-radius:12px;padding:9px 14px;margin-bottom:10px;font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:17px;letter-spacing:.5px;text-transform:uppercase;}
+.eqg-cab small{font-family:inherit;font-size:12px;opacity:.85;letter-spacing:0;}
+.eqg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:10px;}
+.eqc{background:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:4px solid var(--c);cursor:pointer;display:flex;flex-direction:column;gap:8px;transition:transform .12s,box-shadow .12s;}
+.eqc:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.1);}
+.eqc-top{display:flex;gap:10px;align-items:center;} .eqc-nom{font-weight:800;font-size:15px;line-height:1.2;} .eqc-sub{font-size:12px;color:var(--gris-suave);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.eqc-datos{display:flex;flex-direction:column;gap:3px;font-size:13px;} .eqc-datos a{color:inherit;} .eqc-cero{color:#B0A7AB;}
+.eqc-acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid #f0ecee;} .eqc-del{background:#FADBD8!important;color:var(--rojo)!important;border:0!important;margin-left:auto;}
 </style>
 </head>
 <body>
@@ -2432,7 +2446,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.3.2';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.3.3';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.4.8';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -3953,6 +3967,11 @@ function renderEquipos() {
     return;
   }
 
+  // Vista nueva (admin, club, árbitro): filtros en pastillas + tarjetas agrupadas por categoría
+  el.innerHTML = '<div id="eqFiltros"></div><div id="eqLista"></div>';
+  _eqPintarLista();
+  return;
+
   // Group by competition
   const comps = {};
   lista.forEach(e => {
@@ -4106,6 +4125,58 @@ function renderEquipos() {
   aplicarEstadoAcordeones();
 }
 
+// ══════════════════════════════════════════════════════
+//  EQUIPOS · vista en tarjetas con filtros (categoría, club, competición, texto)
+// ══════════════════════════════════════════════════════
+window._eqF = window._eqF || { q: '', cat: '', club: '', comp: '' };
+function _eqCatDe(e) { const c = (DB.competiciones || []).find(x => x.id === e.competicionId); return c ? (_compPartes(c).cat || e.categoria || 'Sin categoría') : (e.categoria || 'Sin competición'); }
+function _eqSet(k, v) { window._eqF[k] = window._eqF[k] === v && k === 'cat' ? '' : v; _eqPintarLista(); }
+function _eqLimpiar() { window._eqF = { q: '', cat: '', club: '', comp: '' }; const i = document.getElementById('buscadorEquiposGlobal'); if (i) i.value = ''; _eqPintarLista(); }
+function _eqPintarLista() {
+  const fl = document.getElementById('eqFiltros'), li = document.getElementById('eqLista'); if (!fl || !li) return;
+  const F = window._eqF, isAdmin = sesion.rol === 'admin', isClub = sesion.rol === 'club', isArb = sesion.rol === 'arbitro';
+  const inp = document.getElementById('buscadorEquiposGlobal'); if (inp && inp.value !== F.q) F.q = inp.value;
+  const base = (isAdmin || isArb) ? (DB.equipos || []) : (DB.equipos || []).filter(e => _eqEsDeClub(e));
+  const nJ = {}; (DB.jugadores || []).forEach(j => { if (j.equipoId) nJ[j.equipoId] = (nJ[j.equipoId] || 0) + 1; });
+  const q = _calNorm(F.q || '').trim();
+  const pasa = (e, sin) => (sin === 'cat' || !F.cat || _eqCatDe(e) === F.cat) && (sin === 'club' || !F.club || _eqClubs(e).includes(F.club)) && (sin === 'comp' || !F.comp || (e.competicionId || '__none__') === F.comp)
+    && (!q || _calNorm((e.nombre || '') + ' ' + (e.delegado || '') + ' ' + _eqClubs(e).map(nombreClub).join(' ')).includes(q));
+  // pastillas de categoría (recuento con el resto de filtros aplicados)
+  const cats = {}; base.filter(e => pasa(e, 'cat')).forEach(e => { const k = _eqCatDe(e); if (!cats[k]) cats[k] = { n: 0, comp: e.competicionId }; cats[k].n++; });
+  const catOrd = Object.entries(cats).sort((a, b) => _calOrdenComp(a[1].comp) - _calOrdenComp(b[1].comp) || a[0].localeCompare(b[0], 'es'));
+  const clubs = {}; base.filter(e => pasa(e, 'club')).forEach(e => _eqClubs(e).forEach(c => clubs[c] = (clubs[c] || 0) + 1));
+  const comps = {}; base.filter(e => pasa(e, 'comp')).forEach(e => { const k = e.competicionId || '__none__'; comps[k] = (comps[k] || 0) + 1; });
+  const compNom = id => { const c = (DB.competiciones || []).find(x => x.id === id); return c ? ((_compPartes(c).cat ? _compPartes(c).cat + ' · ' : '') + (_compPartes(c).nom || c.nombre)) : 'Sin competición'; };
+  const hay = F.q || F.cat || F.club || F.comp;
+  fl.innerHTML = `<div class="eqf">
+      <div class="eqf-chips"><button type="button" class="eqf-chip${!F.cat ? ' on' : ''}" style="--c:#2E4057" onclick="_eqSet('cat','')">Todas <small>${base.filter(e => pasa(e, 'cat')).length}</small></button>
+        ${catOrd.map(([k, v]) => `<button type="button" class="eqf-chip${F.cat === k ? ' on' : ''}" style="--c:${v.comp ? _calColorComp(v.comp) : '#6B7280'}" onclick="_eqSet('cat','${_escHtml(k).replace(/'/g, "\\'")}')">${_escHtml(k)} <small>${v.n}</small></button>`).join('')}</div>
+      <div class="eqf-sel">
+        ${isAdmin ? `<select onchange="_eqSet('club',this.value)"><option value="">🏛️ Todos los clubes</option>${Object.keys(clubs).sort((a, b) => nombreClub(a).localeCompare(nombreClub(b), 'es')).map(c => `<option value="${_escHtml(c)}" ${F.club === c ? 'selected' : ''}>${_escHtml(nombreClub(c))} (${clubs[c]})</option>`).join('')}</select>` : ''}
+        <select onchange="_eqSet('comp',this.value)"><option value="">🏆 Todas las competiciones</option>${Object.keys(comps).sort((a, b) => _calOrdenComp(a) - _calOrdenComp(b) || compNom(a).localeCompare(compNom(b), 'es')).map(c => `<option value="${c}" ${F.comp === c ? 'selected' : ''}>${_escHtml(compNom(c))} (${comps[c]})</option>`).join('')}</select>
+        ${hay ? `<button type="button" class="btn btn-outline btn-sm" onclick="_eqLimpiar()">✕ Limpiar</button>` : ''}
+        ${isAdmin ? `<button type="button" class="btn btn-outline btn-sm" onclick="exportarEquiposPDF()">📄 Exportar</button>` : ''}
+      </div></div>`;
+  const lista = base.filter(e => pasa(e)).sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es'));
+  if (!lista.length) { li.innerHTML = `<div class="empty-state"><div class="ei">🔎</div><p>Ningún equipo coincide con el filtro.</p>${hay ? '<button class="btn btn-outline" onclick="_eqLimpiar()">Quitar filtros</button>' : ''}</div>`; return; }
+  const grupos = {}; lista.forEach(e => { const k = _eqCatDe(e); (grupos[k] = grupos[k] || []).push(e); });
+  const totJ = lista.reduce((s, e) => s + (nJ[e.id] || 0), 0);
+  li.innerHTML = `<div class="eqf-res"><b>${lista.length}</b> equipo${lista.length === 1 ? '' : 's'} · <b>${totJ}</b> jugadores${hay ? ' · filtrado' : ''}</div>` +
+    Object.entries(grupos).sort((a, b) => _calOrdenComp(a[1][0].competicionId) - _calOrdenComp(b[1][0].competicionId) || a[0].localeCompare(b[0], 'es')).map(([cat, eqs]) => {
+      const col = eqs[0].competicionId ? _calColorComp(eqs[0].competicionId) : '#6B7280';
+      return `<div class="eqg"><div class="eqg-cab" style="--c:${col}"><span>${_escHtml(cat)}</span><small>${eqs.length} equipo${eqs.length === 1 ? '' : 's'}</small></div><div class="eqg-grid">${eqs.map(e => {
+        const comp = (DB.competiciones || []).find(c => c.id === e.competicionId), pc = comp ? _compPartes(comp) : {}, c2 = e.competicionId ? _calColorComp(e.competicionId) : '#6B7280', n = nJ[e.id] || 0;
+        const puedeEd = isAdmin || (isClub && _eqEsDeClub(e));
+        return `<div class="eqc" style="--c:${c2}" onclick="abrirFichaEquipo('${e.id}')">
+          <div class="eqc-top">${kitCirculo(e.eq1Camiseta, e.eq1Pantalon)}<div style="min-width:0;flex:1;"><div class="eqc-nom">${_escHtml(e.nombre || '—')}</div>
+            <div class="eqc-sub">${comp ? _escHtml(pc.nom || comp.nombre) + (_calModalidad(comp) === 'Fútbol 7' ? ' · F7' : '') + (pc.temp ? ' · ' + _escHtml(pc.temp) : '') : '<i>Sin competición</i>'}</div></div></div>
+          <div class="eqc-datos"><span class="${n ? '' : 'eqc-cero'}">👥 <b>${n}</b> jugador${n === 1 ? '' : 'es'}</span>
+            ${isAdmin ? `<span>🏛️ ${_escHtml(_eqClubs(e).map(nombreClub).join(' + ') || '—')}</span>` : ''}
+            <span class="${e.delegado ? '' : 'eqc-cero'}">👤 ${e.delegado ? _escHtml(e.delegado) + (e.telDelegado ? ` · <a href="tel:${_escHtml(e.telDelegado)}" onclick="event.stopPropagation()">${_escHtml(e.telDelegado)}</a>` : '') : 'Sin entrenador'}</span></div>
+          <div class="eqc-acc" onclick="event.stopPropagation()"><button class="btn btn-outline btn-xs" onclick="abrirFichaEquipo('${e.id}')">📋 Ficha</button>
+            ${puedeEd ? `<button class="btn btn-outline btn-xs" onclick="editarEquipo('${e.id}')">✏️ Editar</button><button class="btn btn-outline btn-xs" onclick="compartirEnlaceEquipo('${e.id}')">🔗 Enlace</button>` : ''}
+            ${isAdmin || (puedeEd && puedeEvaluar()) ? `<button class="btn btn-xs eqc-del" title="Eliminar equipo" onclick="eliminarEquipo('${e.id}')">🗑️</button>` : ''}</div></div>`; }).join('')}</div></div>`; }).join('');
+}
 function exportarEquiposPDF(soloCompId) {
   const base = soloCompId ? (DB.equipos||[]).filter(e=>(e.competicionId||'__none__')===soloCompId) : (DB.equipos||[]);
   if (!base.length) { toast('No hay equipos para exportar'); return; }
@@ -4270,6 +4341,7 @@ function mostrarSugerenciasEquipo(texto) {
   const q = (texto||'').toLowerCase().trim();
   const drop = document.getElementById('sugerenciasEquipo');
   if (!drop) return;
+  if (sesion.rol !== 'familias') { drop.style.display = 'none'; return; } // la lista ya se filtra en directo
   if (!q) { drop.style.display = 'none'; return; }
   const isAdmin = sesion.rol === 'admin';
   const isClub  = sesion.rol === 'club';
@@ -4504,6 +4576,7 @@ async function eliminarEquipo(id) {
 // ── BUSCADOR DE EQUIPOS ──────────────────────────────────
 function filtrarEquiposGlobal(texto) {
   const q = (texto||'').toLowerCase().trim();
+  if (sesion.rol !== 'familias') { window._eqF.q = texto || ''; _eqPintarLista(); return; }
 
   if (sesion.rol === 'familias') {
     const resEl = document.getElementById('resultadosFamiliaEquipos');
