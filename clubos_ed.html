@@ -1284,6 +1284,15 @@ body.cal-pop-on{overflow:hidden;}
 .eqc-top{display:flex;gap:10px;align-items:center;} .eqc-nom{font-weight:800;font-size:15px;line-height:1.2;} .eqc-sub{font-size:12px;color:var(--gris-suave);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .eqc-datos{display:flex;flex-direction:column;gap:3px;font-size:13px;} .eqc-datos a{color:inherit;} .eqc-cero{color:#B0A7AB;}
 .eqc-acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:8px;border-top:1px solid #f0ecee;} .eqc-del{background:#FADBD8!important;color:var(--rojo)!important;border:0!important;margin-left:auto;}
+.res-rev-btn{background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-weight:800;} .res-rev-n{background:#B45309;color:#fff;border-radius:10px;padding:1px 7px;margin-left:4px;font-size:12px;}
+.rr-card{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid var(--c);}
+.rr-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;} .rr-j{font-size:13px;font-weight:700;color:#555;}
+.rr-est{margin-left:auto;font-size:11px;font-weight:800;border-radius:20px;padding:3px 10px;text-transform:uppercase;} .rr-est.jug{background:#FDE2E1;color:#B42318;} .rr-est.pen{background:#FEF3C7;color:#92400E;}
+.rr-motivo{font-size:13px;background:#FFFBEB;border-radius:8px;padding:6px 10px;margin:8px 0;color:#78350F;}
+.rr-res{display:grid;grid-template-columns:1fr 56px auto 56px 1fr;gap:8px;align-items:center;} .rr-eq{font-weight:800;font-size:14px;}
+.rr-res input{width:56px;text-align:center;font-size:20px;font-weight:900;padding:6px;border:2px solid #ddd;border-radius:10px;}
+.rr-acc{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+@media (max-width:640px){.rr-res{grid-template-columns:1fr 48px auto 48px 1fr;} .rr-res input{width:48px;} .rr-eq{font-size:13px;}}
 </style>
 </head>
 <body>
@@ -1455,6 +1464,7 @@ body.cal-pop-on{overflow:hidden;}
     <div class="tab-panel" id="panel-calendario">
       <div class="section-header">
         <h2>📅 Calendario</h2><div class="section-line"></div>
+        <button class="btn res-rev-btn" id="btnRevisarRes" onclick="resRevAbrir()" style="margin-right:6px;display:none">⚠️ Resultados por revisar</button>
         <button class="btn btn-outline" id="btnGestionSedes" onclick="abrirGestionSedes()" style="margin-right:6px;display:none">🏟️ Gestionar sedes</button>
         <button class="btn btn-outline" onclick="exportarCalendarioPDF()" style="margin-right:6px;">📄 Exportar PDF</button>
         <button class="btn btn-rojo" id="btnNuevoPartido"  onclick="abrirModalPartido()" style="display:none">+ Nuevo partido</button>
@@ -2446,8 +2456,8 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.3.3';      // versión de este archivo (súbela al modificarlo)
-const GS_VERSION_MIN = '2.4.8';   // versión mínima del script de Apps Script que necesita esta app
+const APP_VERSION = '3.3.4';      // versión de este archivo (súbela al modificarlo)
+const GS_VERSION_MIN = '2.5.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
   if (gs) { try { localStorage.setItem('clubos_ed_gsver', gs); } catch(e) {} }
@@ -6455,6 +6465,7 @@ async function eliminarPartidosHuerfanos(compId) {
 }
 
 function renderCalendario() {
+  try { _resRevActualizarBtn(); } catch (e) {}
   const el = document.getElementById('calendarioContent');
   if (!DB.partidos.length) {
     el.innerHTML = '<div class="empty-state"><div class="ei">📅</div><p>No hay partidos programados aún.</p></div>'; return;
@@ -11507,7 +11518,8 @@ function _impDesdeIMD(txt) {
     if (c.length < 4) c = l.trim().split(/\s{2,}/).map(x => x.trim());
     if (c.length < 4) return;
     const res = /^\d{1,2}\s*[-–]\s*\d{1,2}$/.test(c[4] || '') ? c[4].replace(/\s/g, '') : '';
-    out.push([jor, c[0], c[1], c[2], c[3], (c[5] || '').split('-')[0].trim(), res].join(';'));
+    const iL = res ? 5 : 4, obs = c.slice(iL + 1).map(x => x.replace(/;/g, ',')).filter(x => x && x !== '-').join(' / ');
+    out.push([jor, c[0], c[1], c[2], c[3], (c[iL] || '').split('-')[0].trim().replace(/;/g, ','), res].concat(obs ? ['OBS:' + obs] : []).join(';'));
   });
   return out.length ? out.join('\n') : null;
 }
@@ -11528,8 +11540,9 @@ function _impAnalizar() {
     let gl = null, gv = null; const r1 = String(c[6] || '').match(/^\s*(\d{1,2})\s*[-–:]\s*(\d{1,2})\s*$/);
     if (r1) { gl = +r1[1]; gv = +r1[2]; }
     else { gl = c[6] !== undefined && /^\s*\d{1,2}\s*$/.test(c[6]) ? parseInt(c[6], 10) : null; gv = c[7] !== undefined && /^\s*\d{1,2}\s*$/.test(c[7]) ? parseInt(c[7], 10) : null; if (gl === null || gv === null) gl = gv = null; }
-    filas.push({ jornada: jor, fecha, hora: _impHora(c[2]), local: c[3], visitante: c[4], campo: c[5] || '',
-      gl: isNaN(gl) ? null : gl, gv: isNaN(gv) ? null : gv });
+    const obsC = c.find(x => /^OBS:/.test(x));
+    filas.push({ jornada: jor, fecha, hora: _impHora(c[2]), local: c[3], visitante: c[4], campo: /^OBS:/.test(c[5] || '') ? '' : (c[5] || ''),
+      gl: isNaN(gl) ? null : gl, gv: isNaN(gv) ? null : gv, obs: obsC ? obsC.slice(4).trim() : '' });
   });
   window._impFilas = filas;
   const nombres = [...new Set(filas.flatMap(f => [f.local, f.visitante]))].sort((a, b) => a.localeCompare(b));
@@ -11543,8 +11556,8 @@ function _impAnalizar() {
     return { nombre: n, destino: ex ? ex.id : '__nuevo__' };
   });
   const fechas = filas.map(f => f.fecha).sort();
-  const nRes = filas.filter(f => f.gl !== null).length;
-  prev.innerHTML = `${window._impEsIMD ? '<div style="font-size:12px;font-weight:700;color:#1D5FB0;margin-bottom:6px;">🌐 Texto de la web del IMD reconocido</div>' : ''}<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}${nRes ? ` · <b style="color:#17803D;">${nRes} con resultado</b>` : ''}</div>
+  const nRes = filas.filter(f => f.gl !== null && !_impSospechoso(f).nulo).length, nSos = filas.filter(f => _impSospechoso(f).motivo).length;
+  prev.innerHTML = `${window._impEsIMD ? '<div style="font-size:12px;font-weight:700;color:#1D5FB0;margin-bottom:6px;">🌐 Texto de la web del IMD reconocido</div>' : ''}<div style="font-size:13px;margin-bottom:8px;"><b>${filas.length}</b> partidos · <b>${new Set(filas.map(f => f.jornada)).size}</b> jornadas${fechas.length ? ` · ${_convFmtFecha(fechas[0])} → ${_convFmtFecha(fechas[fechas.length - 1])}` : ''}${nRes ? ` · <b style="color:#17803D;">${nRes} con resultado</b>` : ''}${nSos ? ` · <b style="color:#B45309;">⚠️ ${nSos} con cambio u observación (quedarán por revisar)</b>` : ''}</div>
     ${errores.length ? `<div style="font-size:12px;color:#7B1E3A;margin-bottom:8px;">⚠️ ${errores.length} líneas ignoradas:<br>${errores.slice(0, 4).map(_escHtml).join('<br>')}</div>` : ''}
     <div style="font-weight:700;font-size:12px;margin:10px 0 6px;">Equipos (revisa a cuál corresponde cada uno)</div>
     ${window._impEquipos.map((e, i) => `<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
@@ -11556,6 +11569,15 @@ function _impAnalizar() {
     ${window._impEquipos.some(e => e.destino === '__nuevo__') ? `<div style="font-size:12px;color:#B45309;font-weight:700;margin-top:6px;">⚠️ Se crearán ${window._impEquipos.filter(e => e.destino === '__nuevo__').length} equipos nuevos en esta competición. Si alguno ya existe con otro nombre, elígelo en su desplegable.</div>` : ''}
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;"><input type="checkbox" id="impSustituir" style="width:auto;min-height:auto;"> Sustituir los partidos que ya tiene esta competición</label>`;
   ok.disabled = !filas.length;
+}
+// Un 0-0 con observación (cambio de horario, aplazado…) o con fecha futura NO es un resultado real: queda pendiente y por revisar
+function _impSospechoso(f) {
+  const hoy = new Date().toISOString().slice(0, 10), kw = /cambio|aplaz|suspend|horari|fecha|recuper|pendiente|apla/i;
+  if (f.gl === null || f.gv === null) return f.obs && kw.test(f.obs) ? { nulo: false, motivo: f.obs } : { nulo: false, motivo: '' };
+  if (f.fecha && f.fecha > hoy) return { nulo: true, motivo: f.obs || 'El IMD da resultado a un partido con fecha futura' };
+  if (f.obs && f.gl === 0 && f.gv === 0) return { nulo: true, motivo: f.obs };
+  if (f.obs && kw.test(f.obs)) return { nulo: false, motivo: f.obs };
+  return { nulo: false, motivo: '' };
 }
 async function confirmarImportarCal() {
   const comp = (DB.competiciones || []).find(c => c.id === window._impComp); if (!comp) return;
@@ -11580,16 +11602,24 @@ async function confirmarImportarCal() {
   }
   const clave = p => [p.competicionId, String(p.jornada), p.localId, p.visitanteId].join('|');
   const ya = {}; (DB.partidos || []).forEach(p => { ya[clave(p)] = p; });
-  let creados = 0, resultados = 0, cambiosFecha = 0, iguales = 0; const conflictos = [];
+  let creados = 0, resultados = 0, cambiosFecha = 0, iguales = 0, porRevisar = 0; const conflictos = [];
   const nom = id => (DB.equipos.find(e => e.id === id) || {}).nombre || '?';
   filas.forEach(f => {
+    const sos = _impSospechoso(f); if (sos.motivo) porRevisar++;
+    if (sos.nulo) f = Object.assign({}, f, { gl: null, gv: null });
     const p = { id: uid(), competicionId: comp.id, jornada: String(f.jornada), fecha: f.fecha, hora: f.hora, sedeId: '', campoNombre: '', campo: f.campo,
       localId: idDe[f.local], visitanteId: idDe[f.visitante], golesLocal: f.gl, golesVisitante: f.gv,
-      estado: (f.gl !== null && f.gv !== null) ? 'jugado' : 'pendiente', acta: '' };
+      estado: (f.gl !== null && f.gv !== null) ? 'jugado' : 'pendiente', acta: '', obsIMD: f.obs || '', revisarRes: sos.motivo || '' };
     const ex = ya[clave(p)];
     if (!ex) { ya[clave(p)] = p; DB.partidos.push(p); creados++; if (f.gl !== null) resultados++; return; }
     // Ya existe: actualizar sin duplicar
     let cambio = false;
+    if ((ex.obsIMD || '') !== (f.obs || '')) { ex.obsIMD = f.obs || ''; cambio = true; }
+    if (sos.motivo) {
+      if (ex.revisarRes !== sos.motivo) { ex.revisarRes = sos.motivo; cambio = true; }
+      // Un 0-0 importado antes por error vuelve a "pendiente"
+      if (sos.nulo && ex.estado === 'jugado' && !ex.actaCerrada && String(ex.golesLocal) === '0' && String(ex.golesVisitante) === '0') { ex.estado = 'pendiente'; ex.golesLocal = ''; ex.golesVisitante = ''; cambio = true; }
+    } else if (ex.revisarRes && f.gl !== null) { ex.revisarRes = ''; cambio = true; }
     if (f.gl !== null && f.gv !== null) {
       const mismo = ex.estado === 'jugado' && String(ex.golesLocal) === String(f.gl) && String(ex.golesVisitante) === String(f.gv);
       if (!mismo) {
@@ -11611,10 +11641,75 @@ async function confirmarImportarCal() {
   if (resultados) partes.push(`${resultados} resultados`);
   if (cambiosFecha) partes.push(`${cambiosFecha} cambios de fecha/hora`);
   if (nuevos) partes.push(`${nuevos} equipos nuevos`);
+  if (porRevisar) partes.push(`⚠️ ${porRevisar} por revisar`);
+  _resRevActualizarBtn();
   toast(partes.length ? '✅ ' + partes.join(' · ') + (iguales ? ` (${iguales} sin cambios)` : '') : 'Sin cambios: todo estaba al día');
   if (conflictos.length) alert(`⚠️ ${conflictos.length} resultado(s) NO se han cambiado porque el acta está cerrada y no coincide con el IMD. Revísalos a mano:\n\n` + conflictos.slice(0, 15).join('\n'));
 }
 
+// ══════════════════════════════════════════════════════
+//  RESULTADOS POR REVISAR: partidos con cambio de horario/aplazados en el IMD (0-0 provisional)
+//  o marcados como jugados con fecha futura
+// ══════════════════════════════════════════════════════
+function _resRevLista() {
+  const hoy = new Date().toISOString().slice(0, 10);
+  return (DB.partidos || []).filter(p => _puedeEditarPartido(p)).map(p => {
+    const f = _limpiarFecha(p.fecha) || '';
+    if (p.revisarRes) return { p, motivo: String(p.revisarRes) };
+    if (p.estado === 'jugado' && f && f > hoy) return { p, motivo: 'Figura como jugado pero su fecha aún no ha llegado' };
+    return null; }).filter(Boolean)
+    .sort((a, b) => _calOrdenComp(a.p.competicionId) - _calOrdenComp(b.p.competicionId) || String(_limpiarFecha(a.p.fecha)).localeCompare(String(_limpiarFecha(b.p.fecha))));
+}
+function _resRevActualizarBtn() {
+  const b = document.getElementById('btnRevisarRes'); if (!b || !sesion) return;
+  const n = (sesion.rol === 'admin' || (sesion.rol === 'club' && puedeEvaluar())) ? _resRevLista().length : 0;
+  b.style.display = n ? '' : 'none'; b.innerHTML = `⚠️ Resultados por revisar <span class="res-rev-n">${n}</span>`;
+}
+function resRevAbrir() {
+  document.getElementById('resRevPop')?.remove();
+  const pop = document.createElement('div'); pop.className = 'cal-pop-fondo'; pop.id = 'resRevPop'; pop.style.display = 'none';
+  pop.innerHTML = `<div class="cal-pop-caja" role="dialog" aria-modal="true"><div class="cal-pop-cab" style="--c:#B45309;">
+      <div style="min-width:0;"><div class="cal-pop-cat">⚠️ Resultados por revisar</div><div class="cal-pop-nom">Cambios de horario, aplazamientos y 0-0 provisionales del IMD</div></div>
+      <button class="cal-pop-x" onclick="_popCerrar()" aria-label="Cerrar">✕</button></div><div class="cal-pop-cuerpo" id="resRevCuerpo"></div></div>`;
+  document.body.appendChild(pop); resRevPintar(); _popAbrir('resRevPop');
+}
+function resRevPintar() {
+  const cu = document.getElementById('resRevCuerpo'); if (!cu) return;
+  const L = _resRevLista(), nomE = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '—';
+  if (!L.length) { cu.innerHTML = '<div class="empty-state"><div class="ei">✅</div><p>No queda ningún resultado por revisar.</p></div>'; return; }
+  cu.innerHTML = `<div class="ia-nota" style="margin:0 0 12px;">Estos partidos <b>no cuentan como jugados</b> hasta que metas el resultado real. Si el 0-0 era bueno, pulsa <b>✓ Es correcto</b>.</div>` +
+    L.map(({ p, motivo }) => { const c = (DB.competiciones || []).find(x => x.id === p.competicionId), col = p.competicionId ? _calColorComp(p.competicionId) : '#6B7280', jug = p.estado === 'jugado';
+      return `<div class="rr-card" style="--c:${col}">
+        <div class="rr-top"><span class="cat-chip" style="--c:${col}">${_escHtml(c ? (_compPartes(c).cat || '') : '—')}</span><span class="rr-j">J${_escHtml(p.jornada)} · ${_escHtml(_convFmtFecha(_limpiarFecha(p.fecha)))}${p.hora ? ' ' + _escHtml(_limpiarHora(p.hora)) : ''}</span>
+          <span class="rr-est ${jug ? 'jug' : 'pen'}">${jug ? 'Figura jugado ' + _escHtml(p.golesLocal) + '-' + _escHtml(p.golesVisitante) : 'Pendiente'}</span></div>
+        <div class="rr-motivo">📝 ${_escHtml(motivo)}</div>
+        <div class="rr-res"><span class="rr-eq">${_escHtml(nomE(p.localId))}</span>
+          <input type="number" min="0" max="99" inputmode="numeric" id="rrL_${p.id}" value="${jug ? _escHtml(p.golesLocal) : ''}" placeholder="–">
+          <b>-</b><input type="number" min="0" max="99" inputmode="numeric" id="rrV_${p.id}" value="${jug ? _escHtml(p.golesVisitante) : ''}" placeholder="–">
+          <span class="rr-eq" style="text-align:right;">${_escHtml(nomE(p.visitanteId))}</span></div>
+        <div class="rr-acc"><button class="btn btn-rojo btn-sm" onclick="resRevGuardar('${p.id}')">💾 Guardar resultado</button>
+          ${jug ? `<button class="btn btn-outline btn-sm" onclick="resRevPendiente('${p.id}')">⏳ Marcar pendiente</button>` : ''}
+          <button class="btn btn-outline btn-sm" onclick="resRevOk('${p.id}')">✓ Es correcto</button>
+          <button class="btn btn-outline btn-sm" onclick="_popCerrar();editarPartido('${p.id}')">✏️ Editar</button></div></div>`; }).join('');
+}
+async function _resRevFin(msg) { await saveCol('partidos'); renderAll(); resRevPintar(); _resRevActualizarBtn(); toast(msg); }
+async function resRevGuardar(id) {
+  const p = (DB.partidos || []).find(x => x.id === id); if (!p || !_puedeEditarPartido(p)) return;
+  const l = document.getElementById('rrL_' + id).value, v = document.getElementById('rrV_' + id).value;
+  if (l === '' || v === '') { toast('Pon los goles de los dos equipos'); return; }
+  p.golesLocal = parseInt(l, 10); p.golesVisitante = parseInt(v, 10); p.estado = 'jugado'; p.revisarRes = '';
+  await _resRevFin('✅ Resultado guardado');
+}
+async function resRevPendiente(id) {
+  const p = (DB.partidos || []).find(x => x.id === id); if (!p || !_puedeEditarPartido(p)) return;
+  p.estado = 'pendiente'; p.golesLocal = ''; p.golesVisitante = ''; if (!p.revisarRes) p.revisarRes = 'Pendiente de jugar (marcado a mano)';
+  await _resRevFin('⏳ Marcado como pendiente: seguirá en esta lista hasta que pongas el resultado');
+}
+async function resRevOk(id) {
+  const p = (DB.partidos || []).find(x => x.id === id); if (!p || !_puedeEditarPartido(p)) return;
+  p.revisarRes = ''; if (p.estado === 'jugado' && _limpiarFecha(p.fecha) > new Date().toISOString().slice(0, 10)) p.fecha = new Date().toISOString().slice(0, 10);
+  await _resRevFin('✓ Aviso quitado');
+}
 // ══════════════════════════════════════════════════════
 //  REVISAR EQUIPOS DE UNA COMPETICIÓN (limpieza tras importaciones)
 // ══════════════════════════════════════════════════════
