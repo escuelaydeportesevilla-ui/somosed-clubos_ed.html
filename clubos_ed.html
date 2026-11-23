@@ -2456,7 +2456,7 @@ function cambiarEscala(delta) {
 }
 document.addEventListener('DOMContentLoaded', () => aplicarEscala(_escalaActual));
 
-const APP_VERSION = '3.3.4';      // versión de este archivo (súbela al modificarlo)
+const APP_VERSION = '3.3.5';      // versión de este archivo (súbela al modificarlo)
 const GS_VERSION_MIN = '2.5.0';   // versión mínima del script de Apps Script que necesita esta app
 function _verNum(v) { return String(v || '0').split('.').map(n => parseInt(n, 10) || 0).reduce((a, n) => a * 1000 + n, 0); }
 function actualizarVersiones(gs) {
@@ -7487,11 +7487,17 @@ function abrirModalGol(equipoFijo) {
 
   if (equipoFijo) {
     sel.value = equipoFijo; sel.disabled = true;
-    const jugs = _jugadoresGol(equipoFijo);
-    if (jugs.length) {
-      wrap.innerHTML = `<label>Jugador</label><select id="golJugador">
-        ${jugs.map(j=>`<option value="${j.nombre}${j.apellidos?' '+j.apellidos:''}">${j.dorsal?'#'+j.dorsal+' ':''}${j.nombre} ${j.apellidos||''}</option>`).join('')}
-      </select>`;
+    const jugs = _jugadoresGol(equipoFijo), otros = _jugadoresOtrosClub(equipoFijo);
+    const nomEq = id => ((DB.equipos || []).find(e => e.id === id) || {}).nombre || '';
+    if (jugs.length || otros.length) {
+      wrap.innerHTML = `<label>Jugador</label>
+        ${otros.length ? `<input id="golBuscar" placeholder="🔎 Buscar (también de otros equipos del club)…" oninput="_golFiltrar(this.value)" autocomplete="off" style="margin-bottom:6px;">` : ''}
+        <select id="golJugador" size="${Math.min(8, jugs.length + otros.length + 2)}" style="height:auto;">
+        ${jugs.length ? `<optgroup label="Este equipo">${jugs.map(j=>`<option value="${_escHtml(j.nombre + (j.apellidos ? ' ' + j.apellidos : ''))}">${j.dorsal?'#'+j.dorsal+' ':''}${_escHtml(j.nombre)} ${_escHtml(j.apellidos||'')}</option>`).join('')}</optgroup>` : ''}
+        ${otros.length ? `<optgroup label="🔁 Otros equipos del club (juega cedido)">${otros.map(j=>`<option value="${_escHtml(j.nombre + (j.apellidos ? ' ' + j.apellidos : ''))}">${_escHtml(j.nombre)} ${_escHtml(j.apellidos||'')} · ${_escHtml(nomEq(j.equipoId))}</option>`).join('')}</optgroup>` : ''}
+      </select>
+      ${otros.length ? '<div style="font-size:11px;color:var(--gris-suave);margin-top:4px;">El gol cuenta para el equipo de este partido. No se duplica la ficha del jugador.</div>' : ''}`;
+      const s0 = document.getElementById('golJugador'); if (s0 && s0.options.length) s0.selectedIndex = 0;
     } else {
       wrap.innerHTML = `<label>Jugador</label><input id="golJugador" placeholder="Nombre del goleador">`;
     }
@@ -7647,6 +7653,21 @@ function _jugadoresGol(equipoId) {
   const conv = act.filter(j => j.convocado === true || j.convocado === 'true');
   return (conv.length ? conv : act).sort((a, b) => Number(a.dorsal || 99) - Number(b.dorsal || 99));
 }
+// Jugadores de OTROS equipos del mismo club (p.ej. un benjamín que juega con el alevín). Sin duplicar ficha.
+function _jugadoresOtrosClub(equipoId) {
+  const eq = (DB.equipos || []).find(e => e.id === equipoId); if (!eq) return [];
+  const clubs = _eqClubs(eq).filter(c => c && c !== 'cbedadmin');
+  const eqIds = new Set((DB.equipos || []).filter(e => e.id !== equipoId && (!clubs.length || _eqClubs(e).some(c => clubs.includes(c)))).map(e => e.id));
+  return (DB.jugadores || []).filter(j => j.equipoId !== equipoId && eqIds.has(j.equipoId) && j.activo !== false && j.activo !== 'false'
+      && (!window._actaModoClub || _equiposClub().has(j.equipoId)))
+    .sort((a, b) => ((a.nombre || '') + ' ' + (a.apellidos || '')).localeCompare((b.nombre || '') + ' ' + (b.apellidos || ''), 'es'));
+}
+function _golFiltrar(q) {
+  q = _calNorm(q || '').trim(); const sel = document.getElementById('golJugador'); if (!sel) return; let pri = null;
+  [...sel.options].forEach(o => { const ok = !q || _calNorm(o.textContent).includes(q); o.hidden = !ok; if (ok && !pri) pri = o; });
+  sel.querySelectorAll('optgroup').forEach(g => g.hidden = ![...g.children].some(o => !o.hidden));
+  const cur = sel.selectedOptions[0]; if (pri && (!cur || cur.hidden || q)) sel.value = pri.value;
+}
 function abrirActaPartido(partidoId) {
   DB.actaEditId = partidoId;
   const p = DB.partidos.find(x=>x.id===partidoId); if (!p) return;
@@ -7717,7 +7738,10 @@ function actualizarLiveGolesActa() {
       golesPorJugador[g.jugador] = (golesPorJugador[g.jugador]||0) + g.goles;
       totalEquipo += g.goles;
     });
-    const huerfanos = Object.keys(golesPorJugador).filter(nom => !nombresConvocados.has(nom));
+    const otrosClub = editable ? _jugadoresOtrosClub(equipo.id) : [], nomOtro = {};
+    otrosClub.forEach(j => { nomOtro[j.nombre + (j.apellidos ? ' ' + j.apellidos : '')] = ((DB.equipos || []).find(e => e.id === j.equipoId) || {}).nombre || ''; });
+    const invitados = Object.keys(golesPorJugador).filter(nom => !nombresConvocados.has(nom) && nomOtro[nom] !== undefined);
+    const huerfanos = Object.keys(golesPorJugador).filter(nom => !nombresConvocados.has(nom) && nomOtro[nom] === undefined);
 
     const objetivoRaw = document.getElementById(inputId)?.value;
     const objetivo = objetivoRaw!=='' && objetivoRaw!=null ? parseInt(objetivoRaw) : null;
@@ -7737,6 +7761,8 @@ function actualizarLiveGolesActa() {
               ${goles>0&&editable?`<span style="cursor:pointer;color:var(--rojo);font-weight:700;" onclick="quitarGolSesion('${equipo.id}','${esc(nombreCompleto)}')" title="Quitar gol">✕</span>`:''}</span>`;
         }).join('')}
       </div>` : `<div style="font-size:12px;color:var(--gris-suave);margin-bottom:6px;">${editable ? 'Sin jugadores activos.' : 'Equipo rival: sus goleadores los anota su club o la organización.'}</div>`}
+      ${invitados.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">${invitados.map(nom => `<span style="font-size:11px;padding:3px 8px;border-radius:6px;display:inline-flex;align-items:center;gap:5px;background:#D5F5E3;color:#1E8449;font-weight:700;">🔁 ${_escHtml(nom)} <small style="font-weight:400;">(${_escHtml(nomOtro[nom])})</small> (${golesPorJugador[nom]} gol${golesPorJugador[nom] > 1 ? 'es' : ''})
+          ${editable ? `<span style="cursor:pointer;color:var(--rojo);font-weight:700;" onclick="quitarGolSesion('${equipo.id}','${esc(nom)}')" title="Quitar gol">✕</span>` : ''}</span>`).join('')}</div>` : ''}
       ${huerfanos.length && editable ? `<div style="margin-bottom:6px;">
         <div style="font-size:11px;color:var(--rojo);font-weight:700;margin-bottom:3px;">⚠️ Con gol asignado pero ya no convocado:</div>
         ${huerfanos.map(nom => `<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;background:#FDEDEC;padding:4px 8px;border-radius:6px;margin-bottom:3px;">
